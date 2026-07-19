@@ -4,14 +4,14 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 005 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 006`. Note: Prompt 004 itself (the backend scaffold/port) was
+None — Prompt 006 complete (committed locally, not pushed); awaiting
+`RUN PROMPT 007`. Note: Prompt 004 itself (the backend scaffold/port) was
 never given its own commit or `PORT_MANIFEST.md` — its file changes exist
-uncommitted in the working tree from an earlier, undocumented session. This
-005 session did not redo or finalize 004 (explicitly out of scope) but
-incidentally ran `yarn check` against that ported backend for the first
-time as part of verifying 005's own changes — see the 005 entry below. That
-gap (004 uncommitted, no manifest) is still open.
+uncommitted in the working tree from an earlier, undocumented session. Neither
+005 nor 006 redid or finalized 004 (explicitly out of scope each time) but
+both have run `yarn check` against that ported backend as part of verifying
+their own changes — see the 005/006 entries below. That gap (004 uncommitted,
+no manifest) is still open.
 
 ## Completed prompts
 
@@ -96,6 +96,42 @@ gap (004 uncommitted, no manifest) is still open.
   (`lib/**`, `app/api/**`, migrations, all ported non-UI test suites) was
   exercised end-to-end and passed — see the open gap noted above.
 
+- 006 — Application shell and boundaries (2026-07-20). Created route groups
+  `app/(public)/` and `app/(app)/`; moved the minimal `app/page.tsx` into
+  `app/(public)/page.tsx` (URL `/` unchanged — verified in build route
+  output). Root `app/layout.tsx` now sets metadata title template
+  (`"%s — Altr"`), a `Viewport` export (`themeColor: "#F5F6F7"`), and renders
+  the ported `components/LocaleHtmlSync.tsx` (byte-identical port from
+  LEGACY, `<html suppressHydrationWarning>` to avoid the client-side
+  `lang`-sync hydration warning). Added `app/error.tsx` (calm editorial
+  copy, retry button calling `reset()` + `router.refresh()`, logs only
+  `error.digest` — never `error.message` — via `console.error`),
+  `app/not-found.tsx` (same visual system, link home), `app/global-error.tsx`
+  (self-contained — inlines raw token hex values via inline styles rather
+  than `var(...)`, since it replaces the root layout and tokens.css may not
+  be loaded), and a fog-toned `loading.tsx` skeleton in each route group
+  (no spinner). Added `tests/unit/app-boundaries.test.tsx` (RTL) asserting
+  the not-found and error headlines/actions render — not in 006's own
+  "files allowed to change" list, but required by its own "Required tests"
+  section, so added (same kind of in-file contradiction as 005's
+  ARCHITECTURE_DECISIONS instruction, resolved the same way: follow the more
+  specific/actionable instruction). `yarn lint`, `yarn typecheck`,
+  `yarn test` (13 files / 88 tests), `yarn build` (27/27 pages, all
+  `/api/**` paths and `/` unchanged), and `yarn test:e2e` (the 004 smoke
+  spec) all passed.
+  Environment notes from this session: (1) hit a `.next/types` staleness
+  issue after moving `app/page.tsx` — `tsc` referenced the pre-move route
+  shape; fixed by clearing `.next` before re-running typecheck, not a code
+  problem. (2) `yarn test:e2e` initially failed because the Playwright
+  Chromium binary was never installed on this machine; installed via
+  `npx playwright install chromium --with-deps`. (3) Mid-session, `C:` free
+  space collapsed from ~3.5 GB to ~30 MB in a way this repo's own build
+  artifacts (`.next` was 84 MB) could not fully account for — work paused,
+  the user freed space externally, and `C:` returned to ~3.4-4 GB free
+  before continuing. Cause not diagnosed (was outside this session's scope);
+  worth keeping an eye on given this project sits inside a continuously
+  syncing OneDrive folder.
+
 ## Failed prompts
 
 None.
@@ -109,16 +145,18 @@ blocked status for 001 itself — every 001 acceptance criterion was met).
 
 LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 2026-07-19 (see `BASELINE_V2.md` §2.3). WORKSPACE: `yarn build` passed,
-2026-07-19 — 27/27 static pages generated, clean exit (see 005 entry above
-for the `node_modules` cross-drive fix that unblocked this).
+2026-07-20 — 27/27 static pages generated, clean exit (see 005 entry above
+for the `node_modules` cross-drive fix that unblocked this, and 006 for
+route-group verification). `yarn test:e2e` (the 004 smoke spec) also passed,
+2026-07-20, after installing the Playwright Chromium binary (see 006 entry).
 
 ## Last successful test run
 
 LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
-isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-19 —
-86/86 tests passed across 12 files, clean exit (code 0).
+isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
+88/88 tests passed across 13 files, clean exit (code 0).
 
 ## Known regressions
 
