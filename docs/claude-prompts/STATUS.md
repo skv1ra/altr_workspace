@@ -4,7 +4,7 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 001 complete; awaiting `RUN PROMPT 002`.
+None — Prompt 002 complete; awaiting `RUN PROMPT 003`.
 
 ## Completed prompts
 
@@ -19,6 +19,22 @@ None — Prompt 001 complete; awaiting `RUN PROMPT 002`.
   environment issue, not a test failure — see BASELINE_V2 §2.3). Inventory
   counts (21 pages, 30 API routes, 14 migrations, 30 test files) cross-checked
   against `FEATURE_PARITY_MATRIX.md` with no mismatch.
+- 002 — Parity and security audit verification (2026-07-19). Read-only audit
+  of LEGACY (`altrtest2` @ `a22927d`) against `FEATURE_PARITY_MATRIX.md` and
+  `MASTER_CONTEXT.md`'s security invariants; no LEGACY writes, no WORKSPACE
+  code changes. One evidence-path fix (Cookie preferences button's real path
+  is `components/legal/CookiePreferencesButton.tsx`); no COMPLETE row needed
+  reclassifying. All 10 security invariants verified with file:line citations
+  (added to `FEATURE_PARITY_MATRIX.md` § "Verified invariants") — all hold,
+  except one citation gap (invariant #3 cites a test file that doesn't
+  actually check what MASTER_CONTEXT claims; tracked as RISKS.md R12, not
+  fixed here since MASTER_CONTEXT.md is outside this prompt's allowed files).
+  Both canonical-module questions resolved: `lib/auth/rateLimit.ts` is fully
+  dead (safe to delete in Prompt 004); `lib/plans.ts` and
+  `lib/billing/plans.ts` are **both** live for different concerns, which is a
+  price-desync risk tracked as RISKS.md R11. Traceability gate holds (no
+  COMPLETE row missing a rebuild/test/manual-check prompt). All 26 `altr_`
+  tables confirmed RLS-covered.
 
 ## Failed prompts
 
