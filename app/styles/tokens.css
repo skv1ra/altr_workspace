@@ -1,0 +1,82 @@
+/*
+ * Altr design tokens — single source of truth (ADR-009).
+ * Values sourced from docs/claude-prompts/DESIGN_DIRECTION.md.
+ * Consumed by tailwind.config.ts via var(...) references; do not duplicate
+ * raw values elsewhere.
+ */
+
+:root {
+  /* Palette — cinematic white / silver / graphite / black. No accent hues. */
+  --altr-white: #f5f6f7;
+  --altr-silver: #d9dde1;
+  --altr-mist: #b9c0c7;
+  --altr-graphite: #3a3f45;
+  --altr-obsidian: #15171a;
+  --altr-black: #0a0b0c;
+
+  /* RGB triplets for opacity composition (Tailwind rgb(var(...) / <alpha>) pattern). */
+  --altr-white-rgb: 245 246 247;
+  --altr-silver-rgb: 217 221 225;
+  --altr-mist-rgb: 185 192 199;
+  --altr-graphite-rgb: 58 63 69;
+  --altr-obsidian-rgb: 21 23 26;
+  --altr-black-rgb: 10 11 12;
+
+  /* Semantic aliases */
+  --surface-page: var(--altr-white);
+  --surface-inverse: var(--altr-obsidian);
+  --text-primary: var(--altr-graphite);
+  --text-muted: var(--altr-mist);
+  --edge-hairline: var(--altr-silver);
+
+  /* Fluid type scale (clamp: min, fluid, max). Refined in Prompt 007. */
+  --text-display: clamp(2.6rem, 6.5vw, 5.5rem);
+  --text-h1: clamp(2.25rem, 4.2vw, 3.5rem);
+  --text-h2: clamp(1.75rem, 3vw, 2.5rem);
+  --text-h3: clamp(1.375rem, 2vw, 1.75rem);
+  --text-h4: clamp(1.125rem, 1.4vw, 1.375rem);
+  --text-body: clamp(1rem, 1.05vw, 1.125rem);
+  --text-label: clamp(0.6875rem, 0.75vw, 0.75rem);
+
+  /* Type rhythm */
+  --leading-display: 1.05;
+  --leading-heading: 1.15;
+  --leading-body: 1.6;
+  --tracking-tight: -0.02em;
+  --tracking-label: 0.06em;
+  --measure-body: 68ch;
+
+  /* Spacing scale — 4px base. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-9: 2.25rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Radii — modest, never a pill on primary actions. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadow recipes — soft, large-radius, low-opacity only. */
+  --shadow-hairline: 0 1px 0 0 rgb(var(--altr-silver-rgb) / 100%);
+  --shadow-soft: 0 24px 80px rgb(var(--altr-black-rgb) / 8%);
+  --shadow-elevated: 0 12px 40px rgb(var(--altr-black-rgb) / 12%);
+
+  /* Motion */
+  --motion-fast: 180ms;
+  --motion-slow: 600ms;
+  --motion-drift: 24s;
+  --ease-altr: cubic-bezier(0.22, 1, 0.36, 1);
+}
