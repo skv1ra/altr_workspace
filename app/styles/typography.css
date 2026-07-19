@@ -1,0 +1,35 @@
+/*
+ * Vertical rhythm helpers — imported after tokens.css.
+ *
+ * `.section-stack`: page-section spacing rhythm. --space-16 (64px) vertical
+ * padding on mobile, stepping up to --space-24 (96px) at the sm breakpoint
+ * (640px) and above, per DESIGN_DIRECTION's "generous negative space" rule.
+ *
+ * `.prose`: body measure/leading for long-form content (legal pages, memory
+ * excerpts). Uses an owl-selector (`> * + *`) to space direct-child blocks
+ * apart, with headings getting extra top space. Because the selector only
+ * ever matches *direct* children, a `.prose` nested inside another `.prose`
+ * cannot compound: each level's spacing rule only sees its own children.
+ */
+
+.section-stack {
+  padding-block: var(--space-16);
+}
+
+@media (min-width: 640px) {
+  .section-stack {
+    padding-block: var(--space-24);
+  }
+}
+
+.prose > * + * {
+  margin-top: var(--space-6);
+}
+
+.prose :where(h1, h2, h3, h4) {
+  margin-top: var(--space-12);
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}

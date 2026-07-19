@@ -16,7 +16,7 @@ altr_workspace only.
 | 004 | Workspace scaffold and backend port | 1 | Scaffold the Next.js app; port proven backend, migrations, non-UI tests, CI | 003 | L | todo | todo | no | `feat: scaffold workspace and port proven backend` |
 | 005 | Design token foundation | 1 | tokens.css + Tailwind mapping + font pipeline | 004 | M | done | done | no | `feat(design): add Altr design token foundation` |
 | 006 | Application shell and boundaries | 1 | New root layout, error/loading boundaries, route groups | 005 | M | done | done | no | `feat(app): new application shell with boundaries` |
-| 007 | Typography and spacing | 2 | Type scale, prose styles, spacing rhythm | 006 | M | todo | todo | yes | `feat(design): typography and spacing system` |
+| 007 | Typography and spacing | 2 | Type scale, prose styles, spacing rhythm | 006 | M | done | done | yes | `feat(design): typography and spacing system` |
 | 008 | Color, materials, surfaces | 2 | Obsidian/fog/paper surface primitives | 007 | M | todo | todo | yes | `feat(design): material and surface system` |
 | 009 | Buttons, inputs, forms | 2 | Core interactive primitives | 008 | M | todo | todo | yes | `feat(design): core form and button primitives` |
 | 010 | Dialogs, overlays, a11y states | 2 | Modal/toast/menu + focus/keyboard system | 009 | M | todo | todo | yes | `feat(design): overlay components and a11y states` |

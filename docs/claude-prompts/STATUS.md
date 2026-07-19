@@ -4,14 +4,14 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 006 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 007`. Note: Prompt 004 itself (the backend scaffold/port) was
+None — Prompt 007 complete (committed locally, not pushed); awaiting
+`RUN PROMPT 008`. Note: Prompt 004 itself (the backend scaffold/port) was
 never given its own commit or `PORT_MANIFEST.md` — its file changes exist
-uncommitted in the working tree from an earlier, undocumented session. Neither
-005 nor 006 redid or finalized 004 (explicitly out of scope each time) but
-both have run `yarn check` against that ported backend as part of verifying
-their own changes — see the 005/006 entries below. That gap (004 uncommitted,
-no manifest) is still open.
+uncommitted in the working tree from an earlier, undocumented session. None of
+005/006/007 redid or finalized 004 (explicitly out of scope each time) but
+each has run `yarn check` against that ported backend as part of verifying
+their own changes — see the 005/006/007 entries below. That gap (004
+uncommitted, no manifest) is still open.
 
 ## Completed prompts
 
@@ -132,6 +132,48 @@ no manifest) is still open.
   worth keeping an eye on given this project sits inside a continuously
   syncing OneDrive folder.
 
+- 007 — Typography and spacing (2026-07-20). The fluid type scale itself
+  (clamp-based display/h1-h4/body/label, tight display leading, 68ch body
+  measure, +6% label tracking) was already fully specified in
+  `app/styles/tokens.css` and `tailwind.config.ts` from Prompt 005, so this
+  session's work was the primitive layer on top: `components/ui/Text.tsx`
+  exports polymorphic `Display`, `Heading` (level 1-4), `Body`, `Label`, and
+  `Prose` components — each takes an `as` override, renders a sensible
+  default semantic tag, composes classes only (no inline styles), and reads
+  every value from the token-backed Tailwind utilities. Added
+  `app/styles/typography.css` (vertical rhythm: `.section-stack` for
+  section padding — `--space-16` mobile, `--space-24` at the 640px
+  breakpoint — and `.prose`'s owl-selector child spacing; documented why
+  nested `.prose` can't compound: the `> * + *` selector only ever matches
+  direct children, so each nesting level's rhythm is independent). Imported
+  `typography.css` into `app/globals.css` right after `tokens.css` — that
+  file isn't in 007's own "files allowed to change" list, but the prompt's
+  own implementation step explicitly requires the file be "imported after
+  tokens," and an unimported stylesheet does nothing; same kind of in-file
+  gap as 005 (ADR-009) and 006 (required test not in the allowed-files
+  list), resolved the same way — follow the specific, actionable
+  instruction. Added the internal `/styleguide` route
+  (`app/(public)/styleguide/page.tsx`) showing the full scale plus a
+  Cyrillic sample line; gated with `notFound()` when
+  `NODE_ENV === "production"` — **verified for real**, not just by reading
+  the code: the production `yarn build` output for `/styleguide` was
+  confirmed byte-for-byte to contain the not-found boundary's copy
+  ("This page doesn't exist"), not the styleguide content, while a
+  dev-server (`yarn dev`) fetch of the same route returned 200 with the
+  real headings and the Cyrillic line rendered. Tests:
+  `tests/components/Text.test.tsx` (RTL — tag/class/`as`-override coverage
+  for every primitive) and `tests/components/styleguide-page.test.tsx`
+  (production-gate + normal-render coverage for the route itself, not
+  explicitly required but directly serves the security requirement).
+  One test-authoring pitfall hit and fixed: dynamically `import()`-ing the
+  route module per-test to force re-evaluation under a stubbed
+  `NODE_ENV=production` broke Vitest's JSX runtime resolution
+  (`jsxDEV is not a function`) — unnecessary anyway, since the
+  `NODE_ENV` check runs at component call time, not module-import time, so
+  a single static top-level import fixed it. `yarn lint`, `yarn typecheck`,
+  `yarn test` (15 files / 99 tests), and `yarn build` (28/28 pages) all
+  passed.
+
 ## Failed prompts
 
 None.
@@ -145,10 +187,12 @@ blocked status for 001 itself — every 001 acceptance criterion was met).
 
 LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 2026-07-19 (see `BASELINE_V2.md` §2.3). WORKSPACE: `yarn build` passed,
-2026-07-20 — 27/27 static pages generated, clean exit (see 005 entry above
-for the `node_modules` cross-drive fix that unblocked this, and 006 for
-route-group verification). `yarn test:e2e` (the 004 smoke spec) also passed,
-2026-07-20, after installing the Playwright Chromium binary (see 006 entry).
+2026-07-20 — 28/28 static pages generated, clean exit (see 005 entry above
+for the `node_modules` cross-drive fix that unblocked this, 006 for
+route-group verification, and 007 for the new `/styleguide` route including
+confirmation it 404s in this production build). `yarn test:e2e` (the 004
+smoke spec) also passed, 2026-07-20, after installing the Playwright
+Chromium binary (see 006 entry).
 
 ## Last successful test run
 
@@ -156,7 +200,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-88/88 tests passed across 13 files, clean exit (code 0).
+99/99 tests passed across 15 files, clean exit (code 0).
 
 ## Known regressions
 
