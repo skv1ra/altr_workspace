@@ -4,7 +4,8 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 002 complete; awaiting `RUN PROMPT 003`.
+None — Prompt 003 complete (committed locally, not pushed — see note below);
+awaiting `RUN PROMPT 004`.
 
 ## Completed prompts
 
@@ -35,6 +36,21 @@ None — Prompt 002 complete; awaiting `RUN PROMPT 003`.
   price-desync risk tracked as RISKS.md R11. Traceability gate holds (no
   COMPLETE row missing a rebuild/test/manual-check prompt). All 26 `altr_`
   tables confirmed RLS-covered.
+- 003 — Repository wiring and reference assets (2026-07-19). Origin
+  re-verified as `skv1ra/altr_workspace.git`, branch `main`. Created
+  `references/README.md` (provenance, inspiration-only note, LEGACY pin).
+  Verified `references/altr-hero-reference.png` is a genuine 1318×716 PNG
+  (~1.1 MB), SHA-256 `cb1b36ab21e31021008da03276056716c875144924b6901046f5b0c90210a48e`,
+  and visually confirmed it contains only the UI mockup — no private personal
+  data. Confirmed the raw upload folder `altr-hero-reference.png/` was
+  byte-identical (same checksum) before deleting it. Added `node_modules/`,
+  `.next/`, `.env*.local`, `tsconfig.tsbuildinfo` to `.gitignore` for the
+  coming app scaffold. Committed the full prompt pack, `references/`, and
+  `.gitignore` to `main` as the pack's first durable commit. **Not pushed to
+  origin** — the user explicitly instructed "commit the completed work
+  locally and stop" for this run, overriding PROMPT_003 step 6's push
+  instruction. Push to `skv1ra/altr_workspace` `main` remains outstanding and
+  needs explicit user go-ahead before any future prompt does it.
 
 ## Failed prompts
 
@@ -90,7 +106,8 @@ None recorded.
 - Hero reference: DONE — full-resolution image verified at
   `references/altr-hero-reference.png` (2026-07-19); DESIGN_DIRECTION updated
   from the full image. Original upload folder `altr-hero-reference.png/`
-  retained at repo root; it can be deleted once the canonical copy is committed.
+  removed 2026-07-19 (Prompt 003) after its checksum was confirmed identical
+  to the canonical copy.
 
 ## Environment setup still required (user-owned)
 - Production values for all variables in `.env.example` (Supabase, Lemon Squeezy

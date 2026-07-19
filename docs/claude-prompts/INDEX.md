@@ -12,7 +12,7 @@ altr_workspace only.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 001 | Workspace and legacy baseline | 0 | Verify repo wiring; record baselines of workspace and legacy reference | — | S | done | done | no | `docs: record workspace and legacy baseline` |
 | 002 | Parity and security audit verification | 0 | Independently verify FEATURE_PARITY_MATRIX claims against the legacy checkout | 001 | M | done | done | no | `docs: verify feature parity and security audit` |
-| 003 | Repository wiring and reference assets | 0 | Pin legacy audit SHA, verify remotes, commit reference assets | 002 | S | todo | todo | yes | `chore: pin legacy reference and commit hero assets` |
+| 003 | Repository wiring and reference assets | 0 | Pin legacy audit SHA, verify remotes, commit reference assets | 002 | S | done | done | yes | `chore: pin legacy reference and commit hero assets` (committed locally only, not pushed per user instruction) |
 | 004 | Workspace scaffold and backend port | 1 | Scaffold the Next.js app; port proven backend, migrations, non-UI tests, CI | 003 | L | todo | todo | no | `feat: scaffold workspace and port proven backend` |
 | 005 | Design token foundation | 1 | tokens.css + Tailwind mapping + font pipeline | 004 | M | todo | todo | no | `feat(design): add Altr design token foundation` |
 | 006 | Application shell and boundaries | 1 | New root layout, error/loading boundaries, route groups | 005 | M | todo | todo | no | `feat(app): new application shell with boundaries` |

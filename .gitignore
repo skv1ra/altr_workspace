@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# Node / Next.js app scaffold (Prompt 004+)
+node_modules/
+.next/
+.env*.local
+tsconfig.tsbuildinfo
