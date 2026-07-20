@@ -26,7 +26,15 @@
   --surface-page: var(--altr-white);
   --surface-inverse: var(--altr-obsidian);
   --text-primary: var(--altr-graphite);
-  --text-muted: var(--altr-mist);
+  /*
+   * --altr-mist on --altr-white measures ~1.7:1 (WCAG AA body text needs
+   * 4.5:1) — too light to use directly as muted text on light surfaces.
+   * Graphite at 78% opacity composites to ~#63676c over --altr-white,
+   * ~5.3:1 (see tests/components/contrast.test.ts). `.surface-inverse`
+   * (materials.css) overrides this back to the plain --altr-mist, which
+   * measures ~9.8:1 against --altr-obsidian — plenty on dark.
+   */
+  --text-muted: rgb(var(--altr-graphite-rgb) / 78%);
   --edge-hairline: var(--altr-silver);
 
   /* Fluid type scale (clamp: min, fluid, max). Refined in Prompt 007. */

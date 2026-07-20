@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Hairline, Surface } from "@/components/ui/Surface";
 import { Body, Display, Heading, Label, Prose } from "@/components/ui/Text";
 
 export const metadata = { title: "Styleguide" };
@@ -42,6 +43,74 @@ export default function StyleguidePage() {
         </Body>
         <Body>Твоє минуле вчиться залишатися. Кирилиця рендериться тим самим шрифтом.</Body>
       </Prose>
+
+      <div className="space-y-8">
+        <Label as="p">Materials and surfaces</Label>
+
+        <Surface variant="page" className="hairline-top hairline-bottom space-y-2 px-6 py-8">
+          <Heading level={4}>Page surface</Heading>
+          <Body muted>Paper-flat --altr-white ground, graphite text, hairline top/bottom.</Body>
+        </Surface>
+
+        <Surface variant="inverse" className="space-y-2 rounded-lg px-6 py-8">
+          <Heading level={4}>Inverse surface</Heading>
+          <Body muted>
+            Obsidian ground with a subtle facet gradient and 1px edge highlight — text
+            colors invert automatically inside this surface.
+          </Body>
+
+          <Surface variant="inverse" className="mt-4 rounded-md px-4 py-4">
+            <Body muted>Nested inverse (one-step elevation) — e.g. a dialog over a dark dashboard.</Body>
+          </Surface>
+        </Surface>
+
+        <Surface variant="page" className="relative overflow-hidden rounded-lg px-6 py-16">
+          <Surface variant="fog" aria-hidden="true" />
+          <div className="relative">
+            <Heading level={4}>Fog overlay</Heading>
+            <Body muted>
+              Decorative, pointer-events: none, and layered <em>behind</em> real content —
+              it only ever lightens the page surface, so it cannot reduce text contrast.
+            </Body>
+          </div>
+        </Surface>
+
+        <div className="flex flex-wrap gap-6">
+          <Hairline side="top" className="w-40 pt-4">
+            <Label as="p" uppercase={false}>
+              hairline-top
+            </Label>
+          </Hairline>
+          <Hairline side="bottom" className="w-40 pb-4">
+            <Label as="p" uppercase={false}>
+              hairline-bottom
+            </Label>
+          </Hairline>
+          <Hairline side="left" className="w-40 pl-4">
+            <Label as="p" uppercase={false}>
+              hairline-left
+            </Label>
+          </Hairline>
+          <Hairline side="right" className="w-40 pr-4 text-right">
+            <Label as="p" uppercase={false}>
+              hairline-right
+            </Label>
+          </Hairline>
+        </div>
+
+        <div className="flex flex-wrap gap-6">
+          <div className="rounded-lg bg-altr-white px-6 py-6 shadow-soft">
+            <Label as="p" uppercase={false}>
+              shadow-soft
+            </Label>
+          </div>
+          <div className="rounded-lg bg-altr-white px-6 py-6 shadow-elevated">
+            <Label as="p" uppercase={false}>
+              shadow-elevated
+            </Label>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

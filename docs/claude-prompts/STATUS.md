@@ -4,14 +4,14 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 007 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 008`. Note: Prompt 004 itself (the backend scaffold/port) was
+None — Prompt 008 complete (committed locally, not pushed); awaiting
+`RUN PROMPT 009`. Note: Prompt 004 itself (the backend scaffold/port) was
 never given its own commit or `PORT_MANIFEST.md` — its file changes exist
 uncommitted in the working tree from an earlier, undocumented session. None of
-005/006/007 redid or finalized 004 (explicitly out of scope each time) but
-each has run `yarn check` against that ported backend as part of verifying
-their own changes — see the 005/006/007 entries below. That gap (004
-uncommitted, no manifest) is still open.
+005/006/007/008 redid or finalized 004 (explicitly out of scope each time)
+but each has run `yarn check` against that ported backend as part of
+verifying their own changes — see the 005/006/007/008 entries below. That
+gap (004 uncommitted, no manifest) is still open.
 
 ## Completed prompts
 
@@ -174,6 +174,53 @@ uncommitted, no manifest) is still open.
   `yarn test` (15 files / 99 tests), and `yarn build` (28/28 pages) all
   passed.
 
+- 008 — Color, materials, surfaces (2026-07-20). `components/ui/Surface.tsx`
+  adds a typed `Surface` primitive (`page`/`inverse`/`fog` variants) and a
+  `Hairline` primitive (`top`/`bottom`/`left`/`right`), backed by
+  `app/styles/materials.css`: `.surface-page`, `.surface-inverse` (facet
+  gradient at 2-4% white + 1px inset edge highlight, never flat black),
+  `.surface-fog` (layered radial gradients, `pointer-events: none`,
+  drift animation disabled under `prefers-reduced-motion`), one-step
+  elevation for nested inverse surfaces
+  (`.surface-inverse .surface-inverse`), and hairline dividers at
+  `--altr-silver` 60%. Only the custom `shadow-soft`/`shadow-elevated`
+  tokens are used anywhere — no Tailwind default shadow utility appears in
+  new code. Imported into `app/globals.css` after `tokens.css`/
+  `typography.css` (same necessary-but-unlisted-file situation as 007's
+  `typography.css` import — documented there, same resolution here).
+  **Contrast finding:** computing the actual WCAG pairs this prompt
+  requires surfaced a real accessibility bug already present in Prompt
+  005's tokens: `--text-muted` resolved to `--altr-mist` (`#B9C0C7`),
+  which measures only **~1.7:1** against `--surface-page` — nowhere near
+  the 4.5:1 body-text minimum this prompt's own acceptance criteria
+  demand (and `Body muted` from Prompt 007 uses exactly this pairing).
+  `--altr-mist` is fine as muted text on *dark* surfaces (~9.8:1 against
+  obsidian) — the bug was light-surface only. Fixed in `tokens.css`
+  (outside 008's own "files allowed to change" list, touched for the same
+  reason as prior gaps: required to satisfy this prompt's own testable
+  criterion) by changing `--text-muted`'s `:root` value to
+  `rgb(var(--altr-graphite-rgb) / 78%)` (~5.3:1 on white), and adding a
+  `.surface-inverse` override back to plain `--altr-mist` for the dark
+  context. Measured pairs (see `tests/components/contrast.test.ts`, which
+  hardcodes and asserts the hexes per this prompt's "encode expected hex
+  pairs" instruction): graphite/white ~9.8:1, white/obsidian ~16.6:1,
+  mist/obsidian ~9.8:1, muted-composite(`#63676c`)/white ~5.3:1 — all
+  comfortably above 4.5:1; the test also asserts raw mist/white fails
+  (~1.7:1), documenting *why* the override exists. Fog-over-text
+  reasoning: fog is white/silver gradients layered on an already-white
+  page ground, so compositing can only lighten the effective background,
+  never reduce dark-text contrast — verified by inspecting the compiled
+  CSS output rather than asserted numerically. Added the materials section
+  to `/styleguide` (all variants, light/dark context, nested-inverse and
+  fog examples) — confirmed rendering via a dev-server fetch (200, all
+  expected classes present in the HTML). **Could not do the prompt's own
+  "compare against `public/hero-shards/`" visual check** — that directory
+  doesn't exist yet (it's Prompt 013's deliverable); this is an
+  out-of-order dependency in the prompt pack, not a gap in this session's
+  work, and remains outstanding until 013 lands. `yarn lint`,
+  `yarn typecheck`, `yarn test` (17 files / 111 tests), and `yarn build`
+  (28/28 pages) all passed.
+
 ## Failed prompts
 
 None.
@@ -189,10 +236,11 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 2026-07-19 (see `BASELINE_V2.md` §2.3). WORKSPACE: `yarn build` passed,
 2026-07-20 — 28/28 static pages generated, clean exit (see 005 entry above
 for the `node_modules` cross-drive fix that unblocked this, 006 for
-route-group verification, and 007 for the new `/styleguide` route including
-confirmation it 404s in this production build). `yarn test:e2e` (the 004
-smoke spec) also passed, 2026-07-20, after installing the Playwright
-Chromium binary (see 006 entry).
+route-group verification, 007 for the new `/styleguide` route including
+confirmation it 404s in this production build, and 008 for the materials
+section added to that same route). `yarn test:e2e` (the 004 smoke spec)
+also passed, 2026-07-20, after installing the Playwright Chromium binary
+(see 006 entry).
 
 ## Last successful test run
 
@@ -200,7 +248,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-99/99 tests passed across 15 files, clean exit (code 0).
+111/111 tests passed across 17 files, clean exit (code 0).
 
 ## Known regressions
 
@@ -211,6 +259,11 @@ None recorded.
 - ADR-007 (hybrid hero) must be confirmed or amended by the Prompt 012 prototype.
 - Whether a separate staging Supabase project will be provisioned (ADR-012) —
   user decision needed before Prompt 051.
+- Prompt 008's manual verification ("view styleguide beside
+  `public/hero-shards/shard-main.png`") could not be done — that directory
+  doesn't exist until Prompt 013. Revisit the `.surface-inverse` material
+  once real shard renders exist to confirm it reads as the same material
+  family, per 008's visual requirement.
 
 ## Environment notes
 

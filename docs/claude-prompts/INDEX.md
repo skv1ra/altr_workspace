@@ -17,7 +17,7 @@ altr_workspace only.
 | 005 | Design token foundation | 1 | tokens.css + Tailwind mapping + font pipeline | 004 | M | done | done | no | `feat(design): add Altr design token foundation` |
 | 006 | Application shell and boundaries | 1 | New root layout, error/loading boundaries, route groups | 005 | M | done | done | no | `feat(app): new application shell with boundaries` |
 | 007 | Typography and spacing | 2 | Type scale, prose styles, spacing rhythm | 006 | M | done | done | yes | `feat(design): typography and spacing system` |
-| 008 | Color, materials, surfaces | 2 | Obsidian/fog/paper surface primitives | 007 | M | todo | todo | yes | `feat(design): material and surface system` |
+| 008 | Color, materials, surfaces | 2 | Obsidian/fog/paper surface primitives | 007 | M | done | done | yes | `feat(design): material and surface system` |
 | 009 | Buttons, inputs, forms | 2 | Core interactive primitives | 008 | M | todo | todo | yes | `feat(design): core form and button primitives` |
 | 010 | Dialogs, overlays, a11y states | 2 | Modal/toast/menu + focus/keyboard system | 009 | M | todo | todo | yes | `feat(design): overlay components and a11y states` |
 | 011 | Motion system | 2 | Motion tokens, Reveal, reduced-motion rules | 010 | M | todo | todo | yes | `feat(design): motion system with reduced-motion` |
