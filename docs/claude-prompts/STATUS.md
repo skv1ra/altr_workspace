@@ -4,13 +4,14 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 010 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 011`. Note: Prompt 004 itself (the backend scaffold/port) was
-never given its own commit or `PORT_MANIFEST.md` — its file changes exist
-uncommitted in the working tree from an earlier, undocumented session. None of
-005-010 redid or finalized 004 (explicitly out of scope each time) but each
-has run `yarn check` against that ported backend as part of verifying their
-own changes — see the 005-010 entries below. That gap (004 uncommitted, no
+None — Prompt 011 complete (committed locally, not pushed); Phase 2 (design
+system) complete. Awaiting `RUN PROMPT 012` (Phase 3, hero prototype). Note:
+Prompt 004 itself (the backend scaffold/port) was never given its own commit
+or `PORT_MANIFEST.md` — its file changes exist uncommitted in the working
+tree from an earlier, undocumented session. None of 005-011 redid or
+finalized 004 (explicitly out of scope each time) but each has run
+`yarn check` against that ported backend as part of verifying their own
+changes — see the 005-011 entries below. That gap (004 uncommitted, no
 manifest) is still open.
 
 ## Completed prompts
@@ -350,6 +351,54 @@ manifest) is still open.
   warnings). `yarn lint`, `yarn typecheck`, `yarn test` (24 files / 148
   tests), `yarn build` (28/28 pages), and `yarn test:e2e` all passed.
 
+- 011 — Motion system (2026-07-20). **Phase 2 (design system) complete.**
+  `lib/motion/index.ts`: `EASE_ALTR` + `transitions.{micro,enter,drift}`
+  (180ms/600ms/24s, all on `--ease-altr`-equivalent easing),
+  `fadeRise`/`staggerContainer` (12px rise, 60ms stagger step), and
+  `useReducedMotionSafe()` (combines Framer's OS-level `useReducedMotion()`
+  with a manual module-level override used by the styleguide's toggle).
+  **Interpretive call:** the prompt's "drift 24s linear-alternate" phrase
+  reads as describing the alternating *direction* (`repeatType: "mirror"`),
+  not a literal linear timing function — its own trailing clause ("all on
+  `--ease-altr` equivalents") and DESIGN_DIRECTION's Motion section both
+  say ambient drift uses `cubic-bezier(0.22, 1, 0.36, 1)` directly, so
+  `transitions.drift` uses `EASE_ALTR`, not `"linear"`.
+  New `components/ui/Reveal.tsx` (viewport fade-rise, stagger-depth context
+  capped at 4 levels so unboundedly nested Reveals don't grow their delay
+  forever — proven in a test with 10 nested levels). **SSR/no-JS handling,
+  verified concretely, not assumed:** confirmed via `renderToStaticMarkup`
+  that Framer Motion *does* bake `opacity:0` into the raw server HTML
+  (`useReducedMotion()` is falsy with no `window`), which would hide
+  content forever if JS never runs — exactly the risk this prompt's edge
+  case warns about. Fixed with a per-instance `<noscript><style>` block
+  (unique id via `useId()`) that forces `opacity: 1 !important` — `<noscript>`
+  content is inert when JS runs and only takes effect for real no-JS
+  browsers, and `!important` in an author stylesheet beats a plain inline
+  style, so this holds regardless of Framer Motion's internals. Confirmed
+  in the actual dev server output (not just the unit test): the real SSR
+  HTML has both the `opacity:0` inline style *and* the `<noscript>` override
+  sitting right next to it. `app/styles/motion.css`: `@keyframes altr-drift`
+  (single-axis 6px/0.6deg — at, not exceeding, DESIGN_DIRECTION's ceiling)
+  plus a `prefers-reduced-motion` kill-switch. Legacy `components/Reveal.tsx`
+  and its consumers untouched, per this prompt's explicit instruction.
+  **Two jsdom gaps found and worked around** (verified directly, same
+  practice as Prompt 010's `<dialog>` check): jsdom 29.1.1 has no
+  `IntersectionObserver` at all, which Framer Motion's `whileInView`
+  requires — throws `ReferenceError` otherwise. Added a minimal
+  observe/unobserve/disconnect-noop stub locally in
+  `tests/components/Reveal.test.tsx` (not in the shared `tests/setup.ts`,
+  which isn't in this prompt's file scope). This also **broke an existing
+  Prompt 007 test** (`styleguide-page.test.tsx`, which renders the whole
+  page — now transitively including `Reveal` via the new motion section);
+  patched that file with the identical stub, since `tests/components/` is
+  in scope and leaving a pre-existing test broken isn't acceptable.
+  Added a Motion section to `/styleguide` (`MotionDemo.tsx`) with a
+  reduced-motion toggle (forces the override on/off/OS-default), a micro
+  hover-lift demo, a CSS drift circle, and a Reveal block — confirmed
+  rendering via a dev-server fetch (200, toggle buttons present, zero
+  console warnings). `yarn lint`, `yarn typecheck`, `yarn test` (26 files /
+  157 tests), `yarn build` (28/28 pages), and `yarn test:e2e` all passed.
+
 ## Failed prompts
 
 None.
@@ -367,11 +416,11 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 for the `node_modules` cross-drive fix that unblocked this, 006 for
 route-group verification, 007 for the new `/styleguide` route including
 confirmation it 404s in this production build, 008 for the materials
-section added to that same route, 009 for the controls section, and 010
-for the overlays section plus the `@types/react` dependency fix).
-`yarn test:e2e` (the 004 smoke spec) also passed, 2026-07-20, after
-installing the Playwright Chromium binary (see 006 entry) and again after
-010's dependency fix.
+section added to that same route, 009 for the controls section, 010 for
+the overlays section plus the `@types/react` dependency fix, and 011 for
+the motion section). `yarn test:e2e` (the 004 smoke spec) also passed,
+2026-07-20, after installing the Playwright Chromium binary (see 006
+entry), again after 010's dependency fix, and again after 011.
 
 ## Last successful test run
 
@@ -379,7 +428,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-148/148 tests passed across 24 files, clean exit (code 0).
+157/157 tests passed across 26 files, clean exit (code 0).
 
 ## Known regressions
 

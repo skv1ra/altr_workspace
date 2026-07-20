@@ -3,6 +3,7 @@
 @import "./styles/materials.css";
 @import "./styles/controls.css";
 @import "./styles/overlays.css";
+@import "./styles/motion.css";
 
 @tailwind base;
 @tailwind components;

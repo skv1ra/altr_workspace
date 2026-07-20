@@ -1,0 +1,27 @@
+/*
+ * Ambient drift keyframes + reduced-motion kill-switch — imported after
+ * overlays.css. Reveal's entrance/stagger is JS-driven (Framer Motion, see
+ * lib/motion); this file is pure CSS for ambient loops (hero drift,
+ * consumed by Phase 3) that must keep working with zero JS.
+ */
+
+@keyframes altr-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    /* Amplitude ceiling per DESIGN_DIRECTION: <= 6px / 0.6deg. */
+    transform: translate3d(0, 6px, 0) rotate(0.6deg);
+  }
+}
+
+.motion-drift {
+  animation: altr-drift var(--motion-drift) var(--ease-altr) infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-drift {
+    animation: none;
+  }
+}
