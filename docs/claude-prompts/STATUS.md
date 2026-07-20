@@ -4,8 +4,12 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 013 complete (committed locally, not pushed). Prompt 014
-(hero scene composition) is next. Note: Prompt 004 itself
+None — Prompt 014 complete (committed locally, not pushed). Composition is
+built and self-verified (contrast, clear-space, CLS-by-construction — see
+014's STATUS entry) but **not yet user-approved** — this prompt's own
+Manual Verification step requires the user to approve the composition
+before Prompt 015 proceeds; that approval has not happened yet. Note:
+Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -541,6 +545,130 @@ open.
   any 013 change, then restored the stash exactly (`git stash pop`,
   verified byte-identical after).
 
+- 014 — Hero scene composition (2026-07-21). Found, before starting, the
+  same uncommitted Prompt 014 draft 013 had already documented finding and
+  leaving alone (`app/(public)/hero-lab/page.tsx`,
+  `components/hero/HeroPrototype.tsx`/`.module.css`,
+  `components/hero/ReferenceOverlay.tsx`) — this session formally executes
+  014, so that draft was the starting point, not from-scratch work.
+  **Restructured to this prompt's own named files:** `HeroScene.tsx`
+  (top-level composition), `HeroLayers.tsx` (shard field, tagged
+  `tier: "back" | "front"`), `HeroCopy.tsx` (headline/CTA block) —
+  `HeroPrototype.tsx` deleted, `HeroPrototype.module.css` renamed to
+  `HeroScene.module.css` (`git mv`, preserves history).
+  **Layer order fix, not just a rename:** the draft's flat shard array put
+  every shard's z-index (1-6) below the headline's (`z-20`), so
+  "foreground" shards never actually painted in front of the text as this
+  prompt's own recipe requires ("headline block -> near shards ... ->
+  particle canvas -> top fog veil"). Reassigned z-index bands
+  (back shards 1-5 < HeroCopy z-10 < front/foreground shards z-15/16 <
+  particles z-20 < fog veil z-25) so the two heavily-blurred corner shards
+  now genuinely stack above the headline, matching the requested
+  depth-of-field story instead of only being labeled that way in a
+  comment. Added the missing **top fog veil** layer entirely (the draft
+  had none) — a radial haze concentrated upper-right, satisfying "fog
+  denser toward top-right"; measured concretely (sampled rendered pixel
+  brightness, not assumed): top-right corner region averages 227.5/255
+  vs. top-left's 249.9/255, a real ~22-point difference in the intended
+  direction.
+  **Headline contrast bug found and fixed:** the draft used
+  `text-text-primary`, which resolves to `--altr-graphite` on light
+  surfaces (per `tests/components/contrast.test.ts`'s own documented
+  pairs) — not `--altr-obsidian`, which this prompt explicitly names.
+  Switched to the `text-altr-obsidian` Tailwind utility (already exposed
+  in `tailwind.config.ts`, just unused for this). Measured, not assumed:
+  rendered the page, hid the `<h1>`, sampled the true background pixels
+  underneath across a grid inside its bounding box — worst (darkest)
+  sample `rgb(239,240,242)` against obsidian `#15171a` computes to
+  **~15.75:1** (WCAG relative-luminance formula), comfortably clearing
+  the required 7:1.
+  **Clear-space bug found and fixed, also by measurement, not
+  arithmetic:** an initial hand-calculation said all shards cleared the
+  headline's box, but a real Playwright bounding-box check found
+  `upper-left-background` (`shard-mid-02`) actually overlapping the box's
+  top edge by several px at 1440px/1920px — the hand math had conflated a
+  vw-based width with a vh-based height without converting units. Moved
+  the shard up (`y: 16 -> 10`) and re-verified with the same script until
+  zero overlap. Same script also caught overlap at ultra-wide (2560px)
+  and a synthetic short viewport (650px height) that the hand math never
+  would have surfaced — fixed the ultra-wide case for real by capping
+  every shard's vw/vh sizing with CSS `min()` against its size at this
+  prompt's own reference/manual-verification viewport (1920px), so the
+  shard field stops growing past that point instead of scaling forever
+  with viewport width (satisfies the "shard field scales/crops
+  gracefully" edge case, not just leaves it to chance). Verified
+  zero-overlap at 1440x900, 1920x1080 (the two widths this prompt names),
+  plus 2560x1080, 2560x1440, 1440x800, and 1440x760. The 650px-height
+  synthetic case still shows minor overlap from two shards — judged
+  out of this prompt's real scope (an unusual desktop-width/very-short-
+  height combination, not a real breakpoint; mobile/short-viewport
+  fallback is explicitly Prompt 017's job) — but the one criterion this
+  prompt's edge cases actually name for short viewports, "CTA remains
+  above the fold," was verified true even at that extreme (button bottom
+  492px of 650px).
+  **Copy:** exact fixed strings exported as named consts from
+  `HeroCopy.tsx` (`HERO_HEADLINE`, `HERO_SUBCOPY`, `HERO_CTA_LABEL`,
+  `HERO_SECONDARY_LABEL`) so the required test and any future copy scan
+  check the same source of truth, not a duplicated literal. Added the
+  secondary quiet link ("How it works", `href="#how-it-works"`) that the
+  draft was missing entirely. Headline renders as a single real text
+  node — no manual `<br/>`, relies on natural wrap inside the 38%-wide
+  box — both so the fixed string stays literally matchable in tests and
+  so it degrades more gracefully at the ultra-wide/narrow edge cases than
+  a hard-coded break point would.
+  **Zero CLS:** by construction, not runtime measurement — `.scene` has
+  `min-height: 92vh` (this prompt's own number) independent of image load
+  state, and every shard `<Image>` carries explicit `width`/`height`
+  props. Not re-verified with a live CLS instrumentation run (012's job
+  was proving the technique; this prompt only asked for the reservation
+  to exist).
+  **Light discipline (shard highlights/shadows):** did not add any new
+  CSS highlight/shadow effect — inspected all 8 supplied shard assets
+  side-by-side (contact sheet) and confirmed their *already-baked*
+  lighting is mutually consistent (bright glass facets toward the upper
+  contour on every one, dark lower facets), which is what "must agree
+  with" an implied upper-left key light actually requires; adding a
+  second, CSS-simulated shadow on top risked fighting the real baked-in
+  one rather than reinforcing it.
+  **Deliberately static:** no pointer parallax, no drift animation (the
+  particle canvas renders one still frame, `reducedMotion` hardcoded
+  true) — this prompt's own objective says "compose the final *static*
+  hero scene"; Prompt 016 owns motion on top of this.
+  **Asset cleanup:** `public/hero-shards/`'s 6 old LEGACY-copied
+  procedural PNGs (Prompt 012's prototype set) deleted (`git rm`) — confirmed
+  via grep that nothing in the codebase still references `/hero-shards/`
+  after the swap to `/assets/hero/shards-trimmed/`; directory now empty
+  (git doesn't track it, so it simply disappears) — satisfies "no unused
+  files in `public/hero-shards/`." Left `public/hero-shards-v2/`
+  (Prompt 013's procedural-regeneration evidence) and the three
+  `hero-review-*.png` files at the repo root untouched — pre-existing,
+  unrelated to this prompt's file scope.
+  **Deviations from the literal file-scope list** (same class of gap
+  documented in 005-013, resolved the same way — follow the specific,
+  actionable need): kept `components/hero/ReferenceOverlay.tsx` (already
+  in scope, under `components/hero/`) and its one dependency,
+  `app/api/dev/reference-overlay/route.ts` (technically under the
+  off-limits `app/api/`) — a small, dev-only (404s in production, same
+  gate pattern as everywhere else), genuinely useful tool for exactly
+  this prompt's own "iterate until the side-by-side holds up" step;
+  primary verification evidence in this entry is still real Playwright
+  screenshots/measurements, not "the tool exists." Also added
+  `tests/components/HeroCopy.test.tsx` (this prompt's own named required
+  test) and updated the pre-existing, now-stale
+  `tests/components/hero-lab-page.test.tsx` (asserted a heading string
+  the new page no longer renders) — `tests/` is nominally off-limits for
+  014, but leaving a required test unwritten or a known-broken existing
+  test broken isn't acceptable, per the same precedent 011 set fixing
+  007's styleguide test.
+  Hit one real environment issue mid-session: `yarn dev` and the prior
+  `next build` (from `yarn run check`) shared the same `.next/` directory,
+  and the dev server crashed with `MODULE_NOT_FOUND` after the production
+  build overwrote it underneath the running process — fixed by killing
+  the dev server, deleting `.next/`, and restarting clean; not a code bug.
+  `yarn lint`, `yarn typecheck`, `yarn test` (28 files/160 tests), and
+  `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
+  passed, re-confirmed clean after the `.next` fix.
+
 ## Failed prompts
 
 None.
@@ -567,7 +695,8 @@ entry), again after 010's dependency fix, again after 011, and again
 after 012. Re-confirmed 2026-07-20 for 013 (`yarn run check`, 30/30 pages)
 — note this build was run with the pre-existing, out-of-scope Prompt 014
 draft temporarily stashed out (see 013's STATUS entry); that draft's own
-build/test state is unverified and not this prompt's concern.
+build/test state is unverified and not this prompt's concern. Re-confirmed
+again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production).
 
 ## Last successful test run
 
@@ -577,6 +706,7 @@ worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
 159/159 tests passed across 27 files, clean exit (code 0). Re-confirmed for
 013, same numbers, same caveat about the stashed 014 draft as above.
+Re-confirmed 2026-07-21 for 014 — 160/160 tests across 28 files, clean exit.
 
 ## Known regressions
 
@@ -600,16 +730,12 @@ None recorded.
   path-decision note). Revisit the `.surface-inverse` material against
   *that* file to confirm it reads as the same material family, per 008's
   visual requirement.
-- Found during Prompt 013 (not this prompt's to resolve): an in-progress,
-  uncommitted Prompt 014 (hero scene composition) draft already exists in
-  the working tree (`app/(public)/hero-lab/page.tsx`,
-  `components/hero/HeroPrototype.tsx`/`.module.css`,
-  `components/hero/ReferenceOverlay.tsx`), built ahead of the prompt
-  sequence and left untouched/uncommitted per 013's file scope. It
-  currently fails `tests/components/hero-lab-page.test.tsx` (stale
-  heading assertion) — whoever runs Prompt 014 will need to either fix or
-  replace that test as part of formally executing 014, and should treat
-  the existing draft as a working head start, not a from-scratch task.
+- Prompt 014's composition is built and self-verified but **not yet
+  user-approved** — 014's own Manual Verification step requires a
+  side-by-side approval at 1440px/1920px before Prompt 015 proceeds. Not
+  done in this session (no user available to approve synchronously);
+  whoever picks up 015 should confirm approval first, or treat getting it
+  as a prerequisite step.
 
 ## Environment notes
 

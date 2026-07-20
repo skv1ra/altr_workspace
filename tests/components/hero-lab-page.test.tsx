@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import HeroLabPage from "@/app/(public)/hero-lab/page";
+import { HERO_HEADLINE } from "@/components/hero/HeroCopy";
 
 describe("hero-lab page production gate", () => {
   afterEach(() => {
@@ -12,8 +13,8 @@ describe("hero-lab page production gate", () => {
     expect(() => HeroLabPage()).toThrow();
   });
 
-  it("renders the prototype heading outside production", () => {
+  it("renders the fixed hero headline outside production", () => {
     render(<HeroLabPage />);
-    expect(screen.getByRole("heading", { name: "Hero technical prototype" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: HERO_HEADLINE })).toBeInTheDocument();
   });
 });
