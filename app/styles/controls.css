@@ -1,0 +1,209 @@
+/*
+ * Interactive control primitives — imported after materials.css.
+ * Buttons/fields/checkbox read CSS custom properties (not raw Tailwind
+ * color utilities) specifically so `.surface-inverse` can flip the primary
+ * button and re-scope the focus ring with no JS, same technique as
+ * materials.css's --text-primary/--text-muted override.
+ */
+
+:root {
+  --button-primary-bg: var(--altr-obsidian);
+  --button-primary-fg: var(--altr-white);
+  --control-border: rgb(var(--altr-graphite-rgb) / 28%);
+  --control-border-hover: rgb(var(--altr-graphite-rgb) / 45%);
+  --control-focus-ring: var(--altr-obsidian);
+}
+
+.surface-inverse {
+  --button-primary-bg: var(--altr-white);
+  --button-primary-fg: var(--altr-obsidian);
+  --control-border: rgb(var(--altr-white-rgb) / 28%);
+  --control-border-hover: rgb(var(--altr-white-rgb) / 45%);
+  --control-focus-ring: var(--altr-white);
+}
+
+/* Buttons */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding-inline: var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: var(--text-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--ease-altr),
+    box-shadow var(--motion-fast) var(--ease-altr),
+    background-color var(--motion-fast) var(--ease-altr),
+    border-color var(--motion-fast) var(--ease-altr),
+    opacity var(--motion-fast) var(--ease-altr);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-fg);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--control-border);
+  color: var(--text-primary);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: rgb(var(--altr-graphite-rgb) / 6%);
+}
+
+.surface-inverse .btn-ghost:hover:not(:disabled) {
+  background-color: rgb(var(--altr-white-rgb) / 8%);
+}
+
+.btn-danger {
+  background-color: transparent;
+  border-color: rgb(185 28 28 / 35%);
+  color: rgb(185 28 28);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: rgb(185 28 28 / 6%);
+}
+
+/* Loading: label goes to opacity 0 (stays in the a11y tree, keeps its
+   layout box — no shift) while the spinner overlays centered. */
+.btn-label-loading {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+.control-focus:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--control-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Fields — hairline underline, no heavy rounded boxes. */
+.field-input,
+.field-select {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding-block: var(--space-2);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--control-border);
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  transition: border-color var(--motion-fast) var(--ease-altr);
+}
+
+.field-input:hover,
+.field-select:hover {
+  border-color: var(--control-border-hover);
+}
+
+.field-input:focus-visible,
+.field-select:focus-visible {
+  outline: none;
+  border-color: var(--control-focus-ring);
+}
+
+.field-input[aria-invalid="true"] {
+  border-color: rgb(185 28 28 / 70%);
+}
+
+.field-select {
+  appearance: none;
+  padding-right: var(--space-8);
+}
+
+/* Neutralize webkit autofill's yellow highlight. */
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:hover,
+.field-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-page) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.field-input-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-input-row .field-input {
+  padding-right: var(--space-10);
+}
+
+.field-toggle {
+  position: absolute;
+  right: 0;
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Checkbox — custom-drawn (consent flows use it). The native input stays
+   in the DOM as sr-only; this box is purely visual and toggled via
+   data-checked/data-indeterminate + the peer-focus-visible ring. */
+.checkbox-control {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: var(--button-primary-fg);
+  transition:
+    background-color var(--motion-fast) var(--ease-altr),
+    border-color var(--motion-fast) var(--ease-altr);
+}
+
+.checkbox-control[data-checked="true"],
+.checkbox-control[data-indeterminate="true"] {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-bg);
+}

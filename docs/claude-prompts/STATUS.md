@@ -4,14 +4,14 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 008 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 009`. Note: Prompt 004 itself (the backend scaffold/port) was
+None — Prompt 009 complete (committed locally, not pushed); awaiting
+`RUN PROMPT 010`. Note: Prompt 004 itself (the backend scaffold/port) was
 never given its own commit or `PORT_MANIFEST.md` — its file changes exist
 uncommitted in the working tree from an earlier, undocumented session. None of
-005/006/007/008 redid or finalized 004 (explicitly out of scope each time)
-but each has run `yarn check` against that ported backend as part of
-verifying their own changes — see the 005/006/007/008 entries below. That
-gap (004 uncommitted, no manifest) is still open.
+005-009 redid or finalized 004 (explicitly out of scope each time) but each
+has run `yarn check` against that ported backend as part of verifying their
+own changes — see the 005-009 entries below. That gap (004 uncommitted, no
+manifest) is still open.
 
 ## Completed prompts
 
@@ -221,6 +221,66 @@ gap (004 uncommitted, no manifest) is still open.
   `yarn typecheck`, `yarn test` (17 files / 111 tests), and `yarn build`
   (28/28 pages) all passed.
 
+- 009 — Buttons, inputs, forms (2026-07-20). Six primitives in
+  `components/ui/`: `Field` (shared label/help/error scaffolding, render-prop
+  pattern so `TextField`/`PasswordField`/`Select` all get consistent
+  id/`aria-describedby` wiring), `Button` (primary/secondary/ghost/danger),
+  `TextField`, `PasswordField`, `Select`, `Checkbox`. Backed by
+  `app/styles/controls.css` (imported into `globals.css` after
+  `materials.css` — same necessary-but-unlisted-file situation as 007/008,
+  documented there). **a11y decisions:**
+  - Top-aligned labels, not floating — native label/input association with
+    zero JS, no risk of overlapping placeholder text at small widths (the
+    prompt asked to "pick one and document").
+  - Error paragraphs are exactly `<p role="alert">{message}</p>`, no
+    wrapper — preserves the legacy e2e contract (`p[role="alert"]`) verified
+    against `altrtest2`'s `app/auth/page.tsx`.
+  - `PasswordField`'s `autoComplete` prop is **required**, not optional
+    (`"current-password" | "new-password"`), so the security requirement is
+    enforced at the type level, not just by convention. No password value is
+    logged anywhere.
+  - `Select` is a real native `<select>`, restyled only (`appearance: none`
+    + a decorative `ChevronDown`) — Windows/every browser's native keyboard
+    nav (arrows, type-ahead) works for free; a custom-built dropdown was
+    deliberately avoided.
+  - `Checkbox` keeps the real `<input type="checkbox">` in the DOM as
+    `sr-only` for native semantics/keyboard toggle; the visible box is a
+    decorative sibling driven by `data-checked`/`data-indeterminate` and a
+    `peer-focus-visible` ring — `useEffect` syncs the DOM node's
+    `.indeterminate` property (not an HTML attribute, must be set via JS).
+  - `Button` loading state hides the label with `opacity: 0` (not
+    `display`/`visibility: hidden`) so it stays in the accessibility tree
+    (screen readers still get the button's name) while the spinner overlays
+    absolutely — same layout box, zero shift; `aria-busy="true"` and
+    `disabled` are both set.
+  - Focus ring and the primary button's colors are driven by
+    `--control-focus-ring`/`--button-primary-bg`/`--button-primary-fg` CSS
+    custom properties, overridden inside `.surface-inverse` — "obsidian
+    primary on light, paper primary on dark" happens automatically by
+    nesting context, no variant prop needed. No accent hue used for the
+    focus ring (stays neutral per DESIGN_DIRECTION); error/danger states use
+    a restrained red as a functional exception, not a brand accent.
+  - Webkit autofill's yellow highlight neutralized via the
+    `-webkit-box-shadow: 0 0 0 1000px var(--surface-page) inset` technique.
+  Added a controls section to `/styleguide` via a small client-only
+  `ControlsDemo.tsx` co-located in the route folder (not exported from
+  `components/ui/` — demo-only) so the demo is genuinely interactive
+  (real click/keyboard/loading), not a frozen mockup; confirmed via a
+  dev-server fetch (200, all expected classes/attributes present, zero
+  console warnings — notably no React "controlled input without onChange"
+  warnings from the static demo checkboxes). Tests:
+  `tests/components/Button.test.tsx` (click, Enter/Space keyboard
+  activation, disabled blocks activation and stays in the a11y tree,
+  loading sets `aria-busy`/disables/blocks activation),
+  `tests/components/Fields.test.tsx` (label association + error
+  `role="alert"`/`aria-describedby`/`aria-invalid` wiring for all three
+  field types, password visibility toggle, select keyboard selection),
+  `tests/components/Checkbox.test.tsx` (label association, click/keyboard
+  toggle, `.indeterminate` DOM property, error announcement).
+  `yarn lint`, `yarn typecheck`, `yarn test` (20 files / 127 tests), and
+  `yarn build` (28/28 pages, `/styleguide` still 404s in production) all
+  passed.
+
 ## Failed prompts
 
 None.
@@ -237,10 +297,10 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 2026-07-20 — 28/28 static pages generated, clean exit (see 005 entry above
 for the `node_modules` cross-drive fix that unblocked this, 006 for
 route-group verification, 007 for the new `/styleguide` route including
-confirmation it 404s in this production build, and 008 for the materials
-section added to that same route). `yarn test:e2e` (the 004 smoke spec)
-also passed, 2026-07-20, after installing the Playwright Chromium binary
-(see 006 entry).
+confirmation it 404s in this production build, 008 for the materials
+section added to that same route, and 009 for the controls section).
+`yarn test:e2e` (the 004 smoke spec) also passed, 2026-07-20, after
+installing the Playwright Chromium binary (see 006 entry).
 
 ## Last successful test run
 
@@ -248,7 +308,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-111/111 tests passed across 17 files, clean exit (code 0).
+127/127 tests passed across 20 files, clean exit (code 0).
 
 ## Known regressions
 

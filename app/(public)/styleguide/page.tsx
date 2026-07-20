@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Hairline, Surface } from "@/components/ui/Surface";
 import { Body, Display, Heading, Label, Prose } from "@/components/ui/Text";
+import { ControlsDemo } from "./ControlsDemo";
 
 export const metadata = { title: "Styleguide" };
 
@@ -110,6 +111,11 @@ export default function StyleguidePage() {
             </Label>
           </div>
         </div>
+      </div>
+
+      <div className="space-y-8">
+        <Label as="p">Buttons, fields, forms</Label>
+        <ControlsDemo />
       </div>
     </main>
   );
