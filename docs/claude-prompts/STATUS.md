@@ -4,15 +4,18 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 011 complete (committed locally, not pushed); Phase 2 (design
-system) complete. Awaiting `RUN PROMPT 012` (Phase 3, hero prototype). Note:
-Prompt 004 itself (the backend scaffold/port) was never given its own commit
-or `PORT_MANIFEST.md` — its file changes exist uncommitted in the working
-tree from an earlier, undocumented session. None of 005-011 redid or
-finalized 004 (explicitly out of scope each time) but each has run
-`yarn check` against that ported backend as part of verifying their own
-changes — see the 005-011 entries below. That gap (004 uncommitted, no
-manifest) is still open.
+None — Prompt 012 complete (committed locally, not pushed). ADR-007 is
+confirmed *technically* (hybrid raster-shard approach) but **not yet
+visually approved as final** — the current LEGACY shard assets are the
+blocker; Prompt 013 (shard asset pipeline) is the correct next step, per
+explicit user decision. Awaiting `RUN PROMPT 013`. Note: Prompt 004 itself
+(the backend scaffold/port) was never given its own commit or
+`PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
+from an earlier, undocumented session. None of 005-012 redid or finalized
+004 (explicitly out of scope each time) but each has run `yarn check`
+against that ported backend as part of verifying their own changes — see
+the 005-012 entries below. That gap (004 uncommitted, no manifest) is still
+open.
 
 ## Completed prompts
 
@@ -399,6 +402,36 @@ manifest) is still open.
   console warnings). `yarn lint`, `yarn typecheck`, `yarn test` (26 files /
   157 tests), `yarn build` (28/28 pages), and `yarn test:e2e` all passed.
 
+- 012 — Hero technical prototype (2026-07-20). Dependency check passed
+  (`references/altr-hero-reference.png` exists, verified before starting —
+  the prompt requires stopping/marking blocked otherwise). Copied LEGACY's
+  6 shard PNGs (`public/hero-shards/`) and `scripts/generate-hero-shards.mjs`
+  read-only into WORKSPACE (LEGACY untouched). Built `/hero-lab`
+  (`app/(public)/hero-lab/page.tsx`, 404s in production — verified in the
+  actual production build output, same pattern as `/styleguide`) and
+  `components/hero/` (`HeroPrototype`, `HeroParticles` — canvas dust capped
+  at 40/60 particles with the backing store DPR capped at 2x, `MemoryFragment`
+  — the date/label/excerpt/waveform HTML etching). Full measurement
+  table, the rejected mask-sheen technique (and exactly why), and the
+  final decision are recorded in **ADR-007** rather than duplicated here —
+  see `ARCHITECTURE_DECISIONS.md`. Short version: all three quantitative
+  kill criteria passed with real Playwright-measured numbers (avg 60.3
+  FPS / p95 59.5 FPS during pointer interaction, 186.5 KB delivered hero
+  weight via `next/image`, 0 CLS); the fourth (visual credibility) was
+  reviewed live by the user twice and **not approved as final** — the
+  material reads as matte dark rock, not the reference's glossy refractive
+  glass with fine bright fracture veins, and CSS-level compositing on top
+  of the existing LEGACY pixels cannot manufacture geometry that isn't in
+  the source PNGs. Per explicit user decision: ADR-007's hybrid *technical*
+  approach is confirmed and stands; no further micro-tuning of the current
+  LEGACY-pixel prototype is planned; the next step is regenerating the
+  shard assets at higher fidelity (Prompt 013), not layout/CSS work.
+  `/hero-lab` stays in the repo as the base Phase 3 iterates on. Added
+  `tests/components/hero-lab-page.test.tsx` (production-gate + normal
+  render, same pattern as `/styleguide`'s test). `yarn lint`,
+  `yarn typecheck`, `yarn test` (27 files / 159 tests), `yarn build`
+  (29/29 pages), and `yarn test:e2e` all passed.
+
 ## Failed prompts
 
 None.
@@ -417,10 +450,12 @@ for the `node_modules` cross-drive fix that unblocked this, 006 for
 route-group verification, 007 for the new `/styleguide` route including
 confirmation it 404s in this production build, 008 for the materials
 section added to that same route, 009 for the controls section, 010 for
-the overlays section plus the `@types/react` dependency fix, and 011 for
-the motion section). `yarn test:e2e` (the 004 smoke spec) also passed,
+the overlays section plus the `@types/react` dependency fix, 011 for the
+motion section, and 012 for the new `/hero-lab` route, also confirmed
+404ing in production). `yarn test:e2e` (the 004 smoke spec) also passed,
 2026-07-20, after installing the Playwright Chromium binary (see 006
-entry), again after 010's dependency fix, and again after 011.
+entry), again after 010's dependency fix, again after 011, and again
+after 012.
 
 ## Last successful test run
 
@@ -428,7 +463,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-157/157 tests passed across 26 files, clean exit (code 0).
+159/159 tests passed across 27 files, clean exit (code 0).
 
 ## Known regressions
 
@@ -436,7 +471,12 @@ None recorded.
 
 ## Unresolved decisions
 
-- ADR-007 (hybrid hero) must be confirmed or amended by the Prompt 012 prototype.
+- ADR-007 (hybrid hero): technical approach confirmed by the Prompt 012
+  prototype (real FPS/weight/CLS numbers, all passing). Visual approval is
+  NOT yet granted — LEGACY shard asset quality is the blocker (see 012's
+  STATUS entry + ADR-007). Next: Prompt 013 regenerates the shard assets;
+  visual approval is re-sought once those exist, before Phase 3 continues
+  past 013.
 - Whether a separate staging Supabase project will be provisioned (ADR-012) —
   user decision needed before Prompt 051.
 - Prompt 008's manual verification ("view styleguide beside

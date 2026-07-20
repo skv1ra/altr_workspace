@@ -112,6 +112,57 @@ Binding for all prompts. Each record: decision, alternatives, reason, risks, mit
   hero imagery on desktop, ≤ 350 KB mobile, AVIF/WebP with PNG fallback);
   scale/rotation micro-motion + DOF layer swaps to sell depth.
 
+- **Prompt 012 resolution (2026-07-20): CONFIRMED technically, on the
+  approach — NOT yet visually approved as final.** Built `/hero-lab`
+  (`components/hero/`) using LEGACY's 6 shard PNGs, canvas particle dust,
+  pointer parallax, and `lib/motion` drift. Measured on desktop Chrome via
+  Playwright (dev server — `next start` also 404s this dev-only route, so
+  dev mode was the only reachable target; noted as a measurement caveat,
+  not expected to be worse than production in practice):
+
+  | Kill criterion | Target | Measured | Result |
+  | --- | --- | --- | --- |
+  | Sustained FPS during pointer interaction | ≥ 55 | avg 60.3, p95 59.5 | PASS |
+  | Hero asset weight (desktop) | ≤ 900 KB | 186.5 KB (6 requests, `next/image` WebP) | PASS |
+  | CLS contribution | 0 | 0 (measured via PerformanceObserver) | PASS |
+  | Visual credibility (user judgment) | same material family as reference | **not approved — see below** | PENDING |
+
+  Raw LEGACY PNGs sum to 1.8 MB; the 186.5 KB figure is what `next/image`
+  actually delivers (resized + WebP) at real display sizes — the raw sum
+  was not representative of delivered weight.
+
+  **Technique tried and rejected on data, not aesthetics:** a CSS
+  `mask-image`-clipped diagonal sheen (to fake a glossy reflection,
+  confined to each shard's own alpha silhouette) required the browser to
+  fetch the *raw* PNGs as mask sources — `mask-image` bypasses
+  `next/image`'s optimization entirely. Measured effect: hero weight
+  186.5 KB → 1.9 MB, avg FPS 60.3 → 25.8 (p95 20), 91 long tasks during
+  the interaction window (vs. 2, both load-time, without it). Removed;
+  confirmed all three quantitative criteria returned to the passing
+  numbers above once removed. Record this so nobody retries the same
+  masking trick as an "easy" glass-reflection shortcut later — it isn't
+  free, and any future glass-enhancement compositing must not depend on
+  fetching full-resolution alpha channels as CSS masks.
+
+  **User visual review (two rounds) found the material does not yet read
+  as photoreal dark glass** — reads closer to matte dark rock than the
+  reference's glossy, refractive shards with fine bright fracture veins.
+  Composition/fog/depth-layering/rim-light were iterated via CSS alone
+  (repositioned shards for stronger depth cinematography, brightened fog
+  left-of-center, added a contrast/brightness/drop-shadow rim-light pass,
+  added the memory-fragment HTML etching) and the user confirmed those
+  layout/atmosphere changes are heading the right direction — but true
+  glossy reflection/refraction and finer crack-vein geometry are baked
+  into the source PNG pixels and cannot be manufactured with CSS on top
+  of the existing LEGACY assets. **Conclusion: the limiting factor is now
+  asset quality, not layout/compositing tuning — no further micro-tuning
+  of the current LEGACY-pixel prototype is planned.** The hybrid
+  *technical* approach (raster shards + DOM/CSS compositing, no WebGL) is
+  confirmed and stands; the *assets themselves* need regenerating at
+  higher fidelity, which is Prompt 013's job. `/hero-lab` stays in the
+  repo (dev-only, 404s in production) as the base Phase 3 iterates on
+  once new assets exist — it is not being rebuilt from scratch.
+
 ## ADR-008 — Mobile and reduced-motion degradation
 
 - **Decision:** Mobile gets a simplified composition: fewer shards, no pointer
