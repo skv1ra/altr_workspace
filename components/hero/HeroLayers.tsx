@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { MemoryFragment } from "./MemoryFragment";
+import { HeroFragmentGlyph } from "./HeroFragments";
+import { heroFragmentsFor } from "./fragments";
 import styles from "./HeroScene.module.css";
 
 /*
@@ -53,7 +54,6 @@ type ShardDef = {
   opacity: number;
   z: number;
   tier: ShardTier;
-  withMemoryFragment?: boolean;
 };
 
 const SHARDS: ShardDef[] = [
@@ -72,7 +72,6 @@ const SHARDS: ShardDef[] = [
     opacity: 1,
     z: 5,
     tier: "back",
-    withMemoryFragment: true,
   },
   {
     id: "lower-mid-support",
@@ -289,7 +288,9 @@ export function HeroLayers({ tier }: { tier: ShardTier }) {
             priority
             draggable={false}
           />
-          {shard.withMemoryFragment && <MemoryFragment />}
+          {heroFragmentsFor(shard.id).map((fragment) => (
+            <HeroFragmentGlyph key={fragment.id} fragment={fragment} hostBlur={shard.blur} hostOpacity={shard.opacity} />
+          ))}
         </div>
       ))}
     </>

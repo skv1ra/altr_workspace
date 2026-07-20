@@ -4,12 +4,11 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 014 complete (committed locally, not pushed). Composition is
-built and self-verified (contrast, clear-space, CLS-by-construction — see
-014's STATUS entry) but **not yet user-approved** — this prompt's own
-Manual Verification step requires the user to approve the composition
-before Prompt 015 proceeds; that approval has not happened yet. Note:
-Prompt 004 itself
+None — Prompt 015 complete (committed locally, not pushed), run directly on
+the user's explicit instruction despite 014's own Manual Verification
+step (side-by-side user approval) not having happened first — treated as
+implicit go-ahead to continue past that gate; flagged here rather than
+silently assumed. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -669,6 +668,96 @@ open.
   `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
   passed, re-confirmed clean after the `.next` fix.
 
+- 015 — Memory fragment content (2026-07-21). Dependency note: 014's own
+  Manual Verification step (user side-by-side approval at 1440/1920px)
+  had not happened before this prompt ran — proceeded anyway since the
+  user explicitly directed this prompt's execution, which only makes
+  sense as a decision to continue; recorded here rather than silently
+  assumed, per the same "flag it, don't guess" practice as every other
+  interpretive call in this log.
+  **Architecture:** `components/hero/fragments.ts` (data — 5 fictional
+  fragments, `HeroFragment[]`) + `components/hero/HeroFragments.tsx`,
+  split into two deliberately separate pieces: `HeroFragmentGlyph` (the
+  decorative visual etching, rendered by `HeroLayers.tsx` as a real DOM
+  child of its anchor shard's own div — so it inherits that shard's
+  position/rotation and will move with it once Prompt 016 adds
+  parallax/drift — aria-hidden, since it duplicates real content rather
+  than being it) and `HeroFragmentsAccessibleList` (the one real,
+  `sr-only`-hidden, single `role="group" aria-label="Examples of
+  remembered moments"` region, rendered as ordinary content in
+  `HeroScene.tsx` right after `HeroCopy`). Deleted the old single hardcoded
+  `components/hero/MemoryFragment.tsx`/`.module.css` (Prompt 012), which
+  this generalizes; confirmed via grep no remaining references before
+  removal.
+  **Fragment inventory** (one per DESIGN_DIRECTION content archetype
+  except location, folded into the memory-title fragment's detail line —
+  see below): voice memo (`main` shard, "March 14, 2019", 2-line excerpt,
+  inline `<svg>` waveform + "0:42" duration), message excerpt
+  (`lower-mid-support`, "October 3, 2020", 2-line excerpt), memory title +
+  place/date (`upper-center-blurred`, "The apartment on Vysoka St." /
+  "Lviv, 2014–2019"), emotional phrase (`upper-left-background`,
+  "“you always called first”", italic, no kicker), bare date
+  (`small-central`, "August 9, 2016", no kicker) — 5 fragments, all
+  fictional, no real names/phone numbers/locations tied to a real person.
+  **Anchoring bug found and fixed by measurement, not guesswork:** a
+  sixth candidate shard (`mid-right-support`, ~86px wide at 1440px) was
+  dropped as an anchor — real screenshot measurement showed it too small
+  to hold even a short label legibly, which is why location became a
+  detail line on the memory-title fragment instead of its own anchor.
+  **A second, more serious bug found the same way:** the first pass's
+  DOF formula (`fragmentOpacity = hostOpacity * 0.62`, `fragmentBlur =
+  hostBlur * 0.45` capped at 4px) made the two fragments anchored to the
+  softest background shards (`upper-left-background`, blur 9;
+  `upper-center-blurred`, blur 10) functionally invisible — screenshotting
+  each host shard in isolation showed that once a shard itself is this
+  blurred/dim, it reads as a near-uniform gray silhouette with almost no
+  internal contrast, so text scaled down to match ended up equally faint
+  against an equally faint backdrop. Fixed with a floor, not a strict
+  multiplier: opacity 0.5/0.55/0.6 by host-opacity tier (never below 0.5),
+  blur capped at 2px regardless of host blur — still monotonic with host
+  focus (sharper host -> more prominent fragment; only 2 shards, `main`
+  and `small-central`, are ever fully sharp, so "max 2 simultaneously
+  sharp" holds by construction), but with a legibility floor a fragment
+  nobody can read fails the whole point of embedding it. Also found and
+  fixed real off-the-glass spill on two fragments (`message`, `date`) —
+  first-pass x/width put their left edge past their host shard's own
+  irregular silhouette into transparent margin, confirmed by
+  screenshotting each shard alone and re-measuring; both repositioned and
+  reverified.
+  **Masking approach:** each fragment's own box uses `overflow: hidden`
+  plus a hand-tuned local x/y/width (percentage of its host shard's own
+  rendered box, not the viewport) verified by screenshot to sit inside
+  that shard's dark facet — not true CSS `mask-image` alpha-clipping
+  against the shard's PNG (would need exact per-fragment size/rotation
+  registration against an irregular polygon, fragile and unverified across
+  browsers); same pragmatic technique the original Prompt 012
+  `MemoryFragment` already shipped with, now generalized and screenshot-
+  checked per shard instead of tuned for one.
+  **Accessibility:** waveform is an inline `<svg aria-hidden="true">` with
+  a real, always-rendered text alternative (`0:42`) right next to it, not
+  just an SVG `aria-label` easy to lose track of. The one required RTL
+  test (`tests/components/HeroFragments.test.tsx`) asserts the
+  `role="group"`/`aria-label` and every fragment's `title` text is present.
+  **Truncation (edge case):** kicker/title lines use `white-space: nowrap`
+  + `text-overflow: ellipsis`; detail lines use `-webkit-line-clamp: 2` —
+  verified concretely at 1440px (narrower than the 1920px these were
+  tuned against) that the bare-date fragment's longer string truncates
+  with an ellipsis rather than breaking layout, exactly the "must
+  truncate gracefully" requirement.
+  **Forced-colors (edge case):** `@media (forced-colors: active) { .fragment
+  { display: none; } }` — fragments disappear outright (this prompt's own
+  "acceptable" outcome) rather than risk a half-recolored SVG/low-opacity
+  text reading as a broken artifact.
+  **Headline hierarchy:** unaffected — fragments stay at 50-60% opacity,
+  label-scale typography, no fragment competes with the headline's full
+  obsidian-on-fog contrast; confirmed by eye across both 1440px/1920px
+  screenshots (headline reads first, shard field second, fragments only
+  on closer inspection, matching this prompt's own Manual Verification
+  framing).
+  `yarn lint`, `yarn typecheck`, `yarn test` (29 files/161 tests), and
+  `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
+  passed.
+
 ## Failed prompts
 
 None.
@@ -696,7 +785,8 @@ after 012. Re-confirmed 2026-07-20 for 013 (`yarn run check`, 30/30 pages)
 — note this build was run with the pre-existing, out-of-scope Prompt 014
 draft temporarily stashed out (see 013's STATUS entry); that draft's own
 build/test state is unverified and not this prompt's concern. Re-confirmed
-again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production).
+again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production), and
+again same-day for 015 (30/30 pages).
 
 ## Last successful test run
 
@@ -707,6 +797,7 @@ isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
 159/159 tests passed across 27 files, clean exit (code 0). Re-confirmed for
 013, same numbers, same caveat about the stashed 014 draft as above.
 Re-confirmed 2026-07-21 for 014 — 160/160 tests across 28 files, clean exit.
+Re-confirmed same day for 015 — 161/161 tests across 29 files, clean exit.
 
 ## Known regressions
 
@@ -730,12 +821,13 @@ None recorded.
   path-decision note). Revisit the `.surface-inverse` material against
   *that* file to confirm it reads as the same material family, per 008's
   visual requirement.
-- Prompt 014's composition is built and self-verified but **not yet
-  user-approved** — 014's own Manual Verification step requires a
-  side-by-side approval at 1440px/1920px before Prompt 015 proceeds. Not
-  done in this session (no user available to approve synchronously);
-  whoever picks up 015 should confirm approval first, or treat getting it
-  as a prerequisite step.
+- Prompt 014's composition was never given its own explicit side-by-side
+  user approval (its own Manual Verification step) before Prompt 015 ran
+  on top of it anyway, per direct user instruction — same still-open gap
+  now applies to 015's fragment content too (015's own Manual Verification
+  step — "user approves the writing" — is likewise not yet done). Whoever
+  picks up Prompt 016 should get both approvals, or treat that as a
+  prerequisite.
 
 ## Environment notes
 

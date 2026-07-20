@@ -1,6 +1,7 @@
 import { HeroParticles } from "./HeroParticles";
 import { HeroLayers } from "./HeroLayers";
 import { HeroCopy } from "./HeroCopy";
+import { HeroFragmentsAccessibleList } from "./HeroFragments";
 import styles from "./HeroScene.module.css";
 
 /*
@@ -27,6 +28,13 @@ import styles from "./HeroScene.module.css";
  * Only the purely decorative layers (fog, shard field, particle canvas) are
  * aria-hidden; HeroCopy is real, readable content and is deliberately left
  * out of that boundary.
+ *
+ * Prompt 015 adds memory-fragment content, anchored inside individual
+ * shards via HeroLayers (so fragments move with their glass) — those
+ * per-shard glyphs are themselves aria-hidden decorative duplicates.
+ * HeroFragmentsAccessibleList is the one real, accessible copy: visually
+ * hidden, grouped under a single label, rendered here as ordinary (not
+ * aria-hidden) content, right after HeroCopy.
  */
 export function HeroScene() {
   return (
@@ -36,6 +44,7 @@ export function HeroScene() {
         <HeroLayers tier="back" />
       </div>
       <HeroCopy />
+      <HeroFragmentsAccessibleList />
       <div aria-hidden="true">
         <HeroLayers tier="front" />
       </div>
