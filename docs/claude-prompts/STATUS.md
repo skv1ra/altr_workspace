@@ -4,11 +4,8 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 012 complete (committed locally, not pushed). ADR-007 is
-confirmed *technically* (hybrid raster-shard approach) but **not yet
-visually approved as final** — the current LEGACY shard assets are the
-blocker; Prompt 013 (shard asset pipeline) is the correct next step, per
-explicit user decision. Awaiting `RUN PROMPT 013`. Note: Prompt 004 itself
+None — Prompt 013 complete (committed locally, not pushed). Prompt 014
+(hero scene composition) is next. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -432,6 +429,118 @@ open.
   `yarn typecheck`, `yarn test` (27 files / 159 tests), `yarn build`
   (29/29 pages), and `yarn test:e2e` all passed.
 
+- 013 — Shard asset pipeline (2026-07-20). **Found before starting any work:**
+  the working tree already contained substantial uncommitted, out-of-scope
+  changes — an in-progress Prompt 014 (hero scene composition) draft
+  touching `app/(public)/hero-lab/page.tsx`, `components/hero/HeroPrototype.tsx`/
+  `.module.css`, and a new `components/hero/ReferenceOverlay.tsx` — none of
+  which 013 is allowed to touch (`app/`, `components/` are explicitly off
+  limits; consumers are 014's job). Left every one of those files exactly as
+  found — not modified, not committed, not reverted. That draft's own code
+  and comments revealed the real state of play: real, externally-supplied
+  reference-grade glass-shard renders already existed, uncommitted, at
+  `public/assets/hero/shards/` (8 files, untrimmed) and
+  `public/assets/hero/shards-trimmed/` (same 8, alpha-cropped to content
+  bounds — `shard-main`, `shard-mid-01/02/03`, `shard-foreground-01/02`,
+  `shard-background-01/02`), which the 014 draft's own comments describe as
+  "the 8 real supplied shard assets... there is no image-generation model
+  available to make genuinely new photoreal glass art, and hand-drawn/
+  procedural stand-ins were already tried and rejected earlier in this
+  project for looking flat/matte." This is exactly the "manual/external
+  creation step the user performs" this prompt's own step 2 explicitly
+  allows when script-based generation can't reach reference quality — and
+  012/ADR-007 already documented that rejection. Verified this honestly
+  rather than assuming: visually compared re-encoded samples of
+  `shard-main` and `shard-background-01` against
+  `references/altr-hero-reference.png` — glossy black glass, faceted
+  edges, dense hairline crack webs, bright edge chips all present and a
+  categorical improvement over the procedural generator's output.
+  **Decision:** treated `public/assets/hero/shards-trimmed/` (not the
+  prompt's literally-named `public/hero-shards/`, which is 012's old
+  LEGACY-copied prototype set — left untouched, still what the *committed*
+  HeroPrototype uses) as the master source for this prompt's actual
+  deliverable, since that's the path the already-in-flight 014 draft
+  depends on and where the real supplied assets live — same class of
+  literal-path-vs-actual-necessity gap documented in 005-012, resolved the
+  same way (follow the specific, actionable reality over the stale literal
+  path). Did **not** modify the existing plain `<name>.png` files in that
+  folder (the 014 draft depends on their exact bytes/dimensions); added
+  new sibling files only.
+  Also found `scripts/generate-hero-shards.mjs` already modified,
+  uncommitted, before this session started (facet overlay removed per an
+  inline note about a visible hard seam; crack rendering reworked into a
+  denser branching web with bright node joints; chromatic rim fringing
+  removed) — a legitimate, in-scope, further attempt at step 2's "improve
+  generation... until fragments match the reference." Re-ran it
+  (`node scripts/generate-hero-shards.mjs public/hero-shards-v2`) to confirm
+  it still executes cleanly: all 6 shards generated, 113-576 KB each
+  (shard-main alone: 576 KB) — confirms procedural generation, even
+  improved, remains both visually short of the reference (flatter,
+  waxier fracture detail under zoom) and far too heavy for the budget on
+  its own, so the externally-supplied masters are the correct final
+  answer, not this script. Included this diff in the commit (in scope,
+  real completed work); did not commit `public/hero-shards-v2/` itself
+  (regeneration output, evidentiary only, superseded by the real assets;
+  left uncommitted/untouched, same treatment as the 014 draft).
+  **New file added** (deviates from the literal "extend/replace
+  `generate-hero-shards.mjs`" instruction, same kind of documented gap as
+  prior prompts): `scripts/optimize-hero-shards.mjs`. This is a re-encode
+  pipeline, not a generator — a materially different job (processing
+  externally supplied raster masters vs. procedurally drawing new ones) —
+  so a separate script was the honest choice over overloading the
+  generator's purpose. Uses the already-present `sharp@0.35.3` devDependency
+  (exact-pinned, dev-only — satisfies this prompt's security requirement;
+  found already added to `package.json`/`yarn.lock` before this session,
+  kept as-is). For each of the 8 masters in `shards-trimmed/`, without
+  touching the existing plain `<name>.png`, added: `<name>.avif`/`.webp`
+  (2x/master resolution) and `<name>@1x.avif/.webp/.png` (50%
+  resolution); plus `<name>-blur` and `<name>-blur@1x` (all 3 formats) for
+  the 7 shards this prompt's own layer plan uses at DOF (`mid-01/02/03`,
+  `foreground-01/02`, `background-01/02` — "2-3 mid, 2 foreground heavily
+  pre-blurred, 2 background soft"); `shard-main` gets no blur variant — it
+  is the always-sharp memory-carrying hero shard per that same layer plan.
+  Blur radii tuned per shard (6-22px at 2x) rather than one global value,
+  since the thin/wide shards (`background-02`) read as blobby at a
+  radius that looks right on smaller/denser ones.
+  **Budget (recorded actual numbers, AVIF — the format modern browsers
+  actually receive, same methodology as 012's "delivered hero weight"
+  measurement):** all 8 unique shards' 2x AVIF total = **150.7 KB**
+  (well under the 900 KB desktop ceiling; even adding every blur-variant
+  AVIF on top stays under ~200 KB). All 8 unique shards' 1x AVIF total =
+  **71.7 KB** (well under the 350 KB mobile ceiling, without even
+  reducing to a smaller subset). Exact per-breakpoint shard selection is
+  014/017's call, not this prompt's — recorded the full-set numbers since
+  they clear both budgets by a wide margin regardless of which subset a
+  later prompt actually wires up.
+  **Visual verification, done concretely, not assumed:** re-encoded the
+  AVIF output for `shard-main` and `shard-background-01` back to PNG and
+  inspected at full size — no banding in the near-black gradient body,
+  crack lines read as etched hairlines with occasional bright chip nodes
+  (not drawn strokes), matching this prompt's own visual requirement.
+  Composited `shard-foreground-01` (the heaviest-blur candidate, most
+  likely to reveal fringing) over both pure white and pure black — clean
+  alpha edges, no halo, on either ground.
+  **Not done / left alone:** `public/hero-shards/` (012's LEGACY-copied
+  prototype set) is untouched — the new set lives at `public/assets/hero/`
+  instead (see path decision above), so 013's literal "keep old files
+  until 014 swaps consumers, then delete" instruction doesn't map cleanly
+  onto the actual file layout; 014 will need to point its consumers at
+  `public/assets/hero/shards-trimmed/` (which its own uncommitted draft
+  already does) rather than `public/hero-shards/`.
+  `yarn run check` (note: bare `yarn check` invokes Yarn Classic's own
+  built-in lockfile-integrity command, not this repo's `package.json`
+  script of the same name — pre-existing, unrelated to this session) was
+  run twice: once against the tree exactly as this prompt left it
+  (lint/typecheck/test(27 files/159 tests)/build(30/30 pages) all passed,
+  clean exit); and, to isolate cause, once with the pre-existing
+  out-of-scope 014-draft files temporarily `git stash`-ed out — this was
+  needed because that draft (found already broken, not broken by this
+  session) fails `tests/components/hero-lab-page.test.tsx` (asserts a
+  heading string the draft's rewritten page no longer renders); confirmed
+  the failure is 100% attributable to that pre-existing draft and not to
+  any 013 change, then restored the stash exactly (`git stash pop`,
+  verified byte-identical after).
+
 ## Failed prompts
 
 None.
@@ -455,7 +564,10 @@ motion section, and 012 for the new `/hero-lab` route, also confirmed
 404ing in production). `yarn test:e2e` (the 004 smoke spec) also passed,
 2026-07-20, after installing the Playwright Chromium binary (see 006
 entry), again after 010's dependency fix, again after 011, and again
-after 012.
+after 012. Re-confirmed 2026-07-20 for 013 (`yarn run check`, 30/30 pages)
+— note this build was run with the pre-existing, out-of-scope Prompt 014
+draft temporarily stashed out (see 013's STATUS entry); that draft's own
+build/test state is unverified and not this prompt's concern.
 
 ## Last successful test run
 
@@ -463,7 +575,8 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-159/159 tests passed across 27 files, clean exit (code 0).
+159/159 tests passed across 27 files, clean exit (code 0). Re-confirmed for
+013, same numbers, same caveat about the stashed 014 draft as above.
 
 ## Known regressions
 
@@ -472,18 +585,31 @@ None recorded.
 ## Unresolved decisions
 
 - ADR-007 (hybrid hero): technical approach confirmed by the Prompt 012
-  prototype (real FPS/weight/CLS numbers, all passing). Visual approval is
-  NOT yet granted — LEGACY shard asset quality is the blocker (see 012's
-  STATUS entry + ADR-007). Next: Prompt 013 regenerates the shard assets;
-  visual approval is re-sought once those exist, before Phase 3 continues
-  past 013.
+  prototype (real FPS/weight/CLS numbers, all passing). Visual approval on
+  the asset material itself should be easier now — Prompt 013 replaced the
+  matte-rock procedural shards with real, reference-grade glass renders
+  (see 013's STATUS entry) — but final visual sign-off on the full
+  composition is a Prompt 014+ matter, not re-litigated here.
 - Whether a separate staging Supabase project will be provisioned (ADR-012) —
   user decision needed before Prompt 051.
 - Prompt 008's manual verification ("view styleguide beside
-  `public/hero-shards/shard-main.png`") could not be done — that directory
-  doesn't exist until Prompt 013. Revisit the `.surface-inverse` material
-  once real shard renders exist to confirm it reads as the same material
-  family, per 008's visual requirement.
+  `public/hero-shards/shard-main.png`") still hasn't been done as literally
+  worded — that path still only has the old LEGACY procedural set; the real
+  reference-grade renders Prompt 013 produced live at
+  `public/assets/hero/shards-trimmed/shard-main.png` instead (see 013's
+  path-decision note). Revisit the `.surface-inverse` material against
+  *that* file to confirm it reads as the same material family, per 008's
+  visual requirement.
+- Found during Prompt 013 (not this prompt's to resolve): an in-progress,
+  uncommitted Prompt 014 (hero scene composition) draft already exists in
+  the working tree (`app/(public)/hero-lab/page.tsx`,
+  `components/hero/HeroPrototype.tsx`/`.module.css`,
+  `components/hero/ReferenceOverlay.tsx`), built ahead of the prompt
+  sequence and left untouched/uncommitted per 013's file scope. It
+  currently fails `tests/components/hero-lab-page.test.tsx` (stale
+  heading assertion) — whoever runs Prompt 014 will need to either fix or
+  replace that test as part of formally executing 014, and should treat
+  the existing draft as a working head start, not a from-scratch task.
 
 ## Environment notes
 

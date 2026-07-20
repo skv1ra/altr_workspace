@@ -9,7 +9,7 @@ mkdirSync(OUT, { recursive: true });
 
 // Everything inside render() runs in the browser page.
 const render = (params) => {
-  const { seed, W, H, verts, elong, jag, chips, facetN, cracks, microCracks, tone, rimBoost, transparency } = params;
+  const { seed, W, H, verts, elong, jag, chips, cracks, microCracks, tone, rimBoost, transparency } = params;
 
   // --- deterministic rng ---
   let s = seed | 0;
@@ -93,144 +93,113 @@ const render = (params) => {
   ctx.fillStyle = thinG;
   ctx.fillRect(0, 0, W, H);
 
-  // ---------- 3. facets: half-plane gradient overlays + boundary lines ----------
-  const facetLines = [];
-  for (let f = 0; f < facetN; f++) {
-    const i1 = (rnd() * contour.length) | 0;
-    const i2 = (i1 + ((contour.length / 2 + rr(-contour.length / 5, contour.length / 5)) | 0)) % contour.length;
-    const p1 = contour[i1], p2 = contour[i2];
-    facetLines.push([p1, p2]);
-
-    // clip one side of the chord and shade it slightly differently
-    ctx.save();
-    ctx.beginPath();
-    const nx = -(p2[1] - p1[1]), ny = p2[0] - p1[0];
-    ctx.moveTo(p1[0], p1[1]);
-    ctx.lineTo(p2[0], p2[1]);
-    ctx.lineTo(p2[0] + nx * 3, p2[1] + ny * 3);
-    ctx.lineTo(p1[0] + nx * 3, p1[1] + ny * 3);
-    ctx.closePath();
-    ctx.clip();
-    // strong facet contrast: some faces mirror the bright sky, others fall to black
-    const fg = ctx.createLinearGradient(p1[0], p1[1], p1[0] + nx * 0.5, p1[1] + ny * 0.5);
-    const roll = rnd();
-    if (roll > 0.62) {
-      fg.addColorStop(0, `rgba(206, 215, 227, ${rr(0.22, 0.38)})`);
-      fg.addColorStop(0.6, `rgba(206, 215, 227, ${rr(0.05, 0.12)})`);
-    } else if (roll > 0.3) {
-      fg.addColorStop(0, `rgba(0, 0, 0, ${rr(0.2, 0.34)})`);
-      fg.addColorStop(0.7, "rgba(0, 0, 0, 0.04)");
-    } else {
-      fg.addColorStop(0, `rgba(150, 160, 174, ${rr(0.1, 0.18)})`);
-      fg.addColorStop(0.5, "rgba(150, 160, 174, 0.02)");
-    }
-    fg.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = fg;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-    tracePath(ctx);
-    ctx.clip();
-  }
-
-  // one broad "sky reflection" wedge sweeping across the glass
+  // ---------- 3. one soft sky wedge only ----------
+  // The reference's glass face reads almost flat/uniform. An earlier version
+  // drew a half-plane facet overlay here too, but its clip boundary produced
+  // a visible hard seam line across the face (confirmed visually) — removed
+  // rather than only softened. `facetN` is kept in the per-shard config for
+  // now (harmless/unused) so future tuning can reintroduce a *properly*
+  // soft-edged version without reshaping the config schema.
+  // one broad, very soft "sky reflection" wedge — subtle, not a bright band
   {
     const i1 = (rnd() * contour.length) | 0;
     const i2 = (i1 + ((contour.length * rr(0.3, 0.45)) | 0)) % contour.length;
     const p1 = contour[i1], p2 = contour[i2];
     ctx.save();
-    ctx.filter = `blur(${W * 0.012}px)`;
+    ctx.filter = `blur(${W * 0.02}px)`;
     const sg = ctx.createLinearGradient(p1[0], p1[1], p2[0], p2[1]);
-    sg.addColorStop(0, "rgba(222, 230, 240, 0)");
-    sg.addColorStop(0.45, `rgba(222, 230, 240, ${rr(0.09, 0.16)})`);
-    sg.addColorStop(0.55, `rgba(222, 230, 240, ${rr(0.06, 0.11)})`);
-    sg.addColorStop(1, "rgba(222, 230, 240, 0)");
+    sg.addColorStop(0, "rgba(210, 220, 232, 0)");
+    sg.addColorStop(0.48, `rgba(210, 220, 232, ${rr(0.05, 0.09)})`);
+    sg.addColorStop(0.55, `rgba(210, 220, 232, ${rr(0.03, 0.06)})`);
+    sg.addColorStop(1, "rgba(210, 220, 232, 0)");
     ctx.fillStyle = sg;
     ctx.fillRect(0, 0, W, H);
     ctx.filter = "none";
     ctx.restore();
   }
 
-  // facet boundary: dark seam + bright catch-light
-  for (const [p1, p2] of facetLines) {
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
-    ctx.lineWidth = Math.max(1, W / 900);
-    ctx.beginPath();
-    ctx.moveTo(p1[0], p1[1]);
-    ctx.lineTo(p2[0], p2[1]);
-    ctx.stroke();
-    ctx.strokeStyle = "rgba(226, 234, 244, 0.4)";
-    ctx.lineWidth = Math.max(0.6, W / 1600);
-    ctx.beginPath();
-    ctx.moveTo(p1[0] + 1.2, p1[1] + 1.2);
-    ctx.lineTo(p2[0] + 1.2, p2[1] + 1.2);
-    ctx.stroke();
-  }
-
-  // ---------- 4. internal smoke / cloudiness ----------
-  for (let k = 0; k < 4; k++) {
-    const gx = rr(0.2, 0.8) * W, gy = rr(0.2, 0.8) * H;
-    const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, rr(0.15, 0.4) * W);
-    const glow = rnd() > 0.5;
-    g.addColorStop(0, glow ? `rgba(190, 200, 214, ${rr(0.04, 0.09)})` : `rgba(0, 0, 0, ${rr(0.08, 0.2)})`);
+  // ---------- 4. internal smoke / cloudiness (barely perceptible) ----------
+  for (let k = 0; k < 2; k++) {
+    const gx = rr(0.25, 0.75) * W, gy = rr(0.25, 0.75) * H;
+    const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, rr(0.2, 0.4) * W);
+    g.addColorStop(0, `rgba(0, 0, 0, ${rr(0.05, 0.1)})`);
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
   }
 
-  // ---------- 5. cracks: branching bright fracture lines ----------
-  const drawCrack = (x, y, angle, len, width, depth) => {
-    // glass cracks run straight with occasional sharp kinks
+  // ---------- 5. cracks: dense spiderweb radiating from 1-2 impact origins ----------
+  // Matches the reference's fracture look: many thin branches, sharp micro-kinks,
+  // sub-branching, small bright node dots at joints — not a handful of thick
+  // scratchy lines.
+  const crackNodes = [];
+  const drawCrackBranch = (x, y, angle, len, width, depth, maxDepth) => {
     let px = x, py = y, a = angle;
-    const pts = [[px, py]];
-    const steps = 5 + ((rnd() * 4) | 0);
-    for (let i = 0; i < steps; i++) {
-      a += rnd() < 0.25 ? rr(-0.55, 0.55) : rr(-0.1, 0.1);
-      const step = len / steps;
-      px += Math.cos(a) * step;
-      py += Math.sin(a) * step;
-      pts.push([px, py]);
-      if (depth < 2 && rnd() < 0.24) {
-        drawCrack(px, py, a + rr(0.4, 0.9) * (rnd() > 0.5 ? 1 : -1), len * rr(0.3, 0.55), width * 0.6, depth + 1);
+    const segLen = Math.max(W * 0.006, len / (7 + depth * 2));
+    let remaining = len;
+    while (remaining > segLen * 0.7) {
+      a += rnd() < 0.22 ? rr(-0.7, 0.7) : rr(-0.2, 0.2);
+      const step = Math.min(segLen, remaining);
+      const nx = px + Math.cos(a) * step;
+      const ny = py + Math.sin(a) * step;
+      ctx.strokeStyle = `rgba(230, 238, 246, ${rr(0.22, 0.42)})`;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(nx, ny);
+      ctx.stroke();
+      px = nx;
+      py = ny;
+      remaining -= step;
+      if (depth < maxDepth && rnd() < 0.24) {
+        crackNodes.push([px, py, width]);
+        drawCrackBranch(
+          px,
+          py,
+          a + rr(0.5, 1.15) * (rnd() > 0.5 ? 1 : -1),
+          remaining * rr(0.35, 0.6),
+          width * rr(0.6, 0.8),
+          depth + 1,
+          maxDepth,
+        );
       }
     }
-    // halo
-    ctx.strokeStyle = `rgba(215, 225, 238, ${0.10 * width})`;
-    ctx.lineWidth = width * 3.4;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(pts[0][0], pts[0][1]);
-    for (const p of pts) ctx.lineTo(p[0], p[1]);
-    ctx.stroke();
-    // core
-    ctx.strokeStyle = `rgba(240, 246, 252, ${0.5 * Math.min(1, width)})`;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    ctx.moveTo(pts[0][0], pts[0][1]);
-    for (const p of pts) ctx.lineTo(p[0], p[1]);
-    ctx.stroke();
+    crackNodes.push([px, py, width * 0.8]);
   };
 
-  for (let c = 0; c < cracks; c++) {
-    const i = (rnd() * contour.length) | 0;
-    const [ex, ey] = contour[i];
-    const toC = Math.atan2(cy - ey, cx - ex);
-    drawCrack(ex, ey, toC + rr(-0.4, 0.4), rr(0.35, 0.75) * Math.min(W, H), rr(1.2, 2.2) * (W / 1000), 0);
+  for (let originIdx = 0; originIdx < cracks; originIdx++) {
+    const ox = rr(0.28, 0.72) * W;
+    const oy = rr(0.28, 0.72) * H;
+    const branchCount = 3 + ((rnd() * 3) | 0);
+    crackNodes.push([ox, oy, 1.4 * (W / 1000)]);
+    for (let b = 0; b < branchCount; b++) {
+      const a = (b / branchCount) * Math.PI * 2 + rr(-0.5, 0.5);
+      drawCrackBranch(ox, oy, a, rr(0.18, 0.32) * Math.min(W, H), rr(0.7, 1.1) * (W / 1000), 0, 3);
+    }
   }
+  // isolated hairline micro-fractures, unconnected to the main web
   for (let c = 0; c < microCracks; c++) {
-    drawCrack(rr(0.25, 0.75) * W, rr(0.25, 0.75) * H, rnd() * Math.PI * 2, rr(0.06, 0.16) * W, rr(0.5, 0.9) * (W / 1000), 2);
+    drawCrackBranch(
+      rr(0.15, 0.85) * W,
+      rr(0.15, 0.85) * H,
+      rnd() * Math.PI * 2,
+      rr(0.05, 0.13) * W,
+      rr(0.45, 0.7) * (W / 1000),
+      2,
+      3,
+    );
   }
-
-  // ---------- 6. scratches ----------
-  for (let k = 0; k < 46; k++) {
-    const x = rr(0.1, 0.9) * W, y = rr(0.1, 0.9) * H;
-    const a = rnd() * Math.PI;
-    const l = rr(0.03, 0.14) * W;
-    ctx.strokeStyle = `rgba(222, 228, 236, ${rr(0.015, 0.05)})`;
-    ctx.lineWidth = rr(0.5, 1.1) * (W / 1000);
+  // bright node dots at branch/kink points — the small "impact" look
+  for (const [nx, ny, w] of crackNodes) {
+    if (rnd() < 0.55) continue;
+    const radius = w * rr(1.6, 3);
+    const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, radius);
+    g.addColorStop(0, `rgba(255, 255, 255, ${rr(0.3, 0.55)})`);
+    g.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
-    ctx.stroke();
+    ctx.arc(nx, ny, radius, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // ---------- 7. grain ----------
@@ -295,32 +264,10 @@ const render = (params) => {
       nx2 = -nx2;
       ny2 = -ny2;
     }
-    // chromatic fringes on lit edges only
-    if (lit > 0.3) {
-      ctx.strokeStyle = `rgba(150, 190, 255, ${alpha * 0.25})`;
-      ctx.lineWidth = Math.max(1.6, W / 520);
-      ctx.beginPath();
-      ctx.moveTo(p[0] - 1, p[1] - 1);
-      ctx.lineTo(q[0] - 1, q[1] - 1);
-      ctx.stroke();
-      ctx.strokeStyle = `rgba(255, 214, 200, ${alpha * 0.12})`;
-      ctx.beginPath();
-      ctx.moveTo(p[0] + 1, p[1] + 1);
-      ctx.lineTo(q[0] + 1, q[1] + 1);
-      ctx.stroke();
-    }
-    // faint tight glow behind the most lit edges only
-    if (lit > 0.75) {
-      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.14})`;
-      ctx.lineWidth = Math.max(2, W / 420);
-      ctx.beginPath();
-      ctx.moveTo(p[0], p[1]);
-      ctx.lineTo(q[0], q[1]);
-      ctx.stroke();
-    }
-    // white core rim, width scales with how much the edge faces the light
-    ctx.strokeStyle = `rgba(250, 252, 255, ${Math.min(1, alpha * 1.15)})`;
-    ctx.lineWidth = Math.max(0.9, W / 700) * (0.3 + lit * 1.8);
+    // Reference shows no chromatic fringing — crisp neutral-white edges only.
+    // A very tight, bright core rim (thin, not a glow) is the whole effect.
+    ctx.strokeStyle = `rgba(252, 253, 255, ${Math.min(1, alpha * 1.25)})`;
+    ctx.lineWidth = Math.max(0.7, W / 1100) * (0.35 + lit * 1.6);
     ctx.beginPath();
     ctx.moveTo(p[0], p[1]);
     ctx.lineTo(q[0], q[1]);
@@ -349,13 +296,13 @@ const render = (params) => {
 };
 
 const SHARDS = [
-  // main: large, dark, heavily cracked
-  { name: "shard-main", seed: 811, W: 1100, H: 1400, verts: 6, elong: 0.82, jag: 0.9, chips: 10, facetN: 3, cracks: 4, microCracks: 5, tone: 0, rimBoost: 1, transparency: 0.06 },
-  { name: "shard-b", seed: 422, W: 760, H: 900, verts: 5, elong: 1.1, jag: 1.1, chips: 8, facetN: 2, cracks: 3, microCracks: 3, tone: 4, rimBoost: 0.9, transparency: 0.1 },
-  { name: "shard-c", seed: 977, W: 700, H: 980, verts: 5, elong: 0.7, jag: 0.85, chips: 6, facetN: 2, cracks: 3, microCracks: 2, tone: 2, rimBoost: 0.85, transparency: 0.08 },
-  { name: "shard-d", seed: 233, W: 560, H: 640, verts: 4, elong: 1.2, jag: 1.2, chips: 6, facetN: 1, cracks: 2, microCracks: 2, tone: 6, rimBoost: 0.8, transparency: 0.12 },
-  { name: "shard-e", seed: 655, W: 520, H: 700, verts: 5, elong: 0.75, jag: 1, chips: 5, facetN: 2, cracks: 2, microCracks: 1, tone: 8, rimBoost: 0.75, transparency: 0.14 },
-  { name: "shard-f", seed: 149, W: 420, H: 480, verts: 4, elong: 1, jag: 1.3, chips: 5, facetN: 1, cracks: 1, microCracks: 2, tone: 10, rimBoost: 0.7, transparency: 0.16 },
+  // main: large, dark, densely cracked — carries the memory etching
+  { name: "shard-main", seed: 811, W: 1100, H: 1400, verts: 6, elong: 0.82, jag: 0.9, chips: 10, facetN: 1, cracks: 2, microCracks: 16, tone: 0, rimBoost: 1, transparency: 0.06 },
+  { name: "shard-b", seed: 422, W: 760, H: 900, verts: 5, elong: 1.1, jag: 1.1, chips: 8, facetN: 1, cracks: 1, microCracks: 10, tone: 4, rimBoost: 0.9, transparency: 0.1 },
+  { name: "shard-c", seed: 977, W: 700, H: 980, verts: 5, elong: 0.7, jag: 0.85, chips: 6, facetN: 1, cracks: 1, microCracks: 10, tone: 2, rimBoost: 0.85, transparency: 0.08 },
+  { name: "shard-d", seed: 233, W: 560, H: 640, verts: 4, elong: 1.2, jag: 1.2, chips: 6, facetN: 0, cracks: 1, microCracks: 8, tone: 6, rimBoost: 0.8, transparency: 0.12 },
+  { name: "shard-e", seed: 655, W: 520, H: 700, verts: 5, elong: 0.75, jag: 1, chips: 5, facetN: 0, cracks: 1, microCracks: 6, tone: 8, rimBoost: 0.75, transparency: 0.14 },
+  { name: "shard-f", seed: 149, W: 420, H: 480, verts: 4, elong: 1, jag: 1.3, chips: 5, facetN: 0, cracks: 1, microCracks: 6, tone: 10, rimBoost: 0.7, transparency: 0.16 },
 ];
 
 const browser = await chromium.launch();

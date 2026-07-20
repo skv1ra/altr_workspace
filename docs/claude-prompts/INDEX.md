@@ -22,7 +22,7 @@ altr_workspace only.
 | 010 | Dialogs, overlays, a11y states | 2 | Modal/toast/menu + focus/keyboard system | 009 | M | done | done | yes | `feat(design): overlay components and a11y states` |
 | 011 | Motion system | 2 | Motion tokens, Reveal, reduced-motion rules | 010 | M | done | done | yes | `feat(design): motion system with reduced-motion` |
 | 012 | Hero technical prototype | 3 | Prove ADR-007 hybrid approach or amend it | 011 | L | done | done | yes | `feat(hero): hybrid hero technical prototype` |
-| 013 | Shard asset pipeline | 3 | Generate/optimize final shard + DOF assets | 012 | L | todo | todo | yes | `feat(hero): production shard asset pipeline` |
+| 013 | Shard asset pipeline | 3 | Generate/optimize final shard + DOF assets | 012 | L | done | done | yes | `feat(hero): production shard asset pipeline` |
 | 014 | Hero scene composition | 3 | Fog, layers, lighting, shadows, composition | 013 | L | todo | todo | yes | `feat(hero): cinematic scene composition` |
 | 015 | Memory fragment content | 3 | Voice memo, excerpts, dates inside shards | 014 | M | todo | todo | yes | `feat(hero): memory fragment content overlays` |
 | 016 | Hero pointer and scroll motion | 3 | Parallax, drift, scroll choreography | 015 | M | todo | todo | yes | `feat(hero): pointer and scroll motion` |
