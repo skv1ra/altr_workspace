@@ -2,6 +2,7 @@
 @import "./styles/typography.css";
 @import "./styles/materials.css";
 @import "./styles/controls.css";
+@import "./styles/overlays.css";
 
 @tailwind base;
 @tailwind components;

@@ -19,7 +19,7 @@ altr_workspace only.
 | 007 | Typography and spacing | 2 | Type scale, prose styles, spacing rhythm | 006 | M | done | done | yes | `feat(design): typography and spacing system` |
 | 008 | Color, materials, surfaces | 2 | Obsidian/fog/paper surface primitives | 007 | M | done | done | yes | `feat(design): material and surface system` |
 | 009 | Buttons, inputs, forms | 2 | Core interactive primitives | 008 | M | done | done | yes | `feat(design): core form and button primitives` |
-| 010 | Dialogs, overlays, a11y states | 2 | Modal/toast/menu + focus/keyboard system | 009 | M | todo | todo | yes | `feat(design): overlay components and a11y states` |
+| 010 | Dialogs, overlays, a11y states | 2 | Modal/toast/menu + focus/keyboard system | 009 | M | done | done | yes | `feat(design): overlay components and a11y states` |
 | 011 | Motion system | 2 | Motion tokens, Reveal, reduced-motion rules | 010 | M | todo | todo | yes | `feat(design): motion system with reduced-motion` |
 | 012 | Hero technical prototype | 3 | Prove ADR-007 hybrid approach or amend it | 011 | L | todo | todo | yes | `feat(hero): hybrid hero technical prototype` |
 | 013 | Shard asset pipeline | 3 | Generate/optimize final shard + DOF assets | 012 | L | todo | todo | yes | `feat(hero): production shard asset pipeline` |

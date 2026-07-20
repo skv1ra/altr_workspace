@@ -1,0 +1,146 @@
+/*
+ * Dialog/Toast/Menu overlay recipes — imported after controls.css. Same
+ * necessary-but-unlisted-file situation as materials.css (008) and
+ * controls.css (009): an unimported stylesheet leaves these components
+ * unstyled/nonfunctional.
+ */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: radial-gradient(
+    120% 100% at 50% 20%,
+    rgb(var(--altr-white-rgb) / 55%),
+    rgb(var(--altr-silver-rgb) / 45%)
+  );
+  backdrop-filter: blur(6px);
+  animation: overlay-fade var(--motion-fast) var(--ease-altr);
+}
+
+.dialog-backdrop-dark {
+  background: rgb(var(--altr-black-rgb) / 72%);
+}
+
+.dialog-panel {
+  position: relative;
+  width: 100%;
+  max-width: min(480px, 100%);
+  max-height: calc(100vh - var(--space-12));
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  animation: overlay-rise var(--motion-fast) var(--ease-altr);
+}
+
+@keyframes overlay-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-backdrop,
+  .dialog-panel,
+  .toast-card,
+  .menu-panel {
+    animation: overlay-fade var(--motion-fast) linear;
+  }
+}
+
+/* Toast — fixed bottom-right, never over the primary CTA. */
+.toast-region {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: min(360px, calc(100vw - var(--space-12)));
+}
+
+.toast-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  animation: overlay-rise var(--motion-fast) var(--ease-altr);
+}
+
+.toast-dismiss {
+  flex: none;
+  display: inline-flex;
+  min-width: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.toast-dismiss:hover {
+  opacity: 1;
+}
+
+/* Menu / Popover */
+.menu-panel {
+  position: absolute;
+  z-index: 100;
+  margin-top: var(--space-2);
+  min-width: 180px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  animation: overlay-rise var(--motion-fast) var(--ease-altr);
+}
+
+.menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  cursor: pointer;
+}
+
+.menu-item[data-active="true"] {
+  background: rgb(var(--altr-graphite-rgb) / 8%);
+}
+
+.surface-inverse .menu-item[data-active="true"] {
+  background: rgb(var(--altr-white-rgb) / 10%);
+}
+
+.menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

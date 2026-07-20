@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Hairline, Surface } from "@/components/ui/Surface";
 import { Body, Display, Heading, Label, Prose } from "@/components/ui/Text";
 import { ControlsDemo } from "./ControlsDemo";
+import { OverlaysDemo } from "./OverlaysDemo";
 
 export const metadata = { title: "Styleguide" };
 
@@ -116,6 +117,11 @@ export default function StyleguidePage() {
       <div className="space-y-8">
         <Label as="p">Buttons, fields, forms</Label>
         <ControlsDemo />
+      </div>
+
+      <div className="space-y-8">
+        <Label as="p">Dialogs, toasts, menus</Label>
+        <OverlaysDemo />
       </div>
     </main>
   );

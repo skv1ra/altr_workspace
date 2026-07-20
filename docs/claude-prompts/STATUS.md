@@ -4,13 +4,13 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 009 complete (committed locally, not pushed); awaiting
-`RUN PROMPT 010`. Note: Prompt 004 itself (the backend scaffold/port) was
+None — Prompt 010 complete (committed locally, not pushed); awaiting
+`RUN PROMPT 011`. Note: Prompt 004 itself (the backend scaffold/port) was
 never given its own commit or `PORT_MANIFEST.md` — its file changes exist
 uncommitted in the working tree from an earlier, undocumented session. None of
-005-009 redid or finalized 004 (explicitly out of scope each time) but each
+005-010 redid or finalized 004 (explicitly out of scope each time) but each
 has run `yarn check` against that ported backend as part of verifying their
-own changes — see the 005-009 entries below. That gap (004 uncommitted, no
+own changes — see the 005-010 entries below. That gap (004 uncommitted, no
 manifest) is still open.
 
 ## Completed prompts
@@ -281,6 +281,75 @@ manifest) is still open.
   `yarn build` (28/28 pages, `/styleguide` still 404s in production) all
   passed.
 
+- 010 — Dialogs, overlays, accessibility states (2026-07-20). Five
+  primitives in `components/ui/`: `Dialog`, `ConfirmDialog`, `Toast` (the
+  store) + `Toaster` (the renderer), `Menu`. Backed by `app/styles/overlays.css`
+  (same necessary-but-unlisted-file situation as 007/008/009, documented
+  there). **Technical decision:** verified directly against jsdom 29.1.1
+  that `HTMLDialogElement.showModal()`/`.close()` are not implemented
+  (`"dialog.showModal is not a function"`) — so `Dialog` is a fully-managed
+  portal (manual focus trap, manual Escape/backdrop handling, manual scroll
+  lock) rather than native `<dialog>`, to keep it testable in this repo's
+  Vitest/jsdom setup. This mirrors LEGACY's own hand-rolled pattern in
+  `components/legal/CookieConsent.tsx` almost exactly (backdrop
+  mousedown-target check, focusable-element query, Tab/Shift+Tab wrap,
+  Escape close, focus restoration in the effect cleanup) — confirms the
+  approach, not a novel risk.
+  **a11y/behavior notes:**
+  - Focus trap + initial focus + focus-restoration-to-trigger, all via one
+    `useEffect`; stacked dialogs are asserted against at runtime — a second
+    `Dialog` opening while one is already open throws
+    `"Stacked dialogs are forbidden"` (proven in a test).
+  - `ConfirmDialog` always sets `closeOnBackdropClick={false}` internally
+    (not exposed as a prop a caller could misuse) and gives the Cancel
+    button initial focus. Typed-confirmation gate (`typedConfirmation:
+    { phrase }`) disables Confirm until the exact phrase is typed — proven
+    in a test using `"DELETE MY ACCOUNT"`, the exact phrase named in
+    MASTER_CONTEXT's account-deletion contract. A dev-only `console.warn`
+    fires if a title matches `/are you sure/i`, nudging toward the
+    "explicit noun" security requirement without blocking anything.
+  - Cancel is rendered as a plain `<button className="btn btn-secondary">`
+    rather than the `Button` component from 009, specifically so a ref can
+    be attached for initial-focus — `Button`/`Surface` don't forward refs
+    and neither was modified (out of scope); this was the in-scope way to
+    get an identical-looking, ref-able cancel button.
+  - `Toast`/`Toaster` split: `Toast.tsx` is a module-level pub/sub singleton
+    (`toast.push`/`dismiss`/`subscribe`) with no React dependency; `Toaster`
+    subscribes and renders `role="status"` cards, auto-dismiss with a
+    pause-on-hover/focus timer that tracks remaining time (not just
+    restarting the clock). Deliberately **not** mounted in `app/layout.tsx`
+    — that file isn't in this prompt's scope and no screen needs real
+    toasts yet (ADR-013). The store's module-singleton design means it
+    already satisfies "survives route changes" architecturally; whichever
+    screen prompt first needs toasts for real should mount `<Toaster />` at
+    the root layout.
+  - `Menu` is a labeled trigger + `role="menu"` panel: ArrowUp/Down/Home/End,
+    outside-click and Escape dismiss (both restore focus to the trigger),
+    roving `tabIndex={-1}` items focused via refs. Typeahead was left out —
+    explicitly optional per this prompt's spec.
+  **Found and fixed a real, pre-existing dependency defect** while adding
+  Dialog's `createPortal` usage (the first code in this workspace to use
+  it): `yarn.lock` (ported byte-identical from LEGACY in Prompt 004) nests
+  `@types/react-dom` → `@types/react@19.2.17`, conflicting with the
+  pinned top-level `@types/react@18.2.79` — `ReactPortal`'s shape differs
+  between those two major versions, so `tsc` rejected `createPortal`'s
+  return type. This was dormant since Prompt 004 because nothing had
+  exercised that exact type until now. Fixed with the standard Yarn
+  Classic remedy: added `"resolutions": { "@types/react": "18.2.79" }` to
+  `package.json` and re-ran `yarn install`, which also regenerated the
+  affected `yarn.lock` entries — confirmed the nested duplicate is gone.
+  Touching `package.json`/`yarn.lock` is outside 010's own file scope (and
+  arguably 004's), but was required to typecheck a core deliverable of
+  this prompt; re-ran the full backend `yarn check` plus `yarn test:e2e`
+  afterward to confirm nothing else was affected by the dependency change —
+  both passed. Added a Dialogs/Toasts/Menus section to `/styleguide`
+  (`OverlaysDemo.tsx`, same client-demo pattern as 009's `ControlsDemo`)
+  covering an info dialog, a plain `ConfirmDialog`, a typed-confirmation
+  `ConfirmDialog`, a toast trigger, and a `Menu` — confirmed rendering via a
+  dev-server fetch (200, all trigger labels present, zero console
+  warnings). `yarn lint`, `yarn typecheck`, `yarn test` (24 files / 148
+  tests), `yarn build` (28/28 pages), and `yarn test:e2e` all passed.
+
 ## Failed prompts
 
 None.
@@ -298,9 +367,11 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn build` passed,
 for the `node_modules` cross-drive fix that unblocked this, 006 for
 route-group verification, 007 for the new `/styleguide` route including
 confirmation it 404s in this production build, 008 for the materials
-section added to that same route, and 009 for the controls section).
+section added to that same route, 009 for the controls section, and 010
+for the overlays section plus the `@types/react` dependency fix).
 `yarn test:e2e` (the 004 smoke spec) also passed, 2026-07-20, after
-installing the Playwright Chromium binary (see 006 entry).
+installing the Playwright Chromium binary (see 006 entry) and again after
+010's dependency fix.
 
 ## Last successful test run
 
@@ -308,7 +379,7 @@ LEGACY (`altrtest2` @ `a22927d`, disposable worktree): `yarn test`, 2026-07-19
 — 97/97 tests passed across 12 files; command exit code was 1 due to Vitest
 worker OOM crashes, not test failures (see `BASELINE_V2.md` §2.3 for why this
 isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
-127/127 tests passed across 20 files, clean exit (code 0).
+148/148 tests passed across 24 files, clean exit (code 0).
 
 ## Known regressions
 
