@@ -46,6 +46,31 @@ export const sharedCopy = {
       footnoteCancellation: "Manage or cancel your subscription any time from the billing portal.",
       footnoteRefunds: "Refunds are processed through Lemon Squeezy; your invoice updates automatically once one completes — refund eligibility isn't guaranteed beyond that process.",
     },
+    // Prompt 024 — footer + legal pages. `nav.product`/`nav.pricing`/
+    // `nav.language`/`nav.login`/`nav.createAltr`/`common.backDashboard`
+    // are reused as-is for the Footer's own Product/Account columns and
+    // language switch (same words, no duplicate keys).
+    footer: {
+      legalHeading: "Legal",
+      accountHeading: "Account",
+      privacyLink: "Privacy",
+      termsLink: "Terms",
+      cookiesLink: "Cookies",
+      cookiePreferences: "Cookie preferences",
+      copyright: "© 2026 Altr",
+    },
+    legalPage: {
+      back: "Back to Altr",
+      toc: "On this page",
+      version: "Version",
+      effective: "Effective",
+      updated: "Last updated",
+      print: "Print or save as PDF",
+      devNoticeTitle: "Development notice",
+      devNoticeBody: "Mandatory legal configuration is incomplete — the fields below still need real owner/legal input before this document can go live.",
+      missingFields: "Missing fields",
+      ownerReview: "These documents require owner and qualified legal review before commercial launch.",
+    },
   },
   UA: {
     nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
@@ -77,6 +102,27 @@ export const sharedCopy = {
       checkoutError: "Не вдалося почати оформлення — спробуй ще раз.",
       footnoteCancellation: "Керуй підпискою або скасуй її будь-коли через портал білінгу.",
       footnoteRefunds: "Повернення коштів обробляються через Lemon Squeezy; твій рахунок оновлюється автоматично після завершення — окремих гарантій повернення поза цим процесом немає.",
+    },
+    footer: {
+      legalHeading: "Правові",
+      accountHeading: "Акаунт",
+      privacyLink: "Приватність",
+      termsLink: "Умови",
+      cookiesLink: "Cookie",
+      cookiePreferences: "Налаштування cookie",
+      copyright: "© 2026 Altr",
+    },
+    legalPage: {
+      back: "Назад до Altr",
+      toc: "На цій сторінці",
+      version: "Версія",
+      effective: "Набуває чинності",
+      updated: "Оновлено",
+      print: "Друк або збереження PDF",
+      devNoticeTitle: "Повідомлення для розробки",
+      devNoticeBody: "Обовʼязкова юридична конфігурація не заповнена — поля нижче ще потребують реального рішення власника чи юриста, перш ніж цей документ можна буде опублікувати.",
+      missingFields: "Незаповнені поля",
+      ownerReview: "Перед комерційним запуском ці документи потребують перевірки власника та кваліфікованого юриста.",
     },
   },
 } as const satisfies Record<Lang, unknown>;

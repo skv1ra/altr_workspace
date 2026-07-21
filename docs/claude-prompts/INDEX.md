@@ -33,7 +33,7 @@ altr_workspace only.
 | 021 | How-it-works and memory demo | 4 | Editorial process + memory demonstration | 020 | M | done | done | yes | `feat(site): how-it-works and memory demo` |
 | 022 | Twin demo and privacy section | 4 | Draft demo + security/privacy explanation | 021 | M | done | done | yes | `feat(site): twin demo and privacy section` |
 | 023 | Pricing page | 4 | Free/Personal/Work pricing, checkout entry | 022 | M | done | done | yes | `feat(site): premium pricing page` |
-| 024 | Footer, legal restyle, SEO, mobile | 4 | Footer, legal pages skin, metadata, polish | 023 | M | todo | todo | yes | `feat(site): footer, legal restyle and SEO` |
+| 024 | Footer, legal restyle, SEO, mobile | 4 | Footer, legal pages skin, metadata, polish | 023 | M | done | done | yes | `feat(site): footer, legal restyle and SEO` |
 | 025 | Auth screens redesign | 5 | Login/register in new visual system | 011 | M | todo | todo | yes | `feat(auth): redesigned auth screens` |
 | 026 | Recovery, reset, callback | 5 | Forgot/reset pages + callback + Google entry | 025 | M | todo | todo | yes | `feat(auth): recovery and callback flows` |
 | 027 | Protected routes and sign-out | 5 | Route guards, session UX, sign-out | 026 | S | todo | todo | no | `feat(auth): protected routing and sign-out UX` |

@@ -17,7 +17,9 @@ test("homepage renders the header, hero, product, how-it-works, memory, twin, an
 }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("link", { name: "Altr home" })).toBeVisible();
+  // `.first()`: Prompt 024's Footer repeats this same "Altr home" home link
+  // in its own brand mark, so the header's copy is no longer the only match.
+  await expect(page.getByRole("link", { name: "Altr home" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your past learns to remain." })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Your history becomes memory/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Three movements, always in your control/ })).toBeVisible();

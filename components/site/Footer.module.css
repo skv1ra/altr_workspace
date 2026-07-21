@@ -1,0 +1,122 @@
+.footer {
+  padding-block: var(--space-16) var(--space-10);
+  padding-inline: var(--space-10);
+}
+
+@media (max-width: 640px) {
+  .footer {
+    padding-inline: var(--space-6);
+    padding-block: var(--space-12) var(--space-8);
+  }
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-10) var(--space-8);
+  max-width: 1200px;
+  margin-inline: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: 1.4fr repeat(4, 1fr);
+    gap: var(--space-8);
+  }
+}
+
+.brandCol {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .brandCol {
+    grid-column: auto;
+  }
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.copyright {
+  margin-top: var(--space-5);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.heading {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.link {
+  font-size: var(--text-body);
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease-altr);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.link:hover {
+  color: var(--text-primary);
+}
+
+.linkButton {
+  font-family: inherit;
+}
+
+.langRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.langButton {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.langButton:hover {
+  color: var(--text-primary);
+}
+
+.langButton[aria-pressed="true"] {
+  color: var(--text-primary);
+}
+
+.socialRow {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.socialLink {
+  display: inline-flex;
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease-altr);
+}
+
+.socialLink:hover {
+  color: var(--text-primary);
+}

@@ -4,28 +4,16 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 023 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. `/pricing` is now live with real limits
-and the preserved checkout contract (behavior-parity checklist in the 023
-entry below). **New, significant finding this session:**
-`lib/supabase/middleware.ts` blocks `/api/billing/plans` (meant to be
-public) and `/api/billing/me` for every anonymous request — confirmed
-directly against a running server (`curl` returns a real 401) — meaning
-the pricing page's "live pricing unavailable" fallback path is currently
-the *default* experience for anonymous visitors, not a rare edge case.
-Neither introduced this session, neither fixable within 023's own allowed
-files (`lib/supabase/middleware.ts` isn't in it) — a second, unrelated
-middleware-layer finding stacking on top of 020's own CSP/static-generation
-bug, both still needing a `RISKS.md` entry and are not yet filed there. A
-smaller, currently-dormant bug was also found inside `/api/billing/me`'s
-own handler (wrong string compared for its 401 mapping) — unreachable
-today because the middleware bug intercepts first. **Carried forward,
-unchanged:** 020's CSP/`force-dynamic` item (023 proactively applied the
-same fix to `/pricing` rather than rediscovering it); the
-pricing-teaser-in-landing content's unclear future owner (020); the
-`/privacy` dead link (022); Phase 3's manual-verification gaps (014-018);
-019's signed-in-nav-state-not-checked-against-a-real-session item. Note:
-Prompt 004 itself
+None — Prompt 024 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Public-phase closure: Footer, legal pages,
+SEO metadata, and a mobile pass are all in. **Phase 4 (public site) is now
+complete** — 025 begins the auth screens. Full entry below. **Carried
+forward, unchanged:** the `/api/billing/plans`+`/api/billing/me` anonymous-401
+middleware bug and its dormant `/api/billing/me` status-code bug (023); 020's
+CSP/`force-dynamic` item; Phase 3's manual-verification gaps (014-018); 019's
+signed-in-nav-state-not-checked-against-a-real-session item. **Resolved this
+session:** the `/privacy` dead link (022) — `/privacy`, `/terms`, `/cookies`
+are all now real, live routes. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1592,6 +1580,117 @@ open.
   the 9 already in `smoke.spec.ts`, against a real `yarn build && yarn
   start`) all passed via `yarn run check` + a separate `yarn test:e2e`
   run.
+
+- 024 — Footer, legal restyle, SEO, mobile polish (2026-07-21). **Found
+  before writing any code:** `components/legal/` didn't exist in this
+  workspace (same literal-vs-actual gap as every prior prompt) — LEGACY's
+  own `components/legal/LegalDocumentPage.tsx` and `CookiePreferencesButton.tsx`
+  were read as behavioral reference only. LEGACY's `components/PremiumFooter.tsx`
+  was read but **not** structurally copied — it pads a 3-column layout with
+  mostly-dead `#` links to look fuller, which directly conflicts with this
+  prompt's own "not link soup" requirement, so the new `Footer` uses this
+  prompt's own specified 4-column layout instead (Product/Legal/Account/
+  Language+socials). `LEGAL_SETUP.md` in LEGACY was found stale (references
+  an old `lib/legal.ts` singular file and Ukrainian `[ВКАЖІТЬ ...]`
+  placeholders that don't match this workspace's actual `legal-config.ts`
+  English `[NEEDS OWNER INPUT: ...]` placeholders) — not relied on.
+  **`lib/legal/*-content.ts` and `legal-config.ts` confirmed untouched**
+  (no diff in either file this session) — `LegalDocumentPage` only renders
+  the existing `getPrivacyContent`/`getTermsContent`/`getCookiesContent`
+  data, via the same `LegalBlock` union already defined in `lib/legal/types.ts`.
+  **Link inventory diff vs LEGACY `PremiumFooter`:**
+  | LEGACY | WORKSPACE `Footer` |
+  | --- | --- |
+  | 3 columns (Product/Resources/Legal), several dead `#` hrefs | 4 columns (Product/Legal/Account/Language+socials), every link real, max 5 per column |
+  | Hardcoded fake social URLs | Social icons (X/GitHub) only render when `NEXT_PUBLIC_X_URL`/`NEXT_PUBLIC_GITHUB_URL` are actually set — omitted, not dead, when unset |
+  | No language switch | EN/UA switch reusing the shared `useLang()` hook |
+  | No auth-aware account column | Account column shows Log in + Create your Altr signed-out, Dashboard signed-in — same `getCurrentProfile()` pattern as `Header` |
+  | `CookiePreferencesButton` dispatches `altr-open-cookie-preferences`, no listener | Same real function (`openCookiePreferences()`) wired to a real button — still no listener anywhere in this workspace (no cookie-consent banner UI has been built yet in any prompt so far), so it currently has no visible effect; documented here rather than silently no-op'd, same "wire to the real destination even if downstream isn't built" pattern used for `/auth` links since 019 |
+  Footer is now mounted on `/`, `/pricing`, `/privacy`, `/terms`, `/cookies`
+  — every public page.
+  **`data-deletion` page deliberately not built**, even though
+  `lib/legal/deletion-content.ts` and `getDeletionContent()` already exist
+  and LEGACY's own `LegalDocumentPage` supports a 4th `"data-deletion"` kind:
+  this prompt's own "Files allowed to change" list only names
+  `privacy`/`terms`/`cookies` routes, not `data-deletion` — left for a future
+  prompt's explicit scope rather than added speculatively, same judgment
+  call 019-023 made for other tempting-but-out-of-scope additions.
+  **Metadata table:**
+  | Route | `title` (renders as "X — Altr") | Notes |
+  | --- | --- | --- |
+  | `/` | (root `Altr` default) | OG/Twitter card added at the layout level, applies site-wide |
+  | `/pricing` | Pricing | unchanged from 023 |
+  | `/privacy` | Privacy | new |
+  | `/terms` | Terms | new |
+  | `/cookies` | Cookies | new |
+  `app/layout.tsx` gained `metadataBase` (from `getAppUrl()`), a shared
+  `openGraph`/`twitter` block (`summary_large_image`), and `/og-image.png`
+  (1200×630, **132.4 KB**, well under the 300 KB budget) — composed via a
+  one-time, uncommitted `sharp` script from the real
+  `public/assets/hero/shards-trimmed/shard-main.png` asset (not the
+  `references/altr-hero-reference.png` mockup, which project docs mark
+  inspiration-only) plus an SVG fog-gradient background recreating
+  `HeroScene.module.css`'s `.fogBase` recipe and an SVG text overlay. Visually
+  verified via the Read tool before committing only the resulting PNG (the
+  generation script itself isn't in this prompt's allowed-files list, so it
+  was deleted, not committed). `app/robots.ts` disallows `/api/`, `/auth`,
+  every protected path from `lib/supabase/middleware.ts`'s own `pages` list
+  (`/dashboard`, `/memory`, `/assistants`, `/import-conversations`,
+  `/billing`, `/payment/success`, `/legacy-migration`), and the two dev-only
+  routes `/hero-lab`/`/styleguide` — none of those are real marketing
+  surface. `app/sitemap.ts` lists only `/`, `/pricing`, `/privacy`, `/terms`,
+  `/cookies`. Both confirmed present in the real `yarn build` output
+  (`○ /robots.txt`, `○ /sitemap.xml`).
+  **Mobile fixes list (real issues found via actual Playwright screenshots
+  at 320/375/768px against a real `yarn build && yarn start`, not assumed):**
+  1. The cookies page's storage-audit table (7 columns) genuinely can't
+     reflow to one column at 320px; confirmed `overflow-x: auto` was already
+     functionally scrollable (`scrollWidth` 938 vs `clientWidth` 272) but the
+     screenshot showed the right-most column abruptly clipped with no visual
+     cue that more content existed — read as broken/cut-off rather than
+     "scroll for more". Fixed with a CSS-only edge-fade mask
+     (`-webkit-mask-image`/`mask-image` gradient) on `.tableWrap` plus a
+     `min-width: 640px` on the table itself so columns stay legible instead
+     of being squeezed illegibly narrow.
+  2. Adding `Footer`'s own "Altr home" brand link (same accessible name as
+     `Header`'s) broke `tests/e2e/smoke.spec.ts`'s existing single-match
+     `getByRole("link", { name: "Altr home" })` assertion in strict mode —
+     fixed by scoping to `.first()`, the same pattern that test file already
+     uses elsewhere (`Log in`, `Create your Altr`) for exactly this
+     multiple-copies-across-Header/Footer/MobileMenu situation.
+  3. Verified, not a real bug: a full-page (`fullPage: true`) Playwright
+     screenshot of `/` at every width showed large blank/dark gaps between
+     `HowItWorks`/`MemoryDemo`/`TwinDemo` — traced this to `fullPage`
+     capture briefly resizing the real browser viewport to the full
+     document height in one jump, which appears to disrupt these sections'
+     scroll/`IntersectionObserver`-driven `Reveal` fade-ins. Re-verified with
+     incremental fixed-viewport (320×700) screenshots scrolling down the
+     real page in small steps — every section rendered its real content
+     correctly at every scroll position. Documented as a screenshot-tooling
+     artifact, not a user-facing issue, rather than "fixed" with an
+     unnecessary code change.
+  4. Footer's own column grid (`repeat(2, minmax(0,1fr))` under 768px,
+     5-column with brand at 768px+) and the legal-page two-column
+     TOC-plus-article grid (single column under 1024px, sidebar at
+     1024px+) were both verified directly in screenshots at 320/375/768 —
+     no column ever exceeds the "max 5 links" requirement, and the TOC
+     never overlaps or overflows at any tested width.
+  **`tests/phase10-legal-consistency.test.ts` still does not exist in this
+  workspace** (confirmed via search before starting, same as `components/legal/`)
+  — cannot "verify it's still green" since it was never ported in any prior
+  prompt; documented here rather than silently skipped.
+  **Required tests added:** `tests/components/Footer.test.tsx` (link
+  inventory per column, max-5-per-column via `getAllByRole`, signed-in/
+  signed-out account swap, cookie-preferences click wiring, social-link
+  omission when env vars are unset) and
+  `tests/components/LegalDocumentPage.test.tsx` (title + every section
+  heading render for all three `kind`s, dev-notice visibility, TOC link
+  targets) — 9 new tests, all passing.
+  `yarn lint`, `yarn typecheck`, `yarn test` (40 files/199 tests, up from
+  38/190 in 023), `yarn build`, and `yarn test:e2e` (14/14, including the
+  `smoke.spec.ts` fix above) all passed via `yarn run check` + a separate
+  `yarn test:e2e` run — both run twice, once before and once after the
+  mobile-polish CSS fix, to confirm it introduced no regression.
 
 ## Failed prompts
 

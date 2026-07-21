@@ -1,3 +1,4 @@
+import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
 import { PricingTable } from "@/components/site/PricingTable";
 
@@ -28,6 +29,7 @@ export default function PricingPage() {
     <main className="pb-24 pt-32">
       <Header />
       <PricingTable />
+      <Footer />
     </main>
   );
 }

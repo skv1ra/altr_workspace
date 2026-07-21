@@ -1,3 +1,4 @@
+import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
 import { HeroScene } from "@/components/hero/HeroScene";
 import { ProductSection } from "@/components/site/ProductSection";
@@ -43,6 +44,7 @@ export default function HomePage() {
       <MemoryDemo />
       <TwinDemo />
       <PrivacySection />
+      <Footer />
     </main>
   );
 }
