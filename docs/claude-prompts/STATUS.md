@@ -4,11 +4,10 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 015 complete (committed locally, not pushed), run directly on
-the user's explicit instruction despite 014's own Manual Verification
-step (side-by-side user approval) not having happened first — treated as
-implicit go-ahead to continue past that gate; flagged here rather than
-silently assumed. Note: Prompt 004 itself
+None — Prompt 016 complete (committed locally, not pushed), run directly on
+the user's explicit instruction; 014's and 015's own Manual Verification
+steps (user approval) still haven't happened — same still-open gap,
+carried forward again. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -758,6 +757,118 @@ open.
   `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
   passed.
 
+- 016 — Hero pointer and scroll motion (2026-07-21). **Architecture:**
+  `useHeroPointer.ts` (lerp-smoothed -1..1 pointer offset, in a ref — not
+  React state, which would re-render the whole scene ~60x/s — suspended
+  via IntersectionObserver off-screen and `visibilitychange` when the tab
+  is hidden; touch/pen never sets a new target per this prompt's edge
+  case), `useHeroScroll.ts` (0..1 progress over the first ~80vh of scroll,
+  rAF-throttled, also in a ref), `useHeroShardMotion.ts` (see below).
+  Required test `tests/components/hero-motion-hooks.test.tsx`: both hooks
+  return `{x:0,y:0}`/`0` under `setReducedMotionOverride(true)` (this
+  repo's own established mechanism, same as Prompt 011's Reveal tests) —
+  plus a second case genuinely mocking `window.matchMedia` per this
+  prompt's own literal wording, which needed the same jsdom
+  `IntersectionObserver` stub Prompt 011 already established, for a
+  reason worth recording: Framer Motion's `useReducedMotion()` doesn't
+  synchronously reflect a freshly-mocked matchMedia on the very first
+  render (it defaults to "not reduced" until its own effect settles), so
+  `useHeroPointer`'s effect can transiently run its active branch — which
+  touches `IntersectionObserver` — before the re-render with the correct
+  value unwinds it; no animation frame actually fires in that window
+  (rAF is async, nothing flushes it inside a synchronous `render()`), so
+  the asserted offsets are unaffected, only the transient crash needed
+  fixing.
+  **A real, measured performance bug, found and fixed, not just assumed
+  fixed:** the first working version read `--pointer-x`/`--pointer-y`/
+  `--scroll-progress` CSS custom properties directly in each shard's own
+  `transform: calc(...)` — architecturally clean, but measured (Playwright
+  + a real Chrome performance trace, not guessed) at **~51-52 FPS**
+  combined pointer+scroll, below this prompt's 55 FPS floor. Isolating
+  further: pointer-only motion alone was ~60 FPS; real browser scrolling
+  with reduced motion forced (so no custom-property writes at all) was
+  also ~60 FPS — so neither real scrolling nor pointer tracking was the
+  cost; it was specifically 10 shard elements each recomputing a
+  `calc(var())` transform on every scroll-driven update. Fixed by adding
+  `useHeroShardMotion.ts`: reads the pointer/scroll refs each frame and
+  writes a resolved value straight to each shard's `translate` CSS
+  *property* (the individual transform property, composes before
+  `transform` — never touches each shard's own static
+  `translate(-50%,-50%) rotate(...)`), bypassing custom-property/calc()
+  recomputation for shards entirely. `--scroll-progress` itself stays a
+  plain custom property in `useHeroScroll` for fog opacity and the
+  headline's own drift — only 2-3 consumers, confirmed cheap even while
+  actively changing.
+  That fix alone didn't fully resolve it (still ~49-54 FPS depending on
+  interaction mix) — a Chrome trace (`Tracing.start`/`.dataCollected`)
+  showed `RasterTask` dominating (over 3000ms of raster work inside a
+  3000ms wall-clock window, i.e. multiple raster threads pegged), pointing
+  at the foreground shards' heavy `blur(18-22px)` filters needing
+  re-rasterization on every position update rather than the compositor
+  just repositioning an already-blurred layer. Root cause: `will-change`
+  must name the *specific* CSS property actually being animated to get
+  Chromium's early-layer-promotion fast path — `will-change: transform`
+  (added, then measured to barely help) didn't cover the `translate`
+  *property* now driving shard motion, and `.fogBase` (also `blur(18px)`,
+  covers more than the viewport) had no `will-change` hint at all for its
+  scroll-driven opacity easing. Fixed with `will-change: translate` on
+  `.shard` and `will-change: opacity` on `.fogBase` — confirmed by
+  re-measuring after each isolated change (mouse-only: 54.63 -> 59.97 FPS;
+  scroll-only: 51.07 -> 59.49 FPS).
+  **Final measurement** (Playwright driving continuous mouse movement +
+  real `window.scrollTo` calls simultaneously for 10s, counting real
+  `requestAnimationFrame` callbacks): **avg 59.79 FPS**, comfortably
+  clearing the 55 FPS floor. p95 frame time was 23.5ms (~42.6 FPS
+  instantaneous floor) — worse than Prompt 012's own p95 (59.5 FPS), but
+  012 measured pointer-only interaction; this measurement is a
+  deliberately harsher synthetic stress test (continuous mouse movement
+  *and* scrolling, driven as fast as Node/CDP round-trips allow, with no
+  pauses) that a real user's interaction pattern wouldn't sustain for 10
+  straight seconds — reported honestly rather than only citing the
+  favorable average.
+  **Ambient drift:** reuses the existing `motion-drift`/`altr-drift`
+  keyframe from Prompt 011 unchanged (already capped at exactly this
+  prompt's <=6px/<=0.6deg ceiling) — desynchronized purely via a
+  per-shard negative `animation-delay` (0 to -21s across the 24s cycle),
+  applied only when `!reducedMotion` (the class itself is conditional,
+  same pattern the 012 prototype used, on top of motion.css's own
+  `prefers-reduced-motion` kill-switch as a second, independent layer of
+  defense).
+  **Scroll choreography:** verified with real numbers, not just code
+  review — `--scroll-progress` at a real `scrollTo(300)` (of 720px range)
+  computed to 0.4167, and `.fogBase`'s measured computed opacity was
+  exactly 0.75 (`1 - 0.4167*0.6`); at full scroll, the headline's computed
+  transform matrix showed `ty = -8` (this prompt's own <=8px ceiling, hit
+  exactly). Text (headline, subcopy) stays fully opaque/obsidian
+  throughout — only position and the *background* fog opacity change, so
+  contrast never degrades as you scroll, confirmed by eye at a partial
+  scroll position where the hero is still substantially in view.
+  **Reduced motion, verified concretely (not assumed):** with
+  `page.emulateMedia({ reducedMotion: 'reduce' })`, moving the pointer and
+  scrolling produced *zero* change — shard `translate` stayed `"none"`,
+  `transform` matrix identical before/after, `--scroll-progress` never
+  set (empty string), fog opacity stayed `1`. One cosmetic inconsistency
+  found and explicitly not chased further: the shard's className still
+  listed `motion-drift` in this scenario (Framer Motion's own
+  `useReducedMotion()` timing quirk noted above), but the actual rendered
+  `animationName`/`animationDuration` computed to `"none"`/`"0s"` — the
+  CSS-level `@media (prefers-reduced-motion: reduce)` kill-switch
+  (independent of the React class name) is what's actually guaranteeing
+  no visible animation, and it was confirmed to work correctly regardless
+  of the class-name lag.
+  **Manual-verification page fix:** found `/hero-lab` alone was exactly
+  one viewport tall (`document.documentElement.scrollHeight ===
+  window.innerHeight`, confirmed directly) — meaning `window.scrollY`
+  could never move at all on this dev page, making this prompt's own
+  "DevTools performance recording during 10s of pointer+scroll" manual
+  step and any scroll-choreography verification impossible. Added a
+  150vh `aria-hidden` filler section after the hero in
+  `app/(public)/hero-lab/page.tsx` purely so this page can scroll into
+  the hero's own ~80vh range for real; not part of the composition.
+  `yarn lint`, `yarn typecheck`, `yarn test` (30 files/163 tests), and
+  `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
+  passed.
+
 ## Failed prompts
 
 None.
@@ -786,7 +897,8 @@ after 012. Re-confirmed 2026-07-20 for 013 (`yarn run check`, 30/30 pages)
 draft temporarily stashed out (see 013's STATUS entry); that draft's own
 build/test state is unverified and not this prompt's concern. Re-confirmed
 again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production), and
-again same-day for 015 (30/30 pages).
+again same-day for 015 (30/30 pages), and again for 016 (30/30 pages,
+`/hero-lab` 404s in production).
 
 ## Last successful test run
 
@@ -798,6 +910,7 @@ isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
 013, same numbers, same caveat about the stashed 014 draft as above.
 Re-confirmed 2026-07-21 for 014 — 160/160 tests across 28 files, clean exit.
 Re-confirmed same day for 015 — 161/161 tests across 29 files, clean exit.
+Re-confirmed for 016 — 163/163 tests across 30 files, clean exit.
 
 ## Known regressions
 
@@ -821,13 +934,12 @@ None recorded.
   path-decision note). Revisit the `.surface-inverse` material against
   *that* file to confirm it reads as the same material family, per 008's
   visual requirement.
-- Prompt 014's composition was never given its own explicit side-by-side
-  user approval (its own Manual Verification step) before Prompt 015 ran
-  on top of it anyway, per direct user instruction — same still-open gap
-  now applies to 015's fragment content too (015's own Manual Verification
-  step — "user approves the writing" — is likewise not yet done). Whoever
-  picks up Prompt 016 should get both approvals, or treat that as a
-  prerequisite.
+- Prompt 014's composition, 015's fragment content, and now 016's motion
+  layer have each run without their own Manual Verification step's user
+  approval happening first (014: side-by-side composition approval; 015:
+  "user approves the writing"; 016: DevTools performance recording review)
+  — each ran directly on user instruction. Whoever picks up Prompt 017
+  should get all three approvals, or treat that as a prerequisite.
 
 ## Environment notes
 

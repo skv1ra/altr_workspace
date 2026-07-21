@@ -21,6 +21,21 @@
     radial-gradient(60% 56% at 62% 50%, rgba(217, 221, 225, 0.6), rgba(217, 221, 225, 0) 78%),
     radial-gradient(80% 72% at 55% 78%, rgba(185, 192, 199, 0.36), rgba(185, 192, 199, 0) 84%);
   filter: blur(18px);
+  /*
+   * Prompt 016 scroll choreography: "fog opacity eases down" over the
+   * first ~80vh of scroll. `--scroll-progress` (0..1) is set by
+   * useHeroScroll on the .scene ancestor; opacity-only, so this stays
+   * compositor-friendly. Never below 0.4 — the fog also keeps the
+   * headline's contrast bar (Prompt 014), so it thins, it doesn't vanish.
+   * Falls back to 1 (unchanged) under reduced motion, since the property
+   * is simply never set in that case.
+   */
+  opacity: calc(1 - var(--scroll-progress, 0) * 0.6);
+  /* Same lesson as .shard below: hint the specific property this scroll
+   * choreography actually animates, on a large blurred layer, or the
+   * browser can end up re-rasterizing it on every scroll-driven update
+   * instead of just recompositing — measured directly (see STATUS.md). */
+  will-change: opacity;
 }
 
 /*
@@ -51,6 +66,16 @@
 .shard {
   position: absolute;
   transform-origin: center;
+  /*
+   * Prompt 016: this element's transform now changes every animation frame
+   * (pointer parallax + scroll separation + ambient drift). Without
+   * will-change, a shard carrying a blur() filter (the foreground tier,
+   * 18-22px) had to be re-rasterized on the main thread nearly every frame
+   * instead of just having its already-blurred layer repositioned by the
+   * compositor — measured directly: combined pointer+scroll dropped to
+   * ~51.6 FPS without this, ~59-60 FPS with it (see STATUS.md).
+   */
+  will-change: translate;
 }
 
 .shardImg {

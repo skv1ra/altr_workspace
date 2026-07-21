@@ -20,6 +20,14 @@ const NAV_LINKS = [
  *
  * Reference-overlay calibration aid (press R) still applies: bottom-right
  * toggle badge, never covers the hero itself.
+ *
+ * Prompt 016: the hero alone is exactly one viewport tall (`min-height:
+ * 92vh` plus this page's own nav chrome), so `window.scrollY` could never
+ * move at all — confirmed directly (scrollHeight === innerHeight) before
+ * adding this filler section, which exists solely so this dev page can
+ * scroll into the hero's own scroll-choreography range (~80vh) for real,
+ * both for this prompt's manual DevTools performance recording and for any
+ * future FPS/functional verification. Not part of the composition itself.
  */
 export default function HeroLabPage() {
   if (process.env.NODE_ENV === "production") {
@@ -60,6 +68,7 @@ export default function HeroLabPage() {
           </ul>
         </nav>
       </section>
+      <div style={{ height: "150vh" }} aria-hidden="true" />
     </main>
   );
 }

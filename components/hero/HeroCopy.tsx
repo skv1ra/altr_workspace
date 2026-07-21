@@ -25,10 +25,20 @@ export const HERO_SECONDARY_LABEL = "How it works";
  * any future copy scan can just match the literal sentence), and it holds
  * up better than a fixed break at the ultra-wide/narrow edge cases this
  * prompt calls out.
+ *
+ * Prompt 016: a scroll-linked translateY, reading `--scroll-progress`
+ * (0..1, set by useHeroScroll on the scene ancestor — see HeroScene.tsx),
+ * capped at exactly this prompt's <=8px ceiling. No opacity/color change —
+ * text contrast never drops as you scroll, only position shifts a few
+ * pixels. Falls back to 0 (no shift at all) under reduced motion, since the
+ * property is simply never set in that case.
  */
 export function HeroCopy() {
   return (
-    <div className="absolute z-10" style={{ left: "7%", top: "31%", width: "38%" }}>
+    <div
+      className="absolute z-10"
+      style={{ left: "7%", top: "31%", width: "38%", transform: "translateY(calc(var(--scroll-progress, 0) * -8px))" }}
+    >
       <h1
         style={{ fontSize: "clamp(56px, 5.16vw, 74px)" }}
         className="font-normal leading-[1.05] tracking-[-0.02em] text-altr-obsidian"

@@ -54,9 +54,18 @@ type ShardDef = {
   opacity: number;
   z: number;
   tier: ShardTier;
+  /** Pointer-parallax cap in px (DESIGN_DIRECTION: <=10 foreground,
+   * <=4 background) — also drives this shard's scroll-separation distance
+   * (see `scrollOffsetPx` below), so sharper/nearer shards move more under
+   * both pointer and scroll, consistently. */
+  parallaxPx: number;
+  /** Negative animation-delay (seconds) into the shared 24s `altr-drift`
+   * cycle — every shard uses the same keyframes/amplitude ceiling, so this
+   * is the only thing that keeps them from all drifting in lockstep. */
+  driftDelay: number;
 };
 
-const SHARDS: ShardDef[] = [
+export const SHARDS: ShardDef[] = [
   {
     id: "main",
     role: "Main shard",
@@ -72,6 +81,8 @@ const SHARDS: ShardDef[] = [
     opacity: 1,
     z: 5,
     tier: "back",
+    parallaxPx: 8,
+    driftDelay: 0,
   },
   {
     id: "lower-mid-support",
@@ -88,6 +99,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.85,
     z: 4,
     tier: "back",
+    parallaxPx: 7,
+    driftDelay: -4,
   },
   {
     // y nudged up (16 -> 10): a real-viewport measurement (see STATUS.md
@@ -110,6 +123,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.4,
     z: 1,
     tier: "back",
+    parallaxPx: 4,
+    driftDelay: -9,
   },
   {
     id: "far-right-background",
@@ -126,6 +141,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.42,
     z: 1,
     tier: "back",
+    parallaxPx: 4,
+    driftDelay: -14,
   },
   {
     // Nudged right (54 -> 57) for extra clearance from the headline box's
@@ -144,6 +161,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.4,
     z: 2,
     tier: "back",
+    parallaxPx: 4,
+    driftDelay: -19,
   },
   {
     id: "upper-right-distant",
@@ -160,6 +179,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.4,
     z: 1,
     tier: "back",
+    parallaxPx: 4,
+    driftDelay: -2,
   },
   {
     // Nudged right (49 -> 52) for extra clearance from the headline box's
@@ -178,6 +199,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.85,
     z: 3,
     tier: "back",
+    parallaxPx: 8,
+    driftDelay: -11,
   },
   {
     id: "mid-right-support",
@@ -194,6 +217,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.9,
     z: 4,
     tier: "back",
+    parallaxPx: 7,
+    driftDelay: -17,
   },
   {
     // Foreground tier: heavily pre-blurred, cropped against the bottom-left
@@ -213,6 +238,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.92,
     z: 15,
     tier: "front",
+    parallaxPx: 10,
+    driftDelay: -6,
   },
   {
     // Foreground tier: heavily pre-blurred, cropped against the bottom-right
@@ -231,6 +258,8 @@ const SHARDS: ShardDef[] = [
     opacity: 0.8,
     z: 16,
     tier: "front",
+    parallaxPx: 10,
+    driftDelay: -21,
   },
 ];
 
@@ -254,45 +283,82 @@ function shardSize(shard: ShardDef): { width: string; height: string } {
   return { width: "auto", height: `min(${shard.sizeValue}vh, ${capPx.toFixed(1)}px)` };
 }
 
-export function HeroLayers({ tier }: { tier: ShardTier }) {
+// Scroll-separation distance/direction: reuses each shard's own parallaxPx
+// (nearer/sharper shards separate more, same as they parallax more) and
+// radiates outward from the composition's center (50%, 50%) — "a few
+// percent along their depth axis" read as each shard drifting away from
+// the center as the scene "opens up" on scroll, capped well under the
+// >=55 FPS-safe, transform-only budget this prompt requires.
+const SCROLL_SEPARATION_FACTOR = 2.5;
+const SCROLL_SEPARATION_CAP_PX = 30;
+
+export function scrollSeparationPx(shard: ShardDef): { dx: number; dy: number } {
+  const dirX = Math.sign(shard.x - 50) || 1;
+  const dirY = Math.sign(shard.y - 50) || 1;
+  const magnitude = Math.min(shard.parallaxPx * SCROLL_SEPARATION_FACTOR, SCROLL_SEPARATION_CAP_PX);
+  return { dx: dirX * magnitude, dy: dirY * magnitude };
+}
+
+export function HeroLayers({
+  tier,
+  reducedMotion,
+  registerShardEl,
+}: {
+  tier: ShardTier;
+  reducedMotion: boolean;
+  /** Registers (or, called with `null`, unregisters) this shard's DOM node
+   * so HeroScene's useHeroShardMotion can write pointer/scroll offsets
+   * directly to it — see that hook for why this bypasses CSS custom
+   * properties for shard transforms specifically. */
+  registerShardEl: (id: string, el: HTMLDivElement | null) => void;
+}) {
   return (
     <>
-      {SHARDS.filter((shard) => shard.tier === tier).map((shard) => (
-        <div
-          key={shard.id}
-          className={styles.shard}
-          style={{
-            left: `${shard.x}%`,
-            top: `${shard.y}%`,
-            opacity: shard.opacity,
-            zIndex: shard.z,
-            transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)`,
-          }}
-        >
-          <Image
-            src={shard.src}
-            alt=""
-            width={shard.w}
-            height={shard.h}
-            className={styles.shardImg}
+      {SHARDS.filter((shard) => shard.tier === tier).map((shard) => {
+        return (
+          <div
+            key={shard.id}
+            ref={(el) => registerShardEl(shard.id, el)}
+            className={reducedMotion ? styles.shard : `${styles.shard} motion-drift`}
             style={{
-              // Only one dimension is ever meaningfully set — the other
-              // stays "auto" so the browser preserves the trimmed image's
-              // real aspect ratio instead of stretching it.
-              ...shardSize(shard),
-              filter: shard.blur > 0 ? `blur(${shard.blur}px)` : undefined,
+              left: `${shard.x}%`,
+              top: `${shard.y}%`,
+              opacity: shard.opacity,
+              zIndex: shard.z,
+              // Static base only — centers and tilts this shard once, at
+              // render. The dynamic pointer/scroll offset is applied by
+              // useHeroShardMotion via the separate `translate` CSS
+              // *property* (composes before `transform`), not baked into
+              // this string, so it never needs recomputing here.
+              transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)`,
+              animationDelay: reducedMotion ? undefined : `${shard.driftDelay}s`,
             }}
-            // Every shard is inside the single-viewport hero (nothing is
-            // ever "below the fold" here), so lazy-loading is actively
-            // wrong — it raced the initial paint in testing. All eager.
-            priority
-            draggable={false}
-          />
-          {heroFragmentsFor(shard.id).map((fragment) => (
-            <HeroFragmentGlyph key={fragment.id} fragment={fragment} hostBlur={shard.blur} hostOpacity={shard.opacity} />
-          ))}
-        </div>
-      ))}
+          >
+            <Image
+              src={shard.src}
+              alt=""
+              width={shard.w}
+              height={shard.h}
+              className={styles.shardImg}
+              style={{
+                // Only one dimension is ever meaningfully set — the other
+                // stays "auto" so the browser preserves the trimmed image's
+                // real aspect ratio instead of stretching it.
+                ...shardSize(shard),
+                filter: shard.blur > 0 ? `blur(${shard.blur}px)` : undefined,
+              }}
+              // Every shard is inside the single-viewport hero (nothing is
+              // ever "below the fold" here), so lazy-loading is actively
+              // wrong — it raced the initial paint in testing. All eager.
+              priority
+              draggable={false}
+            />
+            {heroFragmentsFor(shard.id).map((fragment) => (
+              <HeroFragmentGlyph key={fragment.id} fragment={fragment} hostBlur={shard.blur} hostOpacity={shard.opacity} />
+            ))}
+          </div>
+        );
+      })}
     </>
   );
 }
