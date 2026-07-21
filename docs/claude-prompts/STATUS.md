@@ -4,10 +4,18 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 016 complete (committed locally, not pushed), run directly on
-the user's explicit instruction; 014's and 015's own Manual Verification
-steps (user approval) still haven't happened — same still-open gap,
-carried forward again. Note: Prompt 004 itself
+None — Prompt 017 complete (committed locally, not pushed), run directly on
+the user's explicit instruction after 018 was requested first and paused
+pending 017 (018 depends on 017; the user chose "implement 017 first, then
+run 018" when asked). 014's, 015's, and 016's own Manual Verification steps
+(user approval) still haven't happened — same still-open gap, carried
+forward again; 017 adds two more open items for the user/018 to pick up:
+(1) `prefers-reduced-data` is implemented correctly but unverifiable in any
+browser installed here (no engine currently supports the media feature —
+see the 017 entry below); (2) the dev-mode shard fade-in timing observation
+also noted in the 017 entry, which needs re-checking against a real
+production build. Both are non-blocking for 017's own acceptance criteria.
+Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -868,6 +876,154 @@ open.
   `yarn lint`, `yarn typecheck`, `yarn test` (30 files/163 tests), and
   `yarn build` (30/30 pages, `/hero-lab` still 404s in production) all
   passed.
+- 017 — Hero fallbacks and loading (2026-07-21). **Mobile/reduced-data tier
+  architecture:** driven by a CSS *container* query (`.scene` gets
+  `container-type: inline-size; container-name: hero`; children key off
+  `@container hero (max-width: 768px)`), not a viewport `@media` query —
+  deliberately, for two reasons: (1) it's what makes the `/hero-lab` tier
+  preview switches (this prompt's own required deliverable) possible
+  without touching DevTools — narrowing a wrapper div around `<HeroScene>`
+  changes the container's inline size but not the real browser viewport,
+  so a `@media` breakpoint could never be previewed that way; in
+  production the wrapper is always 100% width, so the effective breakpoint
+  is identical to a media query there. (2) `prefers-reduced-data`
+  (ADR-008's "serve mobile tier on desktop" edge case) is a real
+  user/network preference, not a size, so it can't be a container query at
+  all — every container-query rule has a byte-for-byte identical
+  `@media (prefers-reduced-data: reduce)` rule immediately after it (no
+  CSS mixin/nesting tooling in this repo's plain PostCSS config, so this
+  is literal duplication, not a mixin).
+  **Shard composition:** of the 10 desktop shards (`HeroLayers.tsx`), 4
+  keep a `mobile` placement (recomposed, not just scaled: `main`,
+  `small-central`, `upper-center-blurred`, `lower-left-foreground` — one
+  sharp memory-carrying piece, one small sharp accent, one soft
+  atmospheric wash, one foreground edge-bleed), positioned so none starts
+  above mobile `HeroCopy`'s own clear-space band (top 8%, ~40% height
+  budget), the same never-intersect-the-copy discipline 014 used for the
+  desktop clear-space box. The other 6 are `.hiddenOnMobile` (`display:
+  none` under the same container/media pair) *and* their `<picture>`
+  resolves to a shared inlined 1x1 transparent-PNG data URI
+  (`TRANSPARENT_PIXEL`, 67 bytes, `img-src` already allows `data:` per
+  `middleware.ts`) for the mobile/reduced-data `<source>` — `display:none`
+  alone does not stop a browser from fetching an `<img src>`, so without
+  this the mobile tier would still pull all 10 shards' assets over the
+  network merely hidden, defeating the weight budget entirely.
+  **Format/resolution chain:** replaced `next/image` with a hand-rolled
+  `<picture>` (`ShardPicture` in `HeroLayers.tsx`) — this prompt asks for a
+  real, inspectable AVIF -> WebP -> PNG `<source>` chain and
+  viewport-conditional `<source media>` art-direction, neither of which
+  next/image's single-`<img>`, optimizer-content-negotiated output
+  produces. Each shard offers, in order: mobile/reduced-data AVIF, mobile/
+  reduced-data WebP, desktop AVIF, desktop WebP, PNG `<img>` fallback
+  (mobile-resolution `@1x.png`, favoring lighter-over-sharper for the
+  no-format-support edge case). `013`'s already-generated `@1x` (50%
+  resolution) variants are the mobile assets; no new asset generation was
+  needed this prompt.
+  **Loading strategy:** only the `main` shard is
+  `loading="eager" fetchPriority="high"`; the other 9 are `loading="lazy"`
+  (supersedes 016's "all eager" note, which had no priority
+  differentiation to begin with) — width/height attributes (unchanged,
+  desktop-2x-pixel values regardless of which resolution actually loads,
+  since `@1x` is exactly half the linear dimensions per 013) reserve every
+  shard's layout box immediately regardless of decode timing, so lazy
+  loading costs decode-order only, never layout shift. Fade-in: a pure CSS
+  keyframe (`opacity: 0 -> 1`, literal `150ms ease-out forwards`, *not*
+  `var(--motion-fast)` which is a different, already-meaningful 180ms
+  token — caught and fixed before commit), deliberately not a JS `onLoad`
+  handler: an onLoad-driven fade starts at opacity 0 and can get stuck
+  there if the image finishes loading before React hydration attaches the
+  listener (a real race on a slow connection or cold JS bundle), silently
+  breaking the no-JS requirement; a time-based animation always reaches
+  its `forwards` end state on its own, script or not. Respects
+  `prefers-reduced-motion` (opacity 1, no animation) independently of the
+  `useReducedMotionSafe()` React path, same belt-and-braces pattern as
+  016's `motion-drift` CSS kill-switch.
+  **No-JS fallback:** verified concretely with Playwright
+  (`javaScriptEnabled: false`, real navigation, no mocking) against
+  `/hero-lab` on a running `yarn dev` server (see below for why `dev`, not
+  a production build) — headline text, CTA, and the primary shard's
+  `<picture>`/`<img>` all present and visible; 10 `<picture>` elements in
+  the DOM. Also added the required RTL test,
+  `tests/components/hero-static-render.test.tsx`, using
+  `renderToStaticMarkup` (React's real no-effects code path — `render()`
+  from Testing Library wraps everything in `act()` and flushes effects, so
+  it can't prove "no effect/mount hook ran" on its own) asserting the
+  headline/subcopy/CTA strings, the primary shard's `<picture>` markup,
+  and the accessible fragment list's `aria-label` are all present in
+  server-rendered-only markup.
+  **`/hero-lab` 404s in production** (012's own gate, unchanged) — this
+  meant the *first* verification attempt, against `yarn build && yarn
+  start`, silently got a 200-status `NEXT_NOT_FOUND` streaming shell
+  instead of the real hero (caught by checking the response body, not just
+  the status code, which is misleadingly 200 for a streamed not-found
+  page). All of this prompt's own manual verification therefore ran
+  against `yarn dev` instead — production-parity performance numbers
+  (exact LCP/FPS/JS-weight) are explicitly Prompt 018's job, not this
+  one's, but 018 will hit the exact same 404 gate against a real
+  production build and needs its own resolution for that, flagged here so
+  it isn't rediscovered from scratch.
+  **Measurements (Playwright, real navigation, `yarn dev`, median-stable
+  across 3 full re-runs of the same script):** desktop (1440px/1920px):
+  8 unique 2x AVIF shard files, **150.7 KB** total (matches 013's own
+  recorded desktop number exactly) — well under the 900 KB budget. Mobile
+  (390px/320px): 4 unique @1x AVIF shard files, **42.5 KB** total — well
+  under the 350 KB budget. CLS, measured via a real
+  `PerformanceObserver({type:"layout-shift"})` over 2.5s post-load (not
+  asserted): 0 to 0.00045 across every tier tested (desktop, mobile,
+  reduced-motion) — effectively zero, ~200x below the 0.1 "good" CLS
+  threshold; not a mathematically exact 0.00000 in every run, reported
+  honestly rather than rounded away. Format-fallback chain: every
+  AVIF/WebP/PNG URL actually referenced by the composition (29 unique
+  files) fetched directly and confirmed `200` with the correct
+  `Content-Type` — genuine files, not just markup claims (full browser-
+  side codec-negotiation-to-PNG couldn't be forced, since only Chromium is
+  installed locally and it natively supports both AVIF and WebP; this
+  verifies every link in the chain independently instead).
+  **`prefers-reduced-data` is implemented correctly but currently inert**:
+  confirmed directly (`CSS.supports("(prefers-reduced-data: reduce)")` ->
+  `false` in the installed Chromium build, even with
+  `--enable-blink-features=MediaQueryPrefersReducedData` /
+  `--enable-features=PrefersReducedData` launch flags and Playwright's own
+  `page.emulateMedia({ reducedData: "reduce" })`) — this media feature has
+  not shipped in any current browser engine industry-wide, not a gap
+  specific to this environment. Per spec, an unsupported media feature
+  simply never matches (fails safe: desktop tier stays desktop, doesn't
+  break), so this is a dormant-but-correct edge case, not a bug — flagged
+  here so it isn't mistaken for "tested and working" versus "written
+  correctly, unverifiable today."
+  **Tier preview switches** (`components/hero/HeroTierPreview.tsx`,
+  wraps `<HeroScene>` in `/hero-lab`): Desktop/Mobile(390px) width toggle
+  (functionally verified — forcing "Mobile" measures the scene's own
+  rendered width at exactly 390px) and a reduced-motion toggle reusing the
+  existing `lib/motion.ts` manual-override mechanism (verified — toggling
+  updates the visible label through the same code path 011/016's tests
+  already exercise). `prefers-reduced-data` has no scriptable preview (a
+  real network/OS preference, not something JS can force) — DevTools'
+  Rendering-panel media-feature emulation is the manual path there, same
+  as forcing a non-AVIF codec.
+  **Found and fixed one real art-direction clearance bug via an actual
+  390px screenshot** (same discipline 014 used for the desktop clear-space
+  box): `small-central`'s first-pass mobile placement (`x: 86`) put its
+  rotated (8deg) bounding box, plus its "date" memory-fragment glyph, past
+  the 390px viewport's right edge; moved to `x: 74`, re-screenshotted,
+  confirmed inside the viewport with the fragment now truncating
+  gracefully via its own existing ellipsis/line-clamp rules instead of
+  being cut by the viewport edge.
+  **Observed, not chased further:** in local `next dev` only, the shard
+  fade-in's animation-start was sometimes measured to lag paint by up to
+  ~2s (Web Animations API `startTime`) before settling — CLS stayed ~0
+  regardless (opacity never triggers layout-shift) and no-JS/SSR content
+  was unaffected either way (headline/CTA/main shard always visible
+  immediately), but this needs re-checking against a real production
+  build once 018 solves the /hero-lab-404s-in-production gate, since dev
+  mode (unminified, React DEV build, HMR runtime) is not representative
+  and this repo's own edge case list already says to measure loading
+  behavior on a production build.
+  `yarn lint`, `yarn typecheck`, `yarn test` (31 files/166 tests, including
+  the new `hero-static-render.test.tsx`), and `yarn build` (30/30 pages)
+  all passed (`yarn run check`, twice, full clean run both times — the
+  bare `yarn check` command is still Yarn Classic's own unrelated
+  lockfile-integrity check, per 013's note).
 
 ## Failed prompts
 

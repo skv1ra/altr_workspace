@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import styles from "./HeroCopy.module.css";
 
 // Fixed per Prompt 014's own spec — exported so the required RTL test can
 // assert against the same source of truth instead of a duplicated literal,
@@ -32,12 +33,19 @@ export const HERO_SECONDARY_LABEL = "How it works";
  * text contrast never drops as you scroll, only position shifts a few
  * pixels. Falls back to 0 (no shift at all) under reduced motion, since the
  * property is simply never set in that case.
+ *
+ * Prompt 017: left/top/width move into HeroCopy.module.css (`.copy`), which
+ * carries a container-query/reduced-data mobile override — the headline
+ * band goes full-width and pins near the top on a portrait viewport, per
+ * ADR-008, with the mobile shard subset (HeroLayers.tsx) recomposed below/
+ * behind it. The scroll-drift transform stays inline (still per-instance,
+ * dynamic) and composes fine with the class's static positioning.
  */
 export function HeroCopy() {
   return (
     <div
-      className="absolute z-10"
-      style={{ left: "7%", top: "31%", width: "38%", transform: "translateY(calc(var(--scroll-progress, 0) * -8px))" }}
+      className={`${styles.copy} absolute z-10`}
+      style={{ transform: "translateY(calc(var(--scroll-progress, 0) * -8px))" }}
     >
       <h1
         style={{ fontSize: "clamp(56px, 5.16vw, 74px)" }}

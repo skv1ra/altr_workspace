@@ -1,4 +1,4 @@
-import Image from "next/image";
+import type { CSSProperties } from "react";
 import { HeroFragmentGlyph } from "./HeroFragments";
 import { heroFragmentsFor } from "./fragments";
 import styles from "./HeroScene.module.css";
@@ -35,14 +35,40 @@ import styles from "./HeroScene.module.css";
  * shard's own rotation (6-8deg) grows its effective bounding box; verified
  * with real screenshots (see STATUS.md 014 entry) that neither shard
  * intersects the box at 1440px or 1920px.
+ *
+ * Prompt 017 (mobile / reduced-data tier, ADR-008): each shard optionally
+ * carries a `mobile` placement (x/y/sizeValue — same units/basis as its
+ * desktop placement, sizeBasis/rotate/blur/opacity unchanged). Shards
+ * without one are structurally absent below the 768px container-inline-size
+ * breakpoint and under `prefers-reduced-data: reduce` (the "serve mobile
+ * tier on desktop" edge case) — see `.hiddenOnMobile` in
+ * HeroScene.module.css and ShardPicture's TRANSPARENT_PIXEL swap below,
+ * which also keeps their real (desktop-only) assets from ever being
+ * fetched in that tier, not just hidden. The 4 shards that keep a `mobile`
+ * placement (`main`, `small-central`, `upper-center-blurred`,
+ * `lower-left-foreground`) preserve one sharp memory-carrying piece, one
+ * small sharp accent, one soft atmospheric wash, and the foreground
+ * edge-bleed — recomposed lower in the frame so none starts above mobile
+ * HeroCopy's own clear-space box (top 8%, height budget ~40% — see
+ * HeroCopy.module.css), the same never-intersect-the-copy discipline as
+ * the desktop box, checked against real Playwright screenshots at 390px
+ * (see STATUS.md 017 entry) the same way 014 checked the desktop box.
  */
 type SizeBasis = "width" | "height";
 export type ShardTier = "back" | "front";
 
+interface ShardPlacement {
+  x: number;
+  y: number;
+  sizeValue: number; // vw if sizeBasis === "width", vh if "height"
+}
+
 type ShardDef = {
   id: string;
   role: string;
-  src: string;
+  /** Extensionless path into shards-trimmed/ — format/resolution variants
+   * are resolved by ShardPicture (`${base}.ext`, `${base}@1x.ext`). */
+  base: string;
   w: number;
   h: number;
   x: number;
@@ -63,13 +89,16 @@ type ShardDef = {
    * cycle — every shard uses the same keyframes/amplitude ceiling, so this
    * is the only thing that keeps them from all drifting in lockstep. */
   driftDelay: number;
+  /** Mobile/reduced-data placement (Prompt 017). Absent = this shard is
+   * structurally hidden in that tier, not just scaled down. */
+  mobile?: ShardPlacement;
 };
 
 export const SHARDS: ShardDef[] = [
   {
     id: "main",
     role: "Main shard",
-    src: "/assets/hero/shards-trimmed/shard-main.png",
+    base: "/assets/hero/shards-trimmed/shard-main",
     w: 1102,
     h: 651,
     x: 71,
@@ -83,11 +112,12 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 8,
     driftDelay: 0,
+    mobile: { x: 58, y: 70, sizeValue: 62 },
   },
   {
     id: "lower-mid-support",
     role: "Small lower-mid support shard",
-    src: "/assets/hero/shards-trimmed/shard-mid-03.png",
+    base: "/assets/hero/shards-trimmed/shard-mid-03",
     w: 1279,
     h: 665,
     x: 35,
@@ -111,7 +141,7 @@ export const SHARDS: ShardDef[] = [
     // the vw number alone suggests. Moved up for real, verified clearance.
     id: "upper-left-background",
     role: "Upper-left background shard",
-    src: "/assets/hero/shards-trimmed/shard-mid-02.png",
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
     w: 481,
     h: 690,
     x: 16,
@@ -129,7 +159,7 @@ export const SHARDS: ShardDef[] = [
   {
     id: "far-right-background",
     role: "Far-right background shard",
-    src: "/assets/hero/shards-trimmed/shard-mid-03.png",
+    base: "/assets/hero/shards-trimmed/shard-mid-03",
     w: 1279,
     h: 665,
     x: 96,
@@ -149,7 +179,7 @@ export const SHARDS: ShardDef[] = [
     // right edge (45%) once this shard's 6deg rotation is accounted for.
     id: "upper-center-blurred",
     role: "Upper-center blurred shard",
-    src: "/assets/hero/shards-trimmed/shard-mid-01.png",
+    base: "/assets/hero/shards-trimmed/shard-mid-01",
     w: 1025,
     h: 635,
     x: 57,
@@ -163,11 +193,12 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 4,
     driftDelay: -19,
+    mobile: { x: 16, y: 84, sizeValue: 40 },
   },
   {
     id: "upper-right-distant",
     role: "Small upper-right distant shard",
-    src: "/assets/hero/shards-trimmed/shard-background-01.png",
+    base: "/assets/hero/shards-trimmed/shard-background-01",
     w: 420,
     h: 540,
     x: 72,
@@ -187,7 +218,7 @@ export const SHARDS: ShardDef[] = [
     // right edge (45%) once this shard's 8deg rotation is accounted for.
     id: "small-central",
     role: "Small central fragment",
-    src: "/assets/hero/shards-trimmed/shard-foreground-02.png",
+    base: "/assets/hero/shards-trimmed/shard-foreground-02",
     w: 319,
     h: 437,
     x: 52,
@@ -201,11 +232,18 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 8,
     driftDelay: -11,
+    // x pulled in from a first-pass 86 -> 74: at 86% this shard's rotated
+    // (8deg) bounding box, plus its "date" memory-fragment glyph (which
+    // extends to 86% of the shard's own width, not clipped by any
+    // overflow), pushed past the 390px viewport's right edge — checked
+    // against a real screenshot at 390px (see STATUS.md 017 entry), same
+    // discipline as the desktop shards' own clearance nudges above.
+    mobile: { x: 74, y: 58, sizeValue: 20 },
   },
   {
     id: "mid-right-support",
     role: "Mid-right support fragment",
-    src: "/assets/hero/shards-trimmed/shard-foreground-02.png",
+    base: "/assets/hero/shards-trimmed/shard-foreground-02",
     w: 319,
     h: 437,
     x: 82,
@@ -226,7 +264,7 @@ export const SHARDS: ShardDef[] = [
     // in front of the headline block per this prompt's layer order.
     id: "lower-left-foreground",
     role: "Lower-left foreground fragment",
-    src: "/assets/hero/shards-trimmed/shard-foreground-01.png",
+    base: "/assets/hero/shards-trimmed/shard-foreground-01",
     w: 383,
     h: 724,
     x: 7,
@@ -240,13 +278,14 @@ export const SHARDS: ShardDef[] = [
     tier: "front",
     parallaxPx: 10,
     driftDelay: -6,
+    mobile: { x: 4, y: 98, sizeValue: 20 },
   },
   {
     // Foreground tier: heavily pre-blurred, cropped against the bottom-right
     // viewport edge — same z-order reasoning as the lower-left piece.
     id: "lower-right-foreground",
     role: "Lower-right foreground mass",
-    src: "/assets/hero/shards-trimmed/shard-background-02.png",
+    base: "/assets/hero/shards-trimmed/shard-background-02",
     w: 685,
     h: 200,
     x: 92,
@@ -274,13 +313,13 @@ export const SHARDS: ShardDef[] = [
 const REFERENCE_VW_PX = 1920;
 const REFERENCE_VH_PX = 1080;
 
-function shardSize(shard: ShardDef): { width: string; height: string } {
-  if (shard.sizeBasis === "width") {
-    const capPx = (shard.sizeValue / 100) * REFERENCE_VW_PX;
-    return { width: `min(${shard.sizeValue}vw, ${capPx.toFixed(1)}px)`, height: "auto" };
+function shardSize(sizeBasis: SizeBasis, sizeValue: number): { width: string; height: string } {
+  if (sizeBasis === "width") {
+    const capPx = (sizeValue / 100) * REFERENCE_VW_PX;
+    return { width: `min(${sizeValue}vw, ${capPx.toFixed(1)}px)`, height: "auto" };
   }
-  const capPx = (shard.sizeValue / 100) * REFERENCE_VH_PX;
-  return { width: "auto", height: `min(${shard.sizeValue}vh, ${capPx.toFixed(1)}px)` };
+  const capPx = (sizeValue / 100) * REFERENCE_VH_PX;
+  return { width: "auto", height: `min(${sizeValue}vh, ${capPx.toFixed(1)}px)` };
 }
 
 // Scroll-separation distance/direction: reuses each shard's own parallaxPx
@@ -299,6 +338,81 @@ export function scrollSeparationPx(shard: ShardDef): { dx: number; dy: number } 
   return { dx: dirX * magnitude, dy: dirY * magnitude };
 }
 
+// 1x1 transparent PNG (67 bytes, inlined — no network request). Used as the
+// mobile/reduced-data <source> for shards that have no `mobile` placement:
+// `<picture>` picks the first matching <source> purely by `media`, before
+// even considering `type` support, so a mobile viewport (or
+// prefers-reduced-data) resolves straight to this placeholder instead of
+// ever requesting the shard's real (desktop-only, heavier) asset —
+// `.hiddenOnMobile` (HeroScene.module.css) then keeps it out of layout too.
+// This is what actually keeps the mobile tier's delivered weight to the 4
+// chosen shards' @1x assets, not "10 shards' worth of hidden <img> tags" —
+// a bare CSS `display:none` on an <img> does not stop the browser from
+// fetching its src.
+const TRANSPARENT_PIXEL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
+// Matches HeroScene.module.css's container-query breakpoint. Combined with
+// `prefers-reduced-data` (ADR-008's "serve mobile tier on desktop" edge
+// case) as an OR — the HTML `media` attribute accepts a comma-separated
+// media query list, which is exactly OR semantics.
+const MOBILE_SOURCE_MEDIA = "(max-width: 768px), (prefers-reduced-data: reduce)";
+
+/**
+ * Renders one shard's format/resolution fallback chain: AVIF -> WebP -> PNG,
+ * each offered at the mobile/reduced-data (@1x) resolution first (only
+ * reachable when `MOBILE_SOURCE_MEDIA` matches), then the desktop (2x)
+ * resolution — or, for shards with no `mobile` placement, the mobile branch
+ * points at the shared transparent pixel instead of a real @1x asset.
+ *
+ * Plain `<picture>`/`<img>`, not `next/image`: this prompt asks for a real,
+ * inspectable AVIF -> WebP -> PNG `<source>` chain and viewport-conditional
+ * `<source media>` art-direction, neither of which next/image's own
+ * (single-`<img>`, content-negotiated-by-the-optimizer) output produces.
+ */
+function ShardPicture({ shard, isPrimary }: { shard: ShardDef; isPrimary: boolean }) {
+  const desktopSize = shardSize(shard.sizeBasis, shard.sizeValue);
+  const mobileSize = shard.mobile ? shardSize(shard.sizeBasis, shard.mobile.sizeValue) : undefined;
+
+  const mobileAvif = shard.mobile ? `${shard.base}@1x.avif` : TRANSPARENT_PIXEL;
+  const mobileWebp = shard.mobile ? `${shard.base}@1x.webp` : TRANSPARENT_PIXEL;
+  const fallbackSrc = shard.mobile ? `${shard.base}@1x.png` : TRANSPARENT_PIXEL;
+
+  const imgStyle: CSSProperties = {
+    "--w-desktop": desktopSize.width,
+    "--h-desktop": desktopSize.height,
+    ...(mobileSize && { "--w-mobile": mobileSize.width, "--h-mobile": mobileSize.height }),
+    filter: shard.blur > 0 ? `blur(${shard.blur}px)` : undefined,
+  } as CSSProperties;
+
+  return (
+    <picture>
+      <source media={MOBILE_SOURCE_MEDIA} type="image/avif" srcSet={mobileAvif} />
+      <source media={MOBILE_SOURCE_MEDIA} type="image/webp" srcSet={mobileWebp} />
+      <source type="image/avif" srcSet={`${shard.base}.avif`} />
+      <source type="image/webp" srcSet={`${shard.base}.webp`} />
+      <img
+        src={fallbackSrc}
+        alt=""
+        width={shard.w}
+        height={shard.h}
+        className={styles.shardImg}
+        style={imgStyle}
+        // Zero-CLS loading strategy (Prompt 017): the primary (sharpest,
+        // memory-carrying) shard decodes first and is marked high-priority;
+        // every other shard is lazy — width/height above already reserve
+        // each one's layout box regardless of decode timing, so lazy
+        // loading costs no layout shift, only decode order. Supersedes
+        // Prompt 016's "all eager" note for this prompt's own explicit
+        // eager-primary/lazy-rest instruction.
+        loading={isPrimary ? "eager" : "lazy"}
+        fetchPriority={isPrimary ? "high" : undefined}
+        draggable={false}
+      />
+    </picture>
+  );
+}
+
 export function HeroLayers({
   tier,
   reducedMotion,
@@ -315,44 +429,36 @@ export function HeroLayers({
   return (
     <>
       {SHARDS.filter((shard) => shard.tier === tier).map((shard) => {
+        const wrapperStyle: CSSProperties = {
+          "--x-desktop": `${shard.x}%`,
+          "--y-desktop": `${shard.y}%`,
+          ...(shard.mobile && {
+            "--x-mobile": `${shard.mobile.x}%`,
+            "--y-mobile": `${shard.mobile.y}%`,
+          }),
+          opacity: shard.opacity,
+          zIndex: shard.z,
+          // Static base only — centers and tilts this shard once, at
+          // render. The dynamic pointer/scroll offset is applied by
+          // useHeroShardMotion via the separate `translate` CSS *property*
+          // (composes before `transform`), not baked into this string, so
+          // it never needs recomputing here.
+          transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)`,
+          animationDelay: reducedMotion ? undefined : `${shard.driftDelay}s`,
+        } as CSSProperties;
+
+        const classNames = [styles.shard];
+        if (!reducedMotion) classNames.push("motion-drift");
+        if (!shard.mobile) classNames.push(styles.hiddenOnMobile);
+
         return (
           <div
             key={shard.id}
             ref={(el) => registerShardEl(shard.id, el)}
-            className={reducedMotion ? styles.shard : `${styles.shard} motion-drift`}
-            style={{
-              left: `${shard.x}%`,
-              top: `${shard.y}%`,
-              opacity: shard.opacity,
-              zIndex: shard.z,
-              // Static base only — centers and tilts this shard once, at
-              // render. The dynamic pointer/scroll offset is applied by
-              // useHeroShardMotion via the separate `translate` CSS
-              // *property* (composes before `transform`), not baked into
-              // this string, so it never needs recomputing here.
-              transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)`,
-              animationDelay: reducedMotion ? undefined : `${shard.driftDelay}s`,
-            }}
+            className={classNames.join(" ")}
+            style={wrapperStyle}
           >
-            <Image
-              src={shard.src}
-              alt=""
-              width={shard.w}
-              height={shard.h}
-              className={styles.shardImg}
-              style={{
-                // Only one dimension is ever meaningfully set — the other
-                // stays "auto" so the browser preserves the trimmed image's
-                // real aspect ratio instead of stretching it.
-                ...shardSize(shard),
-                filter: shard.blur > 0 ? `blur(${shard.blur}px)` : undefined,
-              }}
-              // Every shard is inside the single-viewport hero (nothing is
-              // ever "below the fold" here), so lazy-loading is actively
-              // wrong — it raced the initial paint in testing. All eager.
-              priority
-              draggable={false}
-            />
+            <ShardPicture shard={shard} isPrimary={shard.id === "main"} />
             {heroFragmentsFor(shard.id).map((fragment) => (
               <HeroFragmentGlyph key={fragment.id} fragment={fragment} hostBlur={shard.blur} hostOpacity={shard.opacity} />
             ))}

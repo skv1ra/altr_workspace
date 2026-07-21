@@ -4,6 +4,22 @@
   width: 100%;
   min-height: 92vh;
   overflow: hidden;
+  /*
+   * Prompt 017: the mobile/desktop shard composition below is driven by
+   * this element's own inline size, not the viewport — a plain `@media
+   * (max-width)` would be indistinguishable from the /hero-lab tier-preview
+   * switches, which resize a wrapper around <HeroScene> rather than the
+   * real browser window. In production this container always spans full
+   * viewport width, so the effective breakpoint is identical to a media
+   * query; in the lab it's previewable without touching DevTools.
+   * `prefers-reduced-data` (ADR-008's "serve mobile tier on desktop" edge
+   * case) is a real user/network preference, not a size, so it can't be
+   * expressed as a container query — every rule below that has a
+   * `@container hero (max-width: 768px)` block has an identical
+   * `@media (prefers-reduced-data: reduce)` block right after it.
+   */
+  container-type: inline-size;
+  container-name: hero;
 }
 
 /*
@@ -65,6 +81,13 @@
 
 .shard {
   position: absolute;
+  /* Prompt 017: desktop placement by default; --x-mobile/--y-mobile (set
+   * only on shards that carry a `mobile` placement — see HeroLayers.tsx)
+   * take over below the mobile breakpoint, falling back to the desktop
+   * value via var()'s own fallback for any shard that doesn't set them
+   * (moot in practice, since those shards are `.hiddenOnMobile` anyway). */
+  left: var(--x-desktop);
+  top: var(--y-desktop);
   transform-origin: center;
   /*
    * Prompt 016: this element's transform now changes every animation frame
@@ -78,20 +101,101 @@
   will-change: translate;
 }
 
+/* Prompt 017: shards with no mobile composition role (6 of the 10 — see
+ * HeroLayers.tsx's `mobile` field) are structurally removed from layout
+ * below 768px / under reduced-data, not just dimmed. Their <picture> also
+ * resolves to a shared transparent-pixel source in that tier (ShardPicture)
+ * so this is a belt-and-braces layout guarantee, not what stops the real
+ * fetch. */
+@container hero (max-width: 768px) {
+  .hiddenOnMobile {
+    display: none;
+  }
+}
+@media (prefers-reduced-data: reduce) {
+  .hiddenOnMobile {
+    display: none;
+  }
+}
+
+/* Prompt 017: the 4 shards that do carry a mobile composition role move to
+ * their recomposed portrait position below 768px / under reduced-data. */
+@container hero (max-width: 768px) {
+  .shard {
+    left: var(--x-mobile, var(--x-desktop));
+    top: var(--y-mobile, var(--y-desktop));
+  }
+}
+@media (prefers-reduced-data: reduce) {
+  .shard {
+    left: var(--x-mobile, var(--x-desktop));
+    top: var(--y-mobile, var(--y-desktop));
+  }
+}
+
 .shardImg {
   /*
-   * width/height are set per-instance via inline style (one explicit, one
-   * "auto") — this rule must not fix either dimension. Tailwind's preflight
-   * applies `img { max-width: 100% }` globally; since the wrapping .shard
-   * div is position:absolute with no explicit width ("auto"), that
-   * percentage has an ill-defined circular basis to resolve against and
-   * was capping several shards far smaller than their intended vw/vh size
-   * (confirmed directly: shard-background-02 rendered at ~105px instead of
-   * the intended ~501px). Overridden explicitly since sizing here is fully
+   * width/height are set per-instance via CSS custom properties
+   * (--w-desktop/--h-desktop, one explicit "min(...)" expression and one
+   * "auto" — see ShardPicture in HeroLayers.tsx) — this rule must not fix
+   * either dimension itself. Tailwind's preflight applies
+   * `img { max-width: 100% }` globally; since the wrapping .shard div is
+   * position:absolute with no explicit width ("auto"), that percentage has
+   * an ill-defined circular basis to resolve against and was capping
+   * several shards far smaller than their intended vw/vh size (confirmed
+   * directly: shard-background-02 rendered at ~105px instead of the
+   * intended ~501px). Overridden explicitly since sizing here is fully
    * deliberate.
    */
   display: block;
   user-select: none;
   max-width: none;
   max-height: none;
+  width: var(--w-desktop);
+  height: var(--h-desktop);
+  /*
+   * Prompt 017 loading strategy: "fade shards in as they decode (150ms
+   * opacity, no movement)". A pure CSS keyframe rather than a JS `onLoad`
+   * handler deliberately — an onLoad-driven fade would start at opacity 0
+   * and could get stuck there if the image finishes loading before React
+   * hydration attaches the listener (a real race on a slow connection or a
+   * cold JS bundle), which would silently break the no-JS requirement
+   * below. A time-based animation always reaches its `forwards` end state
+   * on its own, JS or not, and works identically whether or not the
+   * document has any script running at all.
+   */
+  /*
+   * A literal 150ms, not `var(--motion-fast)` (180ms) — this prompt's own
+   * spec names 150ms specifically (distinct from the general micro-
+   * interaction token), so it's honored exactly rather than silently
+   * drifting to a different, already-meaningful design-token value.
+   */
+  opacity: 0;
+  animation: hero-shard-fade-in 150ms ease-out forwards;
+}
+
+@keyframes hero-shard-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shardImg {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+@container hero (max-width: 768px) {
+  .shardImg {
+    width: var(--w-mobile, var(--w-desktop));
+    height: var(--h-mobile, var(--h-desktop));
+  }
+}
+@media (prefers-reduced-data: reduce) {
+  .shardImg {
+    width: var(--w-mobile, var(--w-desktop));
+    height: var(--h-mobile, var(--h-desktop));
+  }
 }

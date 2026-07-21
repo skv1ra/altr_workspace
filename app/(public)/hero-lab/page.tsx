@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HeroScene } from "@/components/hero/HeroScene";
 import { ReferenceOverlay } from "@/components/hero/ReferenceOverlay";
+import { HeroTierPreview } from "@/components/hero/HeroTierPreview";
 
 export const metadata = { title: "Hero lab" };
 
@@ -21,6 +22,11 @@ const NAV_LINKS = [
  * Reference-overlay calibration aid (press R) still applies: bottom-right
  * toggle badge, never covers the hero itself.
  *
+ * Prompt 017: HeroTierPreview (bottom-left badge) wraps HeroScene with
+ * width-tier + reduced-motion preview switches — see that component for why
+ * width narrowing (not a real viewport resize) still exercises the real
+ * mobile composition.
+ *
  * Prompt 016: the hero alone is exactly one viewport tall (`min-height:
  * 92vh` plus this page's own nav chrome), so `window.scrollY` could never
  * move at all — confirmed directly (scrollHeight === innerHeight) before
@@ -37,7 +43,9 @@ export default function HeroLabPage() {
   return (
     <main>
       <section className="relative w-full overflow-hidden">
-        <HeroScene />
+        <HeroTierPreview>
+          <HeroScene />
+        </HeroTierPreview>
 
         <ReferenceOverlay />
 

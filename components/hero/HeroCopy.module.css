@@ -1,0 +1,31 @@
+/*
+ * Desktop placement (Prompt 014): left 7%, top 31%, width 38% — matches the
+ * reference's headline-left composition. Prompt 017 adds the mobile/
+ * reduced-data recomposition: full-width band pinned near the top, so the
+ * headline/CTA "own the frame" on a portrait viewport per ADR-008, with the
+ * mobile shard subset (HeroLayers.tsx) recomposed below/behind it. Uses the
+ * same container-query + media-query pairing as HeroScene.module.css, for
+ * the same reason (previewable via the /hero-lab tier switches, and a real
+ * `prefers-reduced-data` match on desktop).
+ */
+.copy {
+  position: absolute;
+  left: 7%;
+  top: 31%;
+  width: 38%;
+}
+
+@container hero (max-width: 768px) {
+  .copy {
+    left: 6%;
+    top: 8%;
+    width: 88%;
+  }
+}
+@media (prefers-reduced-data: reduce) {
+  .copy {
+    left: 6%;
+    top: 8%;
+    width: 88%;
+  }
+}
