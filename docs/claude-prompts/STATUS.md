@@ -4,16 +4,15 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 024 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Public-phase closure: Footer, legal pages,
-SEO metadata, and a mobile pass are all in. **Phase 4 (public site) is now
-complete** — 025 begins the auth screens. Full entry below. **Carried
-forward, unchanged:** the `/api/billing/plans`+`/api/billing/me` anonymous-401
+None — Prompt 025 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Auth screens (`/auth`, both modes) are now
+live in the new visual system. Full entry below. **Carried forward,
+unchanged:** the `/api/billing/plans`+`/api/billing/me` anonymous-401
 middleware bug and its dormant `/api/billing/me` status-code bug (023); 020's
 CSP/`force-dynamic` item; Phase 3's manual-verification gaps (014-018); 019's
-signed-in-nav-state-not-checked-against-a-real-session item. **Resolved this
-session:** the `/privacy` dead link (022) — `/privacy`, `/terms`, `/cookies`
-are all now real, live routes. Note: Prompt 004 itself
+signed-in-nav-state-not-checked-against-a-real-session item; `/auth/forgot-password`
+is a real, intentionally-deferred link (026's own scope) same as `/privacy`
+was before 024. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1691,6 +1690,105 @@ open.
   `smoke.spec.ts` fix above) all passed via `yarn run check` + a separate
   `yarn test:e2e` run — both run twice, once before and once after the
   mobile-polish CSS fix, to confirm it introduced no regression.
+
+- 025 — Auth screens redesign (2026-07-21). **Found before writing any
+  code:** `app/auth/page.tsx` didn't exist in this workspace (same
+  literal-vs-actual gap as every prior prompt) — only the API routes
+  (`app/api/auth/{register,login,forgot-password,reset-password,logout}/route.ts`,
+  `app/api/auth/google/start/route.ts`) and `app/auth/callback/route.ts`
+  were already ported. LEGACY's own current `app/auth/page.tsx` was read in
+  full as the real structural/behavioral reference (not the stale
+  `LEGAL_SETUP.md`-adjacent kind of gap — this file is genuinely current).
+  **Contract-parity checklist (this prompt's own "preserve every behavioral
+  contract" instruction):**
+  | LEGACY behavior | Status |
+  | --- | --- |
+  | `?mode=login\|register` switching, defaulting to register | Preserved exactly |
+  | Mode switch preserves typed email/password | Preserved — same component state, only `mode` changes; verified in both RTL and e2e |
+  | Name auto-derived from email local-part (`nameFromEmail`), no name field shown | Preserved verbatim, byte-identical helper |
+  | Client-side validation before ever calling the server | Preserved, but reimplemented against `registerSchema`/`loginSchema` (`lib/auth/validation.ts`, unmodified) via `.safeParse()` instead of LEGACY's own regex/length checks — same rules, actually sourced from the one place this prompt's own instruction says to reuse, not duplicate |
+  | Registration requires all three consent checkboxes (terms+privacy, conversations, memory) | Preserved exactly — same three touchpoints, same wording intent, terms checkbox still links to real `/terms`/`/privacy` |
+  | Password visibility toggle, `new-password`/`current-password` autocomplete | Preserved via the existing `PasswordField` primitive (009), which already implements both |
+  | Google OAuth button (`signInWithGoogle()` → `/api/auth/google/start`) | Preserved, unchanged call |
+  | "Forgot password?" link (login mode only) | Preserved as a real link to `/auth/forgot-password` — that page doesn't exist in this workspace yet (026's own scope, same "wire to the real destination even if downstream isn't built" pattern used for `/auth` links since 019 and the Footer's cookie-preferences button in 024) |
+  | Already-authenticated visitor on `/auth` → redirect to `/dashboard` | Preserved exactly (checked LEGACY's own `useEffect` first, per this prompt's own edge-case instruction, rather than assuming) |
+  | Error paragraphs `role="alert"` | Preserved — already documented as a hard contract on the shared `Field` primitive itself (009) |
+  **One real gap found and deliberately fixed, not blindly reproduced:**
+  LEGACY's own `/auth` page never actually reads the `next` query param it's
+  linked with from elsewhere in the app (`PricingTable`'s own
+  `/auth?next=/pricing` CTA, `middleware.ts`'s own
+  `/auth?mode=login&next=...` redirect) — its submit handler always
+  hardcodes `router.replace("/legacy-migration")`, and LEGACY's own
+  `/legacy-migration` page likewise always hardcodes `router.replace("/dashboard")`,
+  so the `next` param is produced in three places but read in zero — a real,
+  dead parameter, confirmed by reading all three files, not guessed.
+  Implemented real propagation in WORKSPACE instead: `app/auth/page.tsx`
+  (server component) resolves `next` once via `safeNextPath()`
+  (`lib/auth/validation.ts`, unmodified, already exported for exactly this)
+  and passes it to `AuthForm`, which navigates there via `router.replace(next)`
+  on any successful, session-establishing login/register — the server's own
+  `next` field in its JSON response is deliberately ignored (documented
+  inline) since it's not part of what either forbidden route file actually
+  needs preserved. `/legacy-migration` itself still doesn't exist in this
+  workspace (out of this prompt's scope), so the chain currently ends at
+  whatever `next` resolves to directly, without an intermediate detour —
+  correct today since `/legacy-migration` is the only route in
+  `lib/supabase/middleware.ts`'s own protected-paths list this prompt
+  doesn't build, and every other `next` destination (e.g. `/pricing`) is
+  reached directly and correctly.
+  **A second real gap, worked around without touching either forbidden
+  file:** both `app/api/auth/{register,login}/route.ts` throw a hardcoded
+  Ukrainian string for a 429 ("Забагато спроб. Спробуй пізніше."), and
+  `lib/auth.ts`'s shared `api()` helper (also unmodified) discards the HTTP
+  status code whenever the server includes a JSON `error` field — which
+  both routes always do — so the actual status code is unrecoverable by the
+  time `registerAccount`/`signInAccount` throw. Matched on the exact literal
+  string instead (confirmed identical in both route handlers by reading the
+  source) to distinguish the calm rate-limited copy from the generic
+  failure copy, satisfying this prompt's own "server error codes mapped to
+  human copy" requirement without editing either must-not-change file.
+  **Visual note, a deliberate divergence from LEGACY, not a bug:** this
+  prompt's own instruction specifies an obsidian visual panel + paper form
+  panel; LEGACY's actual current CSS has this inverted (light visual panel,
+  dark form panel) and stacks the visual panel *above* the form on mobile.
+  Followed this prompt's explicit instruction on both counts — obsidian
+  panel hidden below 900px, form always first — documented as an
+  intentional redesign call, not a missed LEGACY detail. The visual panel
+  reuses `ProductSection`'s own established "one shard, one quiet
+  memory-fragment caption" language (`components/site/ProductSection.tsx`)
+  rather than the full `HeroScene`/`HeroFragments` motion system, which is
+  built around the landing page's own multi-shard parallax layout this
+  single static side panel doesn't need; the panel and its heading are
+  `aria-hidden` (decorative/supplementary) with zero focusable elements
+  inside it, so no keyboard/AT user can get stranded on it — the one real
+  heading and one real "back home" link both live in the form panel.
+  **Required tests added:** `tests/components/AuthForm.test.tsx` (10
+  tests — mode-switch preserves input, client-side validation before any
+  server call, all-three-consents-required, submit disabled/`aria-busy`
+  while pending, rate-limited vs. generic error copy, already-authenticated
+  redirect, `next`-path navigation on success, email-verification notice,
+  consent link targets) and a new `auth` describe block in
+  `tests/e2e/critical-flows.spec.ts` (6 tests). LEGACY's own e2e
+  "registration form validation"/"login form validation" tests were found
+  to target selectors (button "Створити другого себе", heading "Повернись
+  до свого Altr") that don't exist anywhere in LEGACY's own *current*
+  `app/auth/page.tsx` (which uses "Створити акаунт"/"З поверненням") — a
+  stale spec relative to its own app, not a literal contract to port; ported
+  the underlying behavior (bad input → `role="alert"`, no server call)
+  against real current selectors instead. The "protected route redirects
+  anonymous users" LEGACY e2e test *does* match a real, currently-passing
+  `lib/supabase/middleware.ts` contract (unmodified) and was ported as
+  close to verbatim as this workspace's own `x-altr-e2e-user` e2e-mock
+  mechanism (`lib/testing/e2e-auth.ts`) allows. One incidental fix along the
+  way: `page.getByRole("alert")` collides with Next's own
+  `#__next-route-announcer__` element (also `role="alert"`) in strict
+  mode — switched to the `p[role="alert"]` selector, the same one this
+  prompt's own instructions and `Field.tsx`'s own doc comment already name
+  as the real contract.
+  `yarn lint`, `yarn typecheck`, `yarn test` (41 files/209 tests, up from
+  40/199 in 024), `yarn build`, and `yarn test:e2e` (20/20, up from 14/14 —
+  6 new auth tests) all passed via `yarn run check` + a separate
+  `yarn test:e2e` run.
 
 ## Failed prompts
 
