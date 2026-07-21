@@ -4,30 +4,23 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 020 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **The real homepage is live** (`/` now
-renders Header + HeroScene + ProductSection instead of the Prompt 004
-placeholder). **Most important open item, found this session, not
-inherited:** `/` had to be marked `export const dynamic = "force-dynamic"`
-to fix a real, previously-undiscovered, site-wide bug where
-`middleware.ts`'s per-request CSP nonce can never match a statically
-prerendered page's frozen-at-build-time HTML, silently breaking all
-client-side interactivity in production (confirmed directly — see the 020
-entry below). This is a genuine architectural trade-off (lost static
-caching on the highest-traffic route) that deserves a `RISKS.md` entry and
-a real decision beyond what one page-scoped prompt should make alone —
-not yet filed, since `RISKS.md` wasn't in 020's own allowed files. It also
-means 018's own hero-lab interactivity claims (FPS aside — that number is
-real, independent of React) weren't fully proven the way they read;
-flagged, not re-verified, since `/hero-lab` isn't in 020's allowed files
-either. Dead-link ledger and other 020 follow-ups (how-it-works/memory,
-privacy, pricing-teaser-in-landing, final CTA, footer — each already
-scheduled to 021-024 except the pricing teaser, whose future owner is
-genuinely unclear from the plan as written) are in the 020 entry below.
-Phase 3's own still-open manual-verification gaps (014-018, all
-user-approval steps) remain unchanged, carried forward again; 019's own
-follow-ups (signed-in nav state not yet checked against a real session)
-also remain open. Note: Prompt 004 itself
+None — Prompt 021 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. The homepage now has five live sections
+(Header, Hero, Product, How it works, Memory demo); `#how-it-works` closes
+the one dead-anchor item 020's own ledger flagged. Copy-accuracy check (this
+prompt's own required manual-verification step) passed clean — every claim
+in the new sections maps to a FEATURE_PARITY_MATRIX COMPLETE row, no
+unmapped or overstated claim found (full mapping in the 021 entry below).
+**Carried forward, unchanged by this prompt:** 020's own most significant
+open item — `/` runs `export const dynamic = "force-dynamic"` to work
+around a real, previously-undiscovered CSP-nonce-vs-static-generation bug,
+which still deserves a `RISKS.md` entry and a broader architectural
+decision neither 020 nor 021 were scoped to make; 018's hero-lab
+interactivity claims still carry the same unverified caveat 020 raised.
+Also still open: the pricing-teaser-in-landing content's unclear future
+owner (020's finding); Phase 3's manual-verification gaps (014-018); 019's
+signed-in-nav-state-not-checked-against-a-real-session item. Note: Prompt
+004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1342,6 +1335,101 @@ open.
   the new `ProductSection.test.tsx`), `yarn build`, and `yarn test:e2e`
   (5/5, against a real `yarn build && yarn start`, not `yarn dev`) all
   passed via `yarn run check` + a separate `yarn test:e2e` run.
+- 021 — How-it-works and memory demonstration (2026-07-21). **Found
+  before writing any copy:** `components/memory/types.ts` and
+  `components/memory/` (this prompt's own "files to inspect first" / "must
+  not be changed") don't exist anywhere in this workspace — same shape of
+  gap 019/020 already hit for their own named legacy files. The *real*
+  Memory shape lives implicitly in `app/api/memories/route.ts`'s own zod
+  schema and Supabase columns (`category, title, description, confidence
+  [0-1 float], source_type, source_reference, is_active`, provenance via
+  the joined `altr_memory_sources` rows) — used that as ground truth
+  instead. `docs/IMPORT_SECURITY.md` is also absent from this workspace;
+  read LEGACY's copy (disposable clone, same method as 019/020, deleted
+  after) for its exact privacy-boundary wording ("parsed in a browser Web
+  Worker... raw files are not stored by default") and independently
+  re-verified that claim is *also* true of this workspace's own code
+  (`workers/conversation-parser.worker.ts`, `rawFileStored:
+  z.literal(false)` in `app/api/imports/route.ts`) before using it, rather
+  than trusting a doc that was never ported.
+  **New components** (`components/site/`): `HowItWorks.tsx` (`#how-it-
+  works` — three numbered movements, large numerals + hairline rules, one
+  column always, not just "on mobile" — a 3-across grid would be exactly
+  the card-grid look Prompt 020 already ruled out for `ProductSection`,
+  staying consistent) and `MemoryDemo.tsx` (`#memory` — a calm, hairline-
+  divided list on an obsidian surface, matching DESIGN_DIRECTION's own
+  dashboard rule "data displayed as calm editorial lists/tables, not card
+  grids" per this prompt's "must look like the future dashboard"
+  requirement).
+  **Copy-accuracy check outcome (this prompt's own required manual
+  verification — read against FEATURE_PARITY_MATRIX, every claim mapped
+  to a COMPLETE row, not just asserted):**
+  - "Everything is parsed locally in your browser — the raw file is never
+    uploaded" -> **Local parsing in Web Worker** + **Raw archive never
+    uploaded** (both COMPLETE, matrix lines 53/60).
+  - "Edit any memory, disable it, or delete it outright" -> **Memory
+    editing**, **Memory disabling (is_active)**, **Memory deletion**
+    (all COMPLETE, matrix lines 69-71).
+  - "Your Twin drafts replies in your voice... every draft is yours to
+    review — nothing sends itself" -> matches `app/api/ai/draft-reply`
+    returning a draft string with no send-on-behalf-of-user path anywhere
+    in the ported API surface; autonomous action stays explicitly
+    Roadmap-only (Operator/Negotiator, FEATURE_PARITY_MATRIX line
+    133-137) and is never implied. **All claims check out — no unmapped
+    or overstated claim found.**
+  - New `tests/components/HowItWorks.test.tsx` includes a regression test
+    asserting these exact phrases render, specifically so future copy
+    edits can't silently drift into an unaudited claim (e.g. "syncs
+    live") without a test failing first.
+  **Memory demo data:** fictional, 4 entries, field *names/categories*
+  (communication style, frequent phrase, relationship, typical decision)
+  inspired by LEGACY's `lib/memoryData.ts` per this prompt's own "reuse
+  fictional data ideas, not the visuals" instruction — but deliberately
+  **not** its shape: LEGACY's `confidence` is a 0-100 int, this
+  workspace's real schema is a 0-1 float, so copying LEGACY's numbers
+  verbatim would have misrepresented the actual product; confidence isn't
+  displayed in the demo at all (not one of this prompt's own explicit
+  four visible fields: category/title/description/provenance), so the
+  mismatch never had a chance to surface anyway — noted for whoever builds
+  038's real dashboard list, which will need to actually format that
+  float.
+  **No dead buttons, verified two ways:** the one memory shown mid-edit
+  renders its title as a bordered box styled to *look* like a text field
+  (not a real `<input>`, no interactive ARIA role) next to a plain
+  `<span>` "Editing" label — RTL asserts zero `<button>`, zero
+  `role="textbox"`, zero `<input>` anywhere in the whole section; e2e
+  re-confirms zero buttons against a real production build.
+  **Reveal-on-scroll:** both sections use the Prompt 011 `Reveal` system
+  (already reduced-motion-safe and no-JS-safe by construction — see
+  `components/ui/Reveal.tsx`), same as `ProductSection`; not re-verified
+  independently since it's the identical, already-proven mechanism.
+  **320px edge case:** checked with a real screenshot, not assumed —
+  numerals and step text stay balanced (a `@media (max-width: 400px)`
+  rule shrinks the numeral column's `minmax()` floor); the memory list
+  collapses its category-label/content columns to a single stack below
+  640px.
+  **Anchor offset:** extended `app/(public)/page.css`'s existing
+  `scroll-margin-top: 96px` rule (added in 020 for `#product`) to also
+  cover `#how-it-works` (this prompt's own required edge case) and
+  `#memory` (no header nav link points at it yet, but given the same
+  treatment for free/consistency in case a future prompt deep-links to
+  it) — not a new file, just an extended selector list, same as 020's own
+  note anticipated ("#how-it-works/#pricing once 021/023 add them").
+  **Dead-link ledger update:** `#how-it-works` is now live (closes that
+  specific item from 020's ledger) — `page.tsx` docstring and the header-
+  link e2e test both updated to say so explicitly rather than leaving a
+  stale "still deferred" comment. Still open, unchanged: `/pricing`
+  (023), `/auth?mode=login`/`/auth?mode=register` (025), `/dashboard`
+  (029), the privacy section (022), the pricing teaser's uncertain future
+  owner (still unresolved, see 020's entry), the final CTA section and
+  footer (024).
+  `yarn lint`, `yarn typecheck`, `yarn test` (35 files/180 tests, including
+  the new `HowItWorks.test.tsx`/`MemoryDemo.test.tsx`), `yarn build`, and
+  `yarn test:e2e` (7/7, two new tests added, against a real `yarn build &&
+  yarn start`) all passed via `yarn run check` + a separate `yarn
+  test:e2e` run. No-JS spot check (real `javaScriptEnabled: false`
+  context): both new sections' headings and all four memory rows present
+  in the DOM with no script running.
 
 ## Failed prompts
 

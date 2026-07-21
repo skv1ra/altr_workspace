@@ -93,3 +93,153 @@ export const productCopy = {
     fragmentLine: "не чат-бот",
   },
 } as const;
+
+/**
+ * `#how-it-works` (Prompt 021). Each step's claim is checked against
+ * FEATURE_PARITY_MATRIX's own COMPLETE rows, not asserted: step 1 (local
+ * parsing, raw file never uploaded) matches "Local parsing in Web Worker"
+ * (`workers/conversation-parser.worker.ts`) and "Raw archive never
+ * uploaded" (`rawFileStored: z.literal(false)` in
+ * `app/api/imports/route.ts`) — also the exact privacy-boundary wording
+ * LEGACY's own `docs/IMPORT_SECURITY.md` uses ("parsed in a browser Web
+ * Worker... raw files are not stored by default"), which was never
+ * ported into this workspace (read from a disposable LEGACY clone, same
+ * as 019/020's own gap-resolution method) but whose underlying claim is
+ * independently true of this workspace's own code, checked directly.
+ * Step 2 (edit/disable/delete) matches "Memory editing", "Memory
+ * disabling (is_active)", "Memory deletion" (all COMPLETE). Step 3
+ * (reviewable drafts only, no autonomous send) matches
+ * `app/api/ai/draft-reply` returning a draft string for the user to
+ * review — there is no send-on-behalf-of-user path anywhere in the
+ * ported API surface, and autonomous action is explicitly Roadmap-only
+ * (FEATURE_PARITY_MATRIX's Operator/Negotiator entries).
+ */
+export const howItWorksCopy = {
+  EN: {
+    eyebrow: "02 — How it works",
+    title: "Three movements, always in your control.",
+    steps: [
+      {
+        number: "01",
+        title: "Bring your conversations",
+        body: "Import exported chats from WhatsApp, Telegram, Instagram, Messenger, and more. Everything is parsed locally in your browser — the raw file is never uploaded, only the structured result is.",
+      },
+      {
+        number: "02",
+        title: "Shape your memory",
+        body: "What Altr learns becomes a plain, editable memory list. Edit any memory, disable it, or delete it outright — nothing stays that you don't want kept.",
+      },
+      {
+        number: "03",
+        title: "Meet your continuation",
+        body: "Your Twin drafts replies in your voice, grounded in that memory. Every draft is yours to review — nothing sends itself.",
+      },
+    ],
+  },
+  UA: {
+    eyebrow: "02 — Як це працює",
+    title: "Три кроки, які завжди під твоїм контролем.",
+    steps: [
+      {
+        number: "01",
+        title: "Принеси свої розмови",
+        body: "Імпортуй експортовані чати з WhatsApp, Telegram, Instagram, Messenger та інших. Усе обробляється локально у твоєму браузері — необроблений файл ніколи не завантажується, лише структурований результат.",
+      },
+      {
+        number: "02",
+        title: "Сформуй свою памʼять",
+        body: "Те, що вивчає Altr, стає простим, редагованим списком памʼяті. Редагуй будь-яку памʼять, вимикай її або видаляй повністю — нічого не залишається без твоєї згоди.",
+      },
+      {
+        number: "03",
+        title: "Познайомся зі своїм продовженням",
+        body: "Twin пропонує відповіді твоїм голосом на основі цієї памʼяті. Кожну чернетку ти переглядаєш сам — нічого не надсилається автоматично.",
+      },
+    ],
+  },
+} as const;
+
+/**
+ * Memory demonstration section (Prompt 021) — static, fictional data
+ * mirroring the *real* `altr_memories` shape this workspace's own API
+ * already returns (`app/api/memories/route.ts`:
+ * `category, title, description, confidence, source_type,
+ * source_reference, is_active`; provenance via the joined
+ * `altr_memory_sources` rows) — deliberately **not** LEGACY's
+ * `lib/memoryData.ts` shape, whose `confidence` is a 0-100 int; this
+ * workspace's real schema is a 0-1 float
+ * (`z.number().min(0).max(1)`), so 0-100 values would misrepresent the
+ * actual product. Field/category *ideas* are reused from LEGACY's demo
+ * data (communication style, frequent phrase, relationship, typical
+ * decision), per this prompt's own "reuse fictional data ideas, not the
+ * visuals" instruction — the visual presentation is new (calm hairline-
+ * divided list, not LEGACY's card layout).
+ */
+export const memoryDemoCopy = {
+  EN: {
+    eyebrow: "03 — Memory",
+    title: "What Altr remembers, plainly.",
+    body: "A preview of the real memory list — not a mockup, the same fields the actual product stores: a category, a short title, a description, and where it came from.",
+    editingLabel: "Editing",
+    memories: [
+      {
+        category: "Communication style",
+        title: "Short, direct replies",
+        description: "Keeps replies concise and avoids unnecessary wording, especially with the team.",
+        provenance: "Telegram export · Mar 2026",
+      },
+      {
+        category: "Frequent phrase",
+        title: "“Sounds good”",
+        description: "A short confirmation used when a proposed direction is acceptable.",
+        provenance: "Telegram export · Mar 2026",
+        editing: true,
+      },
+      {
+        category: "Relationship",
+        title: "Client tone",
+        description: "Formal enough, clear, and reliable — more measured than the team channel.",
+        provenance: "Email export · Feb 2026",
+      },
+      {
+        category: "Typical decision",
+        title: "Verify before confirming",
+        description: "Confirms only after checking final details and dependencies.",
+        provenance: "Manual entry",
+      },
+    ],
+  },
+  UA: {
+    eyebrow: "03 — Памʼять",
+    title: "Що памʼятає Altr, без прикрас.",
+    body: "Попередній перегляд реального списку памʼяті — не макет, а ті самі поля, які насправді зберігає продукт: категорія, короткий заголовок, опис і джерело.",
+    editingLabel: "Редагування",
+    memories: [
+      {
+        category: "Стиль спілкування",
+        title: "Короткі, прямі відповіді",
+        description: "Тримає відповіді лаконічними й уникає зайвих слів, особливо з командою.",
+        provenance: "Експорт з Telegram · березень 2026",
+      },
+      {
+        category: "Часта фраза",
+        title: "«Sounds good»",
+        description: "Коротке підтвердження, коли запропонований напрямок прийнятний.",
+        provenance: "Експорт з Telegram · березень 2026",
+        editing: true,
+      },
+      {
+        category: "Стосунки",
+        title: "Тон із клієнтами",
+        description: "Достатньо формальний, чіткий і надійний — стриманіший, ніж у командному каналі.",
+        provenance: "Експорт з Email · лютий 2026",
+      },
+      {
+        category: "Типове рішення",
+        title: "Перевірити перед підтвердженням",
+        description: "Підтверджує лише після перевірки фінальних деталей і залежностей.",
+        provenance: "Введено вручну",
+      },
+    ],
+  },
+} as const;
