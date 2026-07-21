@@ -4,26 +4,28 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 022 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. The homepage now has seven live sections
-(Header, Hero, Product, How it works, Memory demo, Twin demo, Privacy).
-Guarantee-to-evidence mapping (this prompt's own required security record)
-passed clean — four guarantees shipped, each traced to a specific
-MASTER_CONTEXT.md invariant or real code; one suggested guarantee ("no
-training on your data") was checked and deliberately dropped as
-unverifiable in this codebase, per the prompt's own explicit instruction —
-full mapping table in the 022 entry below. **Carried forward, unchanged by
-this prompt:** 020's own most significant open item — `/` runs
-`export const dynamic = "force-dynamic"` to work around a real,
-previously-undiscovered CSP-nonce-vs-static-generation bug, still deserving
-a `RISKS.md` entry and a broader architectural decision no landing-section
-prompt has been scoped to make; 018's hero-lab interactivity claims still
-carry the same unverified caveat 020 raised. Also still open: the
-pricing-teaser-in-landing content's unclear future owner (020); the new
-`/privacy` dead link (022, no clear owning prompt in the current INDEX);
-Phase 3's manual-verification gaps (014-018); 019's
-signed-in-nav-state-not-checked-against-a-real-session item. Note: Prompt
-004 itself
+None — Prompt 023 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. `/pricing` is now live with real limits
+and the preserved checkout contract (behavior-parity checklist in the 023
+entry below). **New, significant finding this session:**
+`lib/supabase/middleware.ts` blocks `/api/billing/plans` (meant to be
+public) and `/api/billing/me` for every anonymous request — confirmed
+directly against a running server (`curl` returns a real 401) — meaning
+the pricing page's "live pricing unavailable" fallback path is currently
+the *default* experience for anonymous visitors, not a rare edge case.
+Neither introduced this session, neither fixable within 023's own allowed
+files (`lib/supabase/middleware.ts` isn't in it) — a second, unrelated
+middleware-layer finding stacking on top of 020's own CSP/static-generation
+bug, both still needing a `RISKS.md` entry and are not yet filed there. A
+smaller, currently-dormant bug was also found inside `/api/billing/me`'s
+own handler (wrong string compared for its 401 mapping) — unreachable
+today because the middleware bug intercepts first. **Carried forward,
+unchanged:** 020's CSP/`force-dynamic` item (023 proactively applied the
+same fix to `/pricing` rather than rediscovering it); the
+pricing-teaser-in-landing content's unclear future owner (020); the
+`/privacy` dead link (022); Phase 3's manual-verification gaps (014-018);
+019's signed-in-nav-state-not-checked-against-a-real-session item. Note:
+Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1509,6 +1511,87 @@ open.
   test:e2e` run. No-JS spot check: both new sections' headings, the draft
   label, and all four guarantee rows present in the DOM with no script
   running.
+- 023 — Pricing page (2026-07-21). **Found before writing any code:**
+  `app/pricing/page.tsx` (this prompt's own "current project state" claim
+  — "Legacy pricing... is functional") doesn't exist anywhere in this
+  workspace, same literal-vs-actual gap 019-022 already hit for their own
+  named files — it only exists in LEGACY. `tests/e2e/critical-flows.spec.ts`
+  also doesn't exist here (`tests/e2e/` only had 020's `smoke.spec.ts`) —
+  unlike 020's own finding that LEGACY's file had *no* homepage content to
+  port, this time LEGACY's file genuinely does have real pricing/checkout
+  tests, so those were actually ported into a new file of the same name,
+  not treated as another "nothing to port" case. `lib/billing/**` (all
+  read-only per this prompt) and `lib/plans.ts`/`lib/billing/plans.ts`
+  (read-only, neither in this prompt's own allowed-files list — left
+  completely untouched) all exist and were used as ground truth.
+  **Deliberately did not reuse `lib/plans.ts`'s existing marketing copy**
+  (this prompt's own instruction: "plan display names move to i18n —
+  keep `lib/billing/plans.ts` values as the canonical amounts"): that
+  file's feature lists include roadmap-only claims ("Командний простір"/
+  team workspace, work integrations — FEATURE_PARITY_MATRIX's own
+  "Roadmap only" list) and an `originalPrice` $30->$20/$60->$40 discount
+  framing with **no corresponding field anywhere in
+  `lib/billing/plans.ts`'s canonical amounts** — never actually charged,
+  so not reproduced. New pricing copy (`lib/i18n/copy.ts`'s
+  `sharedCopy.*.pricingPage`) states only what `PLAN_LIMITS`
+  (`lib/billing/limits.ts`) and the real API contracts actually support.
+  **Real limits, verified exact, not approximated:** Free 1 import/mo,
+  5 MB, 250 memories, 10 Twin drafts/mo; Personal 10/25 MB/5,000/500;
+  Work 50/50 MB/25,000/2,000 — read directly from `PLAN_LIMITS`, asserted
+  byte-for-byte in both `PricingTable.test.tsx` and
+  `critical-flows.spec.ts`, never hardcoded as copy.
+  **Found and fixed one real bug via a real screenshot, not just code
+  review:** a first pass rendered the page's own eyebrow/title/subtitle
+  server-side (static English `sharedCopy.EN` text in `page.tsx`) while
+  `PricingTable` itself correctly used `useLang()` — switching to UA
+  translated the three columns but left the heading in English. Moved the
+  intro into `PricingTable` itself so the whole page reacts to one shared
+  language state; re-verified with a UA screenshot.
+  **Found two real, pre-existing production bugs — neither introduced
+  here, neither fixable within this prompt's own allowed files:**
+  (1) `lib/supabase/middleware.ts`'s `protectedPath()` treats every
+  `/api/*` route as auth-required unless explicitly allowlisted
+  (`publicApi`), and `/api/billing/plans`/`/api/billing/me` aren't on that
+  list — even though `/api/billing/plans`'s own route handler has no
+  `requireUser()` call at all and is clearly meant to be public (it's
+  literally how an anonymous visitor is supposed to see live pricing
+  before signing up). Confirmed directly against a running server, not
+  guessed from reading code: `curl` on both routes returns a real 401
+  `{"error":"AUTH_REQUIRED"}` — from middleware itself — for every
+  anonymous request. Practical effect: **every anonymous visitor to
+  `/pricing` currently sees the static-fallback-pricing/quiet-retry state
+  this prompt's own edge case asks for, not live pricing** — that fallback
+  path isn't a rare edge case here, it's the default experience for the
+  page's single most important audience. (2) A narrower, currently-
+  dormant bug inside `/api/billing/me`'s own handler: its catch block
+  only maps the literal string `"UNAUTHORIZED"` to a 401, but
+  `requireUser()` actually throws `"AUTH_REQUIRED"` — unreachable in
+  practice today because middleware's own gate (bug 1) intercepts first,
+  but would surface a wrong status code (500, not 401) if that gate were
+  ever fixed without also fixing this. Both are real findings written up
+  here, not silently worked around — `PricingTable`'s own client code
+  already treats *any* non-2xx from `/api/billing/me` as "not signed in"
+  (matching `Header`'s own established robust-to-any-failure convention),
+  so neither bug breaks the page's own behavior, just its live-pricing
+  *accuracy* for anonymous visitors. Both deserve `RISKS.md`/middleware-
+  owner follow-up, not filed here (`RISKS.md`/`lib/supabase/middleware.ts`
+  aren't in this prompt's allowed files) — a second, unrelated middleware
+  finding stacking on top of 020's own CSP/static-generation one.
+  **Behavior-parity checklist (this prompt's own required "preserve
+  behavior exactly" instruction):**
+  | LEGACY behavior | Status |
+  | --- | --- |
+  | Unauthenticated CTA -> `/auth?next=/pricing` | Preserved — but as a real `<Link href>` (visible/no-JS-safe/matches `Header`'s own established pattern), not LEGACY's `<button>` with a client-side auth check inside the click handler. Same destination URL, satisfies this prompt's own literal acceptance criterion ("matching the current e2e regex"); documented as a deliberate, values-consistent divergence, not an oversight |
+  | Authenticated -> `POST /api/billing/checkout` with `{ planId }` only | Preserved exactly, asserted in both RTL and e2e |
+  | Current-plan state shows quiet "Your plan", not a dead button | Implemented; Free's "not current, can't checkout into it" state shows plain text ("Included with every account"), not a button either, per this prompt's own "no dead buttons" rule (LEGACY's own Free-plan CTA behavior wasn't specified in this prompt's own inspection scope) |
+  | Work<->Personal switch goes through checkout as today | Preserved — any non-current paid plan always renders a real, functional checkout button regardless of which plan the user is currently on |
+  | `/api/billing/plans` unavailable -> static fallback + quiet retry + disabled CTAs with visible reason | Implemented; found (see above) this is not a rare edge case in the current deployment |
+  `yarn lint`, `yarn typecheck`, `yarn test` (38 files/190 tests, including
+  the new `PricingTable.test.tsx`), `yarn build`, and `yarn test:e2e`
+  (14/14 — 5 new pricing tests in the new `critical-flows.spec.ts`, plus
+  the 9 already in `smoke.spec.ts`, against a real `yarn build && yarn
+  start`) all passed via `yarn run check` + a separate `yarn test:e2e`
+  run.
 
 ## Failed prompts
 
