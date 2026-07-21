@@ -32,6 +32,8 @@ html {
  */
 #product,
 #how-it-works,
-#memory {
+#memory,
+#twin,
+#privacy {
   scroll-margin-top: 96px;
 }

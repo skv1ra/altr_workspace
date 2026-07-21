@@ -1,0 +1,92 @@
+.section {
+  padding-block: var(--space-24);
+  padding-inline: var(--space-10);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding-inline: var(--space-6);
+    padding-block: var(--space-12);
+  }
+}
+
+.intro,
+.stage {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.stage {
+  margin-top: var(--space-12);
+}
+
+.figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.incoming {
+  align-self: flex-start;
+  max-width: 85%;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: rgb(var(--altr-white-rgb) / 6%);
+}
+
+.incomingLabel {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.incomingMessage {
+  margin: 6px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/*
+ * The strongest light/dark contrast moment on the page (this prompt's own
+ * visual requirement): a real --altr-white card, obsidian text, sitting
+ * directly on the section's own obsidian ground — every other surface on
+ * this landing (ProductSection, HowItWorks) is the reverse (dark shapes
+ * on light), so this is a deliberate, singular inversion, not a pattern
+ * reused elsewhere.
+ */
+.draftCard {
+  align-self: flex-end;
+  max-width: 92%;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--altr-white);
+  box-shadow: var(--shadow-elevated);
+}
+
+.draftLabel {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--altr-obsidian);
+}
+
+.draftMessage {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--altr-obsidian);
+}
+
+.provenance {
+  align-self: flex-end;
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--text-muted);
+  opacity: 0.75;
+}

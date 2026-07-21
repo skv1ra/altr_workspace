@@ -1,0 +1,40 @@
+.section {
+  padding-block: var(--space-24);
+  padding-inline: var(--space-10);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding-inline: var(--space-6);
+    padding-block: var(--space-12);
+  }
+}
+
+.intro,
+.list,
+.linkRow {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.list {
+  margin-top: var(--space-12);
+}
+
+.linkRow {
+  margin-top: var(--space-10);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-5);
+  align-items: start;
+  padding-block: var(--space-6);
+}
+
+.glyph {
+  margin-top: 2px;
+  color: rgb(var(--altr-graphite-rgb) / 55%);
+  flex-shrink: 0;
+}

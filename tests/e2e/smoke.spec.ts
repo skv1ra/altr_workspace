@@ -12,7 +12,9 @@ import { test, expect } from "@playwright/test";
  * per ADR-006/011's own migration instruction for ported specs.
  */
 
-test("homepage renders the header, hero, product, how-it-works, and memory sections", async ({ page }) => {
+test("homepage renders the header, hero, product, how-it-works, memory, twin, and privacy sections", async ({
+  page,
+}) => {
   await page.goto("/");
 
   await expect(page.getByRole("link", { name: "Altr home" })).toBeVisible();
@@ -20,6 +22,8 @@ test("homepage renders the header, hero, product, how-it-works, and memory secti
   await expect(page.getByRole("heading", { name: /Your history becomes memory/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Three movements, always in your control/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /What Altr remembers, plainly/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /A draft, in your voice/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Specific guarantees, not vague promises/ })).toBeVisible();
 });
 
 test("header nav links point at real or intentionally-deferred targets, no accidental dead hrefs", async ({
@@ -82,6 +86,32 @@ test("the memory demo renders fictional memories with no dead interactive contro
   await expect(section.getByText("Short, direct replies")).toBeVisible();
   await expect(section.getByText("Editing")).toBeVisible();
   await expect(section.getByRole("button")).toHaveCount(0);
+});
+
+test("the Twin demo shows the draft-only label and no send button", async ({ page }) => {
+  await page.goto("/#twin");
+  const section = page.locator("#twin");
+  await expect(section).toBeInViewport();
+  await expect(section.getByText("Draft — you decide what sends")).toBeVisible();
+  await expect(section.getByRole("figure")).toBeVisible();
+  await expect(section.getByRole("button")).toHaveCount(0);
+});
+
+test("the privacy section lists its guarantees and links to /privacy, with no unverifiable training claim", async ({
+  page,
+}) => {
+  await page.goto("/#privacy");
+  const section = page.locator("#privacy");
+  await expect(section).toBeInViewport();
+  await expect(section.getByText("Parsed in your browser", { exact: true })).toBeVisible();
+  await expect(section.getByText("Scoped to you", { exact: true })).toBeVisible();
+  await expect(section.getByText("Never sent without you", { exact: true })).toBeVisible();
+  await expect(section.getByText("Yours to export or delete", { exact: true })).toBeVisible();
+  await expect(section.getByRole("link", { name: "Read the full privacy policy" })).toHaveAttribute(
+    "href",
+    "/privacy",
+  );
+  await expect(section.getByText(/train/i)).toHaveCount(0);
 });
 
 test("mobile menu opens with the same nav links and closes on Escape", async ({ page }) => {

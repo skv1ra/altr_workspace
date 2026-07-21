@@ -243,3 +243,100 @@ export const memoryDemoCopy = {
     ],
   },
 } as const;
+
+/**
+ * Twin demonstration (Prompt 022). A single static, composed moment —
+ * fictional incoming message + fictional draft — checked against what
+ * `app/api/ai/draft-reply/route.ts` actually returns/enforces: the
+ * response's own `status` field is literally `"draft"` (never "sent"),
+ * and its own developer instruction to the model says outright "Never
+ * claim it was sent, accepted, completed, booked, paid, delivered, or
+ * otherwise acted on" — there is no send-on-behalf-of-user code path
+ * anywhere in the ported API surface. `draftLabel` below ("Draft — you
+ * decide what sends") is this prompt's own required literal phrase.
+ */
+export const twinDemoCopy = {
+  EN: {
+    eyebrow: "04 — Your Twin",
+    title: "A draft, in your voice — never sent without you.",
+    figureLabel: "Example Twin draft, for illustration only — not a live conversation",
+    incomingLabel: "Incoming · 09:42",
+    incomingMessage: "Can you confirm the final price and delivery date today?",
+    draftLabel: "Draft — you decide what sends",
+    draftMessage: "Yes — I'll confirm the final price and delivery date today. I'm checking the last details now and will follow up shortly.",
+    provenance: "Drawing on 3 memories",
+  },
+  UA: {
+    eyebrow: "04 — Твій Twin",
+    title: "Чернетка твоїм голосом — ніколи не надсилається без тебе.",
+    figureLabel: "Приклад чернетки Twin, лише для ілюстрації — не жива розмова",
+    incomingLabel: "Вхідне · 09:42",
+    incomingMessage: "Можеш сьогодні підтвердити фінальну ціну і дату доставки?",
+    draftLabel: "Чернетка — ти вирішуєш, що надсилати",
+    draftMessage: "Так — сьогодні підтверджу фінальну ціну і дату доставки. Зараз перевіряю останні деталі й скоро повернусь з відповіддю.",
+    provenance: "На основі 3 спогадів",
+  },
+} as const;
+
+/**
+ * Privacy section (Prompt 022) — "enumerate only verified guarantees...
+ * verify [no-training claim] against code/docs before writing it — if
+ * unverifiable, do not claim it." Each guarantee below is traceable to a
+ * specific MASTER_CONTEXT.md security invariant and/or real code; the
+ * suggested "no training on your data" guarantee was checked
+ * (`lib/ai/openai.ts`'s `createResponse` passes no data-retention/opt-out
+ * parameter to the OpenAI API, and no doc in this workspace or LEGACY —
+ * `docs/SECURITY.md`, read from a disposable LEGACY clone since it isn't
+ * ported here — states a training policy either way) and **deliberately
+ * left out**, per this prompt's own instruction, rather than asserted on
+ * assumption. See STATUS.md's own guarantee-to-evidence mapping table for
+ * the other four.
+ */
+export const privacySectionCopy = {
+  EN: {
+    eyebrow: "05 — Privacy",
+    title: "Specific guarantees, not vague promises.",
+    guarantees: [
+      {
+        title: "Parsed in your browser",
+        body: "Raw conversation exports are parsed locally in a background worker — the file itself is never uploaded, only the structured result is.",
+      },
+      {
+        title: "Scoped to you",
+        body: "Every read and write is scoped to your authenticated account, enforced at the database level.",
+      },
+      {
+        title: "Never sent without you",
+        body: "Altr's Twin produces drafts only. Nothing is sent, scheduled, or acted on without you reviewing it first.",
+      },
+      {
+        title: "Yours to export or delete",
+        body: "Export your data or delete your account at any time — deletion requires explicit confirmation, never a single accidental click.",
+      },
+    ],
+    privacyLink: "Read the full privacy policy",
+  },
+  UA: {
+    eyebrow: "05 — Приватність",
+    title: "Конкретні гарантії, а не розпливчасті обіцянки.",
+    guarantees: [
+      {
+        title: "Обробка у твоєму браузері",
+        body: "Необроблені експорти розмов парсяться локально у фоновому воркері — сам файл ніколи не завантажується, лише структурований результат.",
+      },
+      {
+        title: "Лише для тебе",
+        body: "Кожен запит на читання чи запис прив'язаний до твого автентифікованого акаунта на рівні бази даних.",
+      },
+      {
+        title: "Ніколи не надсилається без тебе",
+        body: "Twin створює лише чернетки. Нічого не надсилається, не планується і не виконується без твого перегляду.",
+      },
+      {
+        title: "Твоє право експортувати чи видалити",
+        body: "Експортуй дані або видали акаунт у будь-який момент — видалення потребує явного підтвердження, ніколи не одним випадковим кліком.",
+      },
+    ],
+    privacyLink: "Читати повну політику приватності",
+  },
+} as const;

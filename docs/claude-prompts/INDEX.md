@@ -31,7 +31,7 @@ altr_workspace only.
 | 019 | Public header and navigation | 4 | Premium fixed header, mobile menu | 011 | M | done | done | yes | `feat(site): premium public header` |
 | 020 | Hero integration and product section | 4 | Landing top: hero + product explanation | 018,019 | M | done | done | yes | `feat(site): integrate hero and product section` |
 | 021 | How-it-works and memory demo | 4 | Editorial process + memory demonstration | 020 | M | done | done | yes | `feat(site): how-it-works and memory demo` |
-| 022 | Twin demo and privacy section | 4 | Draft demo + security/privacy explanation | 021 | M | todo | todo | yes | `feat(site): twin demo and privacy section` |
+| 022 | Twin demo and privacy section | 4 | Draft demo + security/privacy explanation | 021 | M | done | done | yes | `feat(site): twin demo and privacy section` |
 | 023 | Pricing page | 4 | Free/Personal/Work pricing, checkout entry | 022 | M | todo | todo | yes | `feat(site): premium pricing page` |
 | 024 | Footer, legal restyle, SEO, mobile | 4 | Footer, legal pages skin, metadata, polish | 023 | M | todo | todo | yes | `feat(site): footer, legal restyle and SEO` |
 | 025 | Auth screens redesign | 5 | Login/register in new visual system | 011 | M | todo | todo | yes | `feat(auth): redesigned auth screens` |

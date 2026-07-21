@@ -3,6 +3,8 @@ import { HeroScene } from "@/components/hero/HeroScene";
 import { ProductSection } from "@/components/site/ProductSection";
 import { HowItWorks } from "@/components/site/HowItWorks";
 import { MemoryDemo } from "@/components/site/MemoryDemo";
+import { TwinDemo } from "@/components/site/TwinDemo";
+import { PrivacySection } from "@/components/site/PrivacySection";
 import "./page.css";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +29,9 @@ export const dynamic = "force-dynamic";
  * either.
  *
  * Prompt 021 appends `#how-it-works` and the memory demonstration
- * (`#memory`) — see STATUS.md's own ledger for what's still deferred to
- * 022-024 (privacy, pricing, final CTA, footer).
+ * (`#memory`). Prompt 022 appends the Twin demonstration (`#twin`) and
+ * the privacy section (`#privacy`) — see STATUS.md's own ledger for
+ * what's still deferred to 023-024 (pricing, final CTA, footer).
  */
 export default function HomePage() {
   return (
@@ -38,6 +41,8 @@ export default function HomePage() {
       <ProductSection />
       <HowItWorks />
       <MemoryDemo />
+      <TwinDemo />
+      <PrivacySection />
     </main>
   );
 }

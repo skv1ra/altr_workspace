@@ -4,21 +4,24 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 021 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. The homepage now has five live sections
-(Header, Hero, Product, How it works, Memory demo); `#how-it-works` closes
-the one dead-anchor item 020's own ledger flagged. Copy-accuracy check (this
-prompt's own required manual-verification step) passed clean — every claim
-in the new sections maps to a FEATURE_PARITY_MATRIX COMPLETE row, no
-unmapped or overstated claim found (full mapping in the 021 entry below).
-**Carried forward, unchanged by this prompt:** 020's own most significant
-open item — `/` runs `export const dynamic = "force-dynamic"` to work
-around a real, previously-undiscovered CSP-nonce-vs-static-generation bug,
-which still deserves a `RISKS.md` entry and a broader architectural
-decision neither 020 nor 021 were scoped to make; 018's hero-lab
-interactivity claims still carry the same unverified caveat 020 raised.
-Also still open: the pricing-teaser-in-landing content's unclear future
-owner (020's finding); Phase 3's manual-verification gaps (014-018); 019's
+None — Prompt 022 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. The homepage now has seven live sections
+(Header, Hero, Product, How it works, Memory demo, Twin demo, Privacy).
+Guarantee-to-evidence mapping (this prompt's own required security record)
+passed clean — four guarantees shipped, each traced to a specific
+MASTER_CONTEXT.md invariant or real code; one suggested guarantee ("no
+training on your data") was checked and deliberately dropped as
+unverifiable in this codebase, per the prompt's own explicit instruction —
+full mapping table in the 022 entry below. **Carried forward, unchanged by
+this prompt:** 020's own most significant open item — `/` runs
+`export const dynamic = "force-dynamic"` to work around a real,
+previously-undiscovered CSP-nonce-vs-static-generation bug, still deserving
+a `RISKS.md` entry and a broader architectural decision no landing-section
+prompt has been scoped to make; 018's hero-lab interactivity claims still
+carry the same unverified caveat 020 raised. Also still open: the
+pricing-teaser-in-landing content's unclear future owner (020); the new
+`/privacy` dead link (022, no clear owning prompt in the current INDEX);
+Phase 3's manual-verification gaps (014-018); 019's
 signed-in-nav-state-not-checked-against-a-real-session item. Note: Prompt
 004 itself
 (the backend scaffold/port) was never given its own commit or
@@ -1430,6 +1433,82 @@ open.
   test:e2e` run. No-JS spot check (real `javaScriptEnabled: false`
   context): both new sections' headings and all four memory rows present
   in the DOM with no script running.
+- 022 — Twin demonstration and privacy section (2026-07-21). **Found
+  before writing any copy:** `docs/SECURITY.md` (this prompt's own "files
+  to inspect first") doesn't exist in this workspace — read from a
+  disposable LEGACY clone (same method as 019-021, deleted after);
+  `docs/IMPORT_SECURITY.md` (also named) confirmed absent again, already
+  established in 021. `app/privacy/page.tsx` also doesn't exist yet (only
+  `app/api/privacy/*`) — linked to `/privacy` anyway per this prompt's own
+  literal instruction, added to the dead-link ledger below rather than
+  skipped.
+  **New components** (`components/site/`): `TwinDemo.tsx` (`#twin` — a
+  static composed moment on an obsidian ground: a muted incoming-message
+  row, then the draft in a real `--altr-white` card, this prompt's own
+  visual "strongest light/dark contrast moment on the page", verified
+  with a real screenshot) and `PrivacySection.tsx` (`#privacy` — four
+  one-sentence guarantees with a quiet `lucide-react` glyph each,
+  hairline-divided rows, not a card grid).
+  **Guarantee-to-evidence mapping (this prompt's own required security
+  record — every sentence traced to real code or a MASTER_CONTEXT.md
+  invariant, not asserted):**
+
+  | Guarantee sentence | Evidence |
+  | --- | --- |
+  | "Parsed in your browser... the file itself is never uploaded, only the structured result is." | MASTER_CONTEXT invariant #7; `workers/conversation-parser.worker.ts`; `rawFileStored: z.literal(false)` in `app/api/imports/route.ts` |
+  | "Every read and write is scoped to your authenticated account, enforced at the database level." | MASTER_CONTEXT invariant #4; `supabase/tests/phase_3_rls_verification.sql` |
+  | "Altr's Twin produces drafts only. Nothing is sent, scheduled, or acted on without you reviewing it first." | MASTER_CONTEXT invariant #6 (exact wording: "AI output is a reviewable draft. The application never sends messages."); `app/api/ai/draft-reply/route.ts`'s own developer instruction ("Never claim it was sent, accepted, completed..."); response `status` field is literally `"draft"`; no send-on-behalf-of-user path exists anywhere in the ported API surface |
+  | "Export your data or delete your account at any time — deletion requires explicit confirmation, never a single accidental click." | `app/api/privacy/export/route.ts` (real GET export); `app/api/privacy/account/route.ts` (`confirmation: z.literal("DELETE MY ACCOUNT")`, matches MASTER_CONTEXT invariant #8 exactly) |
+
+  **One suggested guarantee deliberately dropped, not silently ignored:**
+  "no training on your data" — checked `lib/ai/openai.ts`'s `createResponse`
+  (no data-retention/opt-out parameter passed to the OpenAI API call) and
+  every doc available (this workspace's own, plus LEGACY's
+  `docs/SECURITY.md`) — none state a training policy either way. Per this
+  prompt's own explicit instruction ("if unverifiable, do not claim it"),
+  left out entirely: four guarantees shipped, not five. A regression test
+  (`PrivacySection.test.tsx` and the e2e suite) asserts the word "train"
+  never appears anywhere in the section, so a future edit can't
+  reintroduce this claim without a test failing first.
+  **Legal-eye read (this prompt's own required manual verification):**
+  read all four sentences again looking for anything a reviewer could
+  challenge — flagged and specifically checked one edge case on the third
+  guarantee's word "scheduled": the profile API has unused
+  `autoDrafts`/`weeklyDigest` preference *flags* (`app/api/me/route.ts`,
+  `lib/profileServer.ts`) with **zero wired implementation anywhere** —
+  no cron, no scheduled-send job references them at all — so "nothing is
+  ...scheduled... without you reviewing it first" holds vacuously true
+  (nothing is scheduled, full stop) rather than overclaiming a review gate
+  on a feature that doesn't exist. No other sentence found challengeable.
+  **No fake send button / labeled figure, verified two ways:** `TwinDemo`
+  renders as `<figure aria-label="...for illustration only — not a live
+  conversation">` with zero `<button>`s anywhere in the section — RTL
+  asserts the figure role/name and zero buttons; e2e re-confirms against
+  a real production build. Same "zero buttons" discipline `MemoryDemo`
+  (021) already established.
+  **Reveal-on-scroll:** both sections reuse the Prompt 011 `Reveal`
+  system, same as every prior landing section — not independently
+  re-verified, identical already-proven mechanism.
+  **Edge cases:** long UA strings in the demo bubbles checked with a real
+  screenshot (draft card grows to fit, no truncation/overflow); 320px
+  checked for both sections, clean.
+  **Anchor offset:** extended `app/(public)/page.css`'s existing
+  `scroll-margin-top: 96px` selector list to `#twin` and `#privacy` (no
+  new file, same pattern 020/021 already established).
+  **Dead-link ledger update:** adds `/privacy` (page doesn't exist yet —
+  no prompt in the current INDEX explicitly owns a dedicated
+  `app/privacy/page.tsx` build the way 023/025/029 own their own targets;
+  flagged, not guessed at). Still open, unchanged from 020/021: `/pricing`
+  (023), `/auth?mode=login`/`/auth?mode=register` (025), `/dashboard`
+  (029), the pricing-teaser-in-landing's unclear owner, the final CTA
+  section and footer (024).
+  `yarn lint`, `yarn typecheck`, `yarn test` (37 files/184 tests, including
+  the new `TwinDemo.test.tsx`/`PrivacySection.test.tsx`), `yarn build`, and
+  `yarn test:e2e` (9/9, two new tests added, against a real `yarn build &&
+  yarn start`) all passed via `yarn run check` + a separate `yarn
+  test:e2e` run. No-JS spot check: both new sections' headings, the draft
+  label, and all four guarantee rows present in the DOM with no script
+  running.
 
 ## Failed prompts
 
