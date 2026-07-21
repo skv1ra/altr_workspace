@@ -29,7 +29,7 @@ altr_workspace only.
 | 017 | Hero fallbacks and loading | 3 | Mobile, reduced-motion, no-JS, zero-CLS loading | 016 | M | done | done | yes | `feat(hero): fallbacks and loading strategy` |
 | 018 | Hero performance verification | 3 | FPS, asset budget, CLS measurements | 017 | M | done | done | yes | `perf(hero): verify hero performance budget` |
 | 019 | Public header and navigation | 4 | Premium fixed header, mobile menu | 011 | M | done | done | yes | `feat(site): premium public header` |
-| 020 | Hero integration and product section | 4 | Landing top: hero + product explanation | 018,019 | M | todo | todo | yes | `feat(site): integrate hero and product section` |
+| 020 | Hero integration and product section | 4 | Landing top: hero + product explanation | 018,019 | M | done | done | yes | `feat(site): integrate hero and product section` |
 | 021 | How-it-works and memory demo | 4 | Editorial process + memory demonstration | 020 | M | todo | todo | yes | `feat(site): how-it-works and memory demo` |
 | 022 | Twin demo and privacy section | 4 | Draft demo + security/privacy explanation | 021 | M | todo | todo | yes | `feat(site): twin demo and privacy section` |
 | 023 | Pricing page | 4 | Free/Personal/Work pricing, checkout entry | 022 | M | todo | todo | yes | `feat(site): premium pricing page` |

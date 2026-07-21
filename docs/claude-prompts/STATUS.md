@@ -4,20 +4,30 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 019 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. 019 depends only on 011 (design system),
-not on 018, so it proceeded independently of Phase 3's own still-open
-manual-verification gaps (014/015/016/017/018, all user-approval steps not
-yet done — carried forward again, unchanged by this prompt). 019 leaves its
-own follow-ups for later: the real homepage doesn't render `<Header />` yet
-(020's integration job — verified via the styleguide preview only, per
-this prompt's own instruction); the signed-in nav state was verified by
-mocking `getCurrentProfile()` in tests, not against a real session (no
-auth screens exist yet, Prompt 025+) — flagged for a spot-check once they
-do; `components/Navigation.tsx`/`components/LanguageSwitcher.tsx` (this
-prompt's own "files to inspect first") turned out not to exist anywhere in
-this workspace at all, read from a disposable `altrtest2` clone instead
-(see the 019 entry below for how). Note: Prompt 004 itself
+None — Prompt 020 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **The real homepage is live** (`/` now
+renders Header + HeroScene + ProductSection instead of the Prompt 004
+placeholder). **Most important open item, found this session, not
+inherited:** `/` had to be marked `export const dynamic = "force-dynamic"`
+to fix a real, previously-undiscovered, site-wide bug where
+`middleware.ts`'s per-request CSP nonce can never match a statically
+prerendered page's frozen-at-build-time HTML, silently breaking all
+client-side interactivity in production (confirmed directly — see the 020
+entry below). This is a genuine architectural trade-off (lost static
+caching on the highest-traffic route) that deserves a `RISKS.md` entry and
+a real decision beyond what one page-scoped prompt should make alone —
+not yet filed, since `RISKS.md` wasn't in 020's own allowed files. It also
+means 018's own hero-lab interactivity claims (FPS aside — that number is
+real, independent of React) weren't fully proven the way they read;
+flagged, not re-verified, since `/hero-lab` isn't in 020's allowed files
+either. Dead-link ledger and other 020 follow-ups (how-it-works/memory,
+privacy, pricing-teaser-in-landing, final CTA, footer — each already
+scheduled to 021-024 except the pricing teaser, whose future owner is
+genuinely unclear from the plan as written) are in the 020 entry below.
+Phase 3's own still-open manual-verification gaps (014-018, all
+user-approval steps) remain unchanged, carried forward again; 019's own
+follow-ups (signed-in nav state not yet checked against a real session)
+also remain open. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1191,6 +1201,147 @@ open.
   the new `Header.test.tsx`), and `yarn build` (30/30 pages; `/hero-lab`
   grew 6.46 KB -> 6.49 KB gzip, negligible, unrelated to this prompt's own
   route) all passed via `yarn run check`.
+- 020 — Hero integration and product section (2026-07-21). **The homepage
+  is rebuilt**: `app/(public)/page.tsx` (was the Prompt 004 single-line
+  placeholder) now renders `<Header />` + `<HeroScene />` (unchanged, same
+  component `/hero-lab` already verified — no fork) + a new
+  `<ProductSection />` for `#product`. Prompt 004's own port never carried
+  the legacy hero/homepage components into WORKSPACE (confirmed again,
+  same as 019 found for `Navigation.tsx`) — this prompt's own text already
+  flagged that ("no deletion needed"), so there was nothing to delete or
+  swap out; **deleted files: none, importer proof: none needed.**
+  **Found and fixed a real, serious, pre-existing, project-wide bug —
+  not introduced by this prompt, but this is the first prompt whose own
+  acceptance criteria required proving real click interactivity against a
+  genuine production build on a publicly-reachable route (018 measured
+  perf/paint numbers on `/hero-lab`, which don't require any click to
+  succeed; 019 only ever verified interactivity via `yarn dev` or jsdom,
+  neither of which enforces CSP the way a real browser does):**
+  `middleware.ts` generates a fresh CSP nonce *per request* and sets it as
+  both the `x-nonce` request header and the `Content-Security-Policy`
+  response header — correct — but nothing in the app ever reads that
+  nonce back out to apply it to Next's own inline scripts, and more
+  fundamentally, `/` was **statically prerendered** (`○` in the build
+  output), meaning its HTML — including whatever nonce might have been
+  baked into it — is fixed at *build* time, while the CSP header's nonce
+  is fresh on *every request*; the two can never match for a static page,
+  by construction. Confirmed precisely, not guessed: production HTML
+  (`yarn build && yarn start`) had zero `nonce="..."` attributes on its 5
+  bare inline `<script>self.__next_f.push(...)</script>` RSC-payload
+  tags, and the browser console showed 5 real
+  `Executing inline script violates ... Content Security Policy` errors —
+  clicking the mobile-menu trigger did nothing at all (React never
+  finished hydrating; `getByRole("dialog")` after a real `.click()` found
+  nothing). Cross-checked against `yarn dev` (which showed correct,
+  matching nonces on every script, zero bare inline scripts, zero CSP
+  errors) to confirm this was prod-only, not something already broken and
+  unnoticed. **Fix, within this prompt's own allowed files only**
+  (`middleware.ts`/`app/layout.tsx` are not in scope, and this prompt
+  isn't the place to redesign the CSP strategy): added
+  `export const dynamic = "force-dynamic"` to `app/(public)/page.tsx`,
+  which forces `/` to render per-request instead of statically —
+  confirmed fixed (production HTML now carries matching nonces on every
+  script tag, zero CSP console errors, all 5
+  `tests/e2e/smoke.spec.ts` tests pass against a real `yarn build && yarn
+  start`, including the mobile-menu open/Escape-close/focus-return test).
+  **Real trade-off, flagged honestly, not silently absorbed:** `/` losing
+  static generation means it's server-rendered on every request instead
+  of served as cached static HTML — a real cost/latency trade-off for the
+  single highest-traffic route on the whole site. A broken-but-fast
+  homepage is worse than a working-but-dynamic one, so this was still the
+  right call for *this* prompt, but the underlying CSP-nonce-vs-static-
+  generation tension is a site-wide architectural question (does every
+  page needing real interactivity go dynamic? does the CSP strategy
+  change to a hash-based policy instead of nonces for statically
+  rendered routes? something else?) that deserves its own `RISKS.md`
+  entry and a real decision — not made here, `RISKS.md` isn't in this
+  prompt's own allowed files. **This also puts a caveat on 018's own
+  interactivity claims:** 018's FPS measurement drove `page.mouse.move`/
+  `window.scrollTo` against production `/hero-lab` and counted real
+  `requestAnimationFrame` callbacks via a script injected directly through
+  Playwright (not through React) — that count is real and unaffected by
+  this bug, but it does **not** prove React-driven shard motion
+  (`useHeroPointer`/`useHeroShardMotion`) was actually responding to that
+  input in that specific run, since `/hero-lab` was *also* static in
+  production and could plausibly have hit the identical hydration
+  failure. Not re-verified here (out of this prompt's scope — `/hero-lab`
+  isn't an allowed file) — flagged so it isn't mistaken for a settled
+  fact.
+  **`#product`:** new `ProductSection.tsx` — eyebrow/title/body plus three
+  plain labeled beats (Import/Memory/Drafts) in one column with hairline
+  dividers, no card grid (DESIGN_DIRECTION's own "forbidden: ...
+  rounded-card grids" rule, and this prompt's own visual requirement); one
+  quiet shard (`shard-mid-02`, reused from the hero's own asset family,
+  `@1x` resolution — this is a below-the-fold supporting visual, not
+  hero-scale) with one small memory-fragment caption, continuing the fog
+  atmosphere (`Surface variant="fog"`) rather than cutting to flat white.
+  New `lib/i18n/home-copy.ts` export `productCopy` (EN/UA) — added
+  alongside, not into, the file's existing `homeCopy` export: that object
+  turned out to be dead weight neither LEGACY's real homepage (which has
+  its own separate inline copy object) nor this workspace actually uses
+  anywhere (`grep`-confirmed both), the wrong shape/voice to extend, and
+  cleaning it up isn't this prompt's objective. Copy is truthful to
+  FEATURE_PARITY_MATRIX's "Roadmap only" list: imports are described as
+  user-supplied exported conversation files (matches
+  `lib/imports/parsers.ts`'s real WhatsApp/Telegram/Instagram/Messenger
+  export-file handling), never live OAuth/API sync; drafts are described
+  as proposals the user reviews before sending (matches
+  `app/api/ai/draft-reply`), never autonomous action.
+  **Real bug found and fixed via a screenshot close-up, not just review:**
+  the fragment caption's first-pass styling used dark graphite text
+  (right for text over the light page background, illegible over the
+  shard's own near-black glass, which is what it actually sits on) —
+  DESIGN_DIRECTION specifies "etched in light silver type inside the
+  glass" for exactly this reason, and the hero's own fragments
+  (`HeroFragments.module.css`) already use light silver + a dark shadow;
+  fixed to match. A second look also found the caption's second line
+  overflowing the shard's silhouette in both languages — shortened the
+  copy (EN: "context, not a chatbot" -> "not a chatbot"; UA matched) and
+  reduced its font-size, confirmed fully inside the shard afterward in
+  both languages with real screenshots.
+  **Smooth scroll + anchor targets:** new `app/(public)/page.css` (plain
+  global CSS, not a CSS Module — Next's css-loader rejects a module file
+  whose only selectors are `:global(...)`, "not pure"; a plain global
+  file, importable from any page per the App Router, has no such
+  constraint and needed no middleware/layout changes) sets
+  `scroll-behavior: smooth` on `html` (reduced-motion respected) and
+  `scroll-margin-top: 96px` on `#product` so the fixed header never
+  covers the section's own heading when scrolled or landed on directly.
+  Verified with real Playwright runs, not just code review: clicking
+  "Product" in the header lands on a real, in-viewport `#product`;
+  navigating directly to `/#product` shows it already in view, no dead
+  scroll.
+  **e2e:** LEGACY's `tests/e2e/critical-flows.spec.ts` (this prompt's own
+  "files to inspect first") turned out to have **no homepage-content
+  block to port at all** — every one of its tests navigates to `/auth`,
+  `/dashboard`, `/pricing`, `/memory`, `/import-conversations`, or
+  `/assistants`; `/` only ever appears once, as a post-sign-out redirect
+  target, never asserted against for content. Rewrote
+  `tests/e2e/smoke.spec.ts` with genuinely new coverage instead (5 tests:
+  header+hero+product render; nav hrefs; the Product-link scroll; direct
+  `/#product` landing; mobile menu open/Escape-close/focus-return) — role-
+  based selectors throughout, matching ADR-011's own migration
+  instruction in spirit even though there was no legacy spec body to
+  literally migrate.
+  **Dead-link ledger (per this prompt's own instruction to keep one, not
+  a defect list):** live and verified: `/` (logo), `/#product`. Still
+  unresolved, each waiting on its own later, already-scheduled prompt:
+  `/#how-it-works` (021), `/pricing` (023), `/auth?mode=login` and
+  `/auth?mode=register` (025), `/dashboard` (029). LEGACY content not yet
+  re-covered on the new landing: the how-it-works memory/understanding/
+  action demo and the dedicated memory section (021, per its own title);
+  the privacy explanation (022); a pricing teaser embedded in the landing
+  itself, if the rebuild still wants one — LEGACY had one, but the current
+  INDEX describes 023 as a dedicated pricing *page*, not a landing
+  section, so this specific piece's future owner is genuinely unclear
+  from the plan as written, flagged rather than guessed; the final CTA
+  section and footer (024, per its own title). None of this is silently
+  dropped — every piece above is either already scheduled or explicitly
+  flagged as unscheduled.
+  `yarn lint`, `yarn typecheck`, `yarn test` (33 files/176 tests, including
+  the new `ProductSection.test.tsx`), `yarn build`, and `yarn test:e2e`
+  (5/5, against a real `yarn build && yarn start`, not `yarn dev`) all
+  passed via `yarn run check` + a separate `yarn test:e2e` run.
 
 ## Failed prompts
 

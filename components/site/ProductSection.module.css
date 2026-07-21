@@ -1,0 +1,91 @@
+.section {
+  padding-block: var(--space-24);
+  padding-inline: var(--space-10);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding-inline: var(--space-6);
+    padding-block: var(--space-12);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: var(--space-16);
+  align-items: center;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+  }
+}
+
+.visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.shardImg {
+  width: min(70%, 260px);
+  height: auto;
+  filter: drop-shadow(0 24px 60px rgb(var(--altr-black-rgb) / 14%));
+}
+
+@media (max-width: 900px) {
+  .shardImg {
+    width: min(50%, 220px);
+  }
+}
+
+/*
+ * A single, quiet memory-fragment caption (DESIGN_DIRECTION's own
+ * "realistic, quiet artifacts ... styled as faint etchings" language) —
+ * deliberately a much lighter touch than the hero's own per-shard
+ * fragment system (components/hero/HeroFragments.tsx), which is built
+ * around a whole positioned-per-shard content model this single below-
+ * the-fold visual doesn't need. Decorative/aria-hidden, same as the
+ * hero's own fragment glyphs.
+ */
+.fragment {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  text-align: center;
+  /*
+   * Etched *inside the dark glass*, not over the light page background —
+   * light silver text + dark shadow, matching DESIGN_DIRECTION's "etched
+   * in light silver type inside the glass" and the hero's own actual
+   * fragment coloring (components/hero/HeroFragments.module.css:
+   * `rgba(214, 221, 229, ...)` + a dark shadow). A first pass used dark
+   * graphite text (the wrong assumption — legible on a light background,
+   * unreadable against the near-black shard it actually sits on) — caught
+   * with a real screenshot close-up, not just code review.
+   */
+  color: rgb(214 221 229 / 75%);
+  text-shadow: 0 0 6px rgb(0 0 0 / 45%);
+}
+
+.fragmentKicker {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.fragmentLine {
+  margin: 4px 0 0;
+  font-size: 10.5px;
+  font-style: italic;
+  font-weight: 300;
+  white-space: nowrap;
+}
