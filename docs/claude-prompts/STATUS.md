@@ -4,18 +4,20 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 017 complete (committed locally, not pushed), run directly on
-the user's explicit instruction after 018 was requested first and paused
-pending 017 (018 depends on 017; the user chose "implement 017 first, then
-run 018" when asked). 014's, 015's, and 016's own Manual Verification steps
+None — Prompt 018 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Phase 3 (hero) is now fully done,
+012-018.** 014's, 015's, 016's, and 017's own Manual Verification steps
 (user approval) still haven't happened — same still-open gap, carried
-forward again; 017 adds two more open items for the user/018 to pick up:
-(1) `prefers-reduced-data` is implemented correctly but unverifiable in any
-browser installed here (no engine currently supports the media feature —
-see the 017 entry below); (2) the dev-mode shard fade-in timing observation
-also noted in the 017 entry, which needs re-checking against a real
-production build. Both are non-blocking for 017's own acceptance criteria.
-Note: Prompt 004 itself
+forward again; 018 adds its own required manual step on top ("user reviews
+HERO_PERF_REPORT.md and approves Phase 4 integration"), plus two open items
+017 left for later that 018 did not resolve: (1) `prefers-reduced-data` is
+implemented correctly but unverifiable in any browser installed here (no
+engine currently supports the media feature); (2) the `next dev`-only shard
+fade-in timing observation — 018's real production-build numbers (0ms long
+tasks, sub-300ms LCP) make it likely this was a dev-only artifact, but it
+was not independently re-tested, so it's left open rather than claimed
+resolved. Neither blocked 017 or 018's own acceptance criteria. Note:
+Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1024,6 +1026,74 @@ open.
   all passed (`yarn run check`, twice, full clean run both times — the
   bare `yarn check` command is still Yarn Classic's own unrelated
   lockfile-integrity check, per 013's note).
+- 018 — Hero performance verification (2026-07-21). **Phase 3 complete.**
+  Requested by the user before 017 existed; asked first (per this
+  prompt's own "Dependencies: 017" and its "Current project state"
+  premise, neither true yet), the user chose "implement 017 first, then
+  run 018" — 017 shipped in its own prior session/commit, this one runs
+  018 for real against it.
+  **Solved 012's own unresolved measurement gap, not just repeated it:**
+  `/hero-lab` 404s in production (`NODE_ENV === "production"` gate,
+  unchanged since 012); ADR-007's 012 resolution note explicitly hit this
+  same wall and settled for measuring against `next dev` as a documented
+  caveat — this prompt's own edge case ("measure with production build
+  only") is stricter, so a different resolution was used: the gate's
+  condition was temporarily changed locally
+  (`&& !process.env.ALTR_PERF_MEASURE`), a real `ALTR_PERF_MEASURE=1 yarn
+  build` + `yarn start` served the actual hero in a real production build,
+  measured, then `git checkout` reverted the file byte-for-byte before the
+  final clean build/`yarn check` — confirmed zero net diff to
+  `app/(public)/hero-lab/page.tsx` (not one of this prompt's own allowed
+  files) before committing, and re-confirmed the gate still 404s a truly
+  clean production build afterward.
+  **All six required metrics measured, median of 3 Playwright runs
+  (production server, no throttle, "local desktop") + Lighthouse
+  desktop/mobile presets — full table in the new
+  `docs/claude-prompts/HERO_PERF_REPORT.md`:** LCP 248ms median (target
+  <2s); CLS 0.00008 desktop / 0.0000188 mobile (target 0.00, effectively
+  zero at any real reporting precision); FPS 60.03 avg during combined
+  pointer+scroll stress (target >=55, reusing 016's own measurement
+  methodology); hero-route JS 6.46 KB gzip, independently re-verified by
+  gzip-ing the actual chunk file directly (target <=35KB, and that number
+  still includes `/hero-lab`-only dev chrome not part of the real hero);
+  image bytes 150.7 KB desktop / 42.5 KB mobile (targets 900/350 KB,
+  matching 017's own dev-mode numbers exactly, confirming those transfer
+  sizes are environment-independent as expected for static files); 0ms
+  long tasks across every load run (target <200ms). Lighthouse: **100/100
+  desktop**, **98/100 mobile** (standard 4x-CPU/~1.6Mbps throttle) —
+  LCP/CLS/TBT all clean on both. **All six targets pass with wide margin;
+  no regressions found, so no `components/hero/` changes were needed or
+  made this prompt** — 017 already shipped a hero that clears 018's own
+  budget as-is.
+  **One honestly-flagged, non-blocking observation, not a failure:** LCP's
+  *element* (not just its time, which is this prompt's actual checklist
+  item) varied between the headline and the primary shard image across
+  runs — both paint within the same sub-1.3s window, and the LCP algorithm
+  picks by rendered pixel area, which the shard image sometimes wins.
+  Documented in HERO_PERF_REPORT.md rather than "fixed," since a fix would
+  mean either a visual change (out of scope: "no visual changes allowed"
+  for this prompt) or suppressing a legitimately-painted image from LCP
+  consideration, which would be gaming the measurement, not the
+  experience.
+  **017's own open dev-mode observation (shard fade-in sometimes lagging
+  paint by up to ~2s in `next dev`) was not independently re-tested here**
+  (018 measures its own six named metrics, not that specific animation
+  timing) — but the clean 0ms-long-tasks and sub-300ms LCP numbers against
+  a real production build make it very likely that was a `next dev`-only
+  artifact (unminified bundle, React DEV build, HMR runtime), not
+  something users would see; left as an open item rather than claimed
+  resolved without direct verification.
+  Lighthouse (v13.4.1) installed transiently via `npx lighthouse` — not
+  added to `package.json`/`yarn.lock`. `yarn lint`, `yarn typecheck`,
+  `yarn test`, and `yarn build` (against the properly-gated, reverted tree)
+  all passed via `yarn run check`.
+  **Phase 3 (hero) is now complete end-to-end** (012-018 all done) —
+  Phase 4 integration (020, which depends on 018+019) can proceed once
+  019 (public header) also lands; the still-open manual-verification
+  user-approval gaps noted above (014/015/016/017, plus this prompt's own
+  "user reviews HERO_PERF_REPORT.md and approves Phase 4 integration" step)
+  remain outstanding and are a prerequisite this repo's own traceability
+  gate cares about, not yet satisfied by this session.
 
 ## Failed prompts
 
