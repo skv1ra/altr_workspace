@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Hairline, Surface } from "@/components/ui/Surface";
 import { Body, Display, Heading, Label, Prose } from "@/components/ui/Text";
 import { ControlsDemo } from "./ControlsDemo";
+import { HeaderDemo } from "./HeaderDemo";
 import { MotionDemo } from "./MotionDemo";
 import { OverlaysDemo } from "./OverlaysDemo";
 
@@ -128,6 +129,11 @@ export default function StyleguidePage() {
       <div className="space-y-8">
         <Label as="p">Motion</Label>
         <MotionDemo />
+      </div>
+
+      <div className="space-y-8">
+        <Label as="p">Public header and navigation</Label>
+        <HeaderDemo />
       </div>
     </main>
   );

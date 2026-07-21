@@ -1,0 +1,43 @@
+/*
+ * Overrides Dialog's default centered ~480px card (app/styles/overlays.css
+ * .dialog-panel) into a full-bleed, full-height sheet — this prompt's own
+ * "full-screen quiet overlay" requirement, not a centered modal. Dialog's
+ * backdrop (.dialog-backdrop) already centers its content with flex, which
+ * still works correctly once the panel itself fills that space.
+ */
+.panel {
+  max-width: 100%;
+  width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/*
+ * .dialog-backdrop (app/styles/overlays.css) has its own `padding:
+ * var(--space-6)` framing whatever panel it holds — appropriate for a
+ * centered card, but it left a visible margin/rounded gap around this
+ * panel instead of a true full-bleed sheet. Dialog doesn't expose a way to
+ * override the backdrop itself per-instance, so this reaches for it via
+ * :global() + :has(), scoped specifically to a backdrop that contains our
+ * own hashed .panel class — every other Dialog/ConfirmDialog usage in the
+ * app is unaffected.
+ */
+:global(.dialog-backdrop):has(.panel) {
+  padding: 0;
+}
+
+.panel h2 {
+  position: absolute;
+  top: var(--space-6);
+  left: var(--space-6);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

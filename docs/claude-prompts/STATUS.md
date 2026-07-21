@@ -4,20 +4,20 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 018 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Phase 3 (hero) is now fully done,
-012-018.** 014's, 015's, 016's, and 017's own Manual Verification steps
-(user approval) still haven't happened — same still-open gap, carried
-forward again; 018 adds its own required manual step on top ("user reviews
-HERO_PERF_REPORT.md and approves Phase 4 integration"), plus two open items
-017 left for later that 018 did not resolve: (1) `prefers-reduced-data` is
-implemented correctly but unverifiable in any browser installed here (no
-engine currently supports the media feature); (2) the `next dev`-only shard
-fade-in timing observation — 018's real production-build numbers (0ms long
-tasks, sub-300ms LCP) make it likely this was a dev-only artifact, but it
-was not independently re-tested, so it's left open rather than claimed
-resolved. Neither blocked 017 or 018's own acceptance criteria. Note:
-Prompt 004 itself
+None — Prompt 019 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. 019 depends only on 011 (design system),
+not on 018, so it proceeded independently of Phase 3's own still-open
+manual-verification gaps (014/015/016/017/018, all user-approval steps not
+yet done — carried forward again, unchanged by this prompt). 019 leaves its
+own follow-ups for later: the real homepage doesn't render `<Header />` yet
+(020's integration job — verified via the styleguide preview only, per
+this prompt's own instruction); the signed-in nav state was verified by
+mocking `getCurrentProfile()` in tests, not against a real session (no
+auth screens exist yet, Prompt 025+) — flagged for a spot-check once they
+do; `components/Navigation.tsx`/`components/LanguageSwitcher.tsx` (this
+prompt's own "files to inspect first") turned out not to exist anywhere in
+this workspace at all, read from a disposable `altrtest2` clone instead
+(see the 019 entry below for how). Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1094,6 +1094,103 @@ open.
   "user reviews HERO_PERF_REPORT.md and approves Phase 4 integration" step)
   remain outstanding and are a prerequisite this repo's own traceability
   gate cares about, not yet satisfied by this session.
+- 019 — Public header and navigation (2026-07-21). **Found before writing
+  any code:** `components/Navigation.tsx` and `components/LanguageSwitcher.tsx`
+  (this prompt's own literal "files to inspect first") don't exist
+  anywhere in this workspace — not committed, not uncommitted; neither
+  does `app/page.tsx` (the actual root route is `app/(public)/page.tsx`, a
+  bare placeholder heading, no nav at all). Prompt 004's backend-only port
+  evidently never carried these UI files over. Resolved the same way prior
+  gaps of this shape have been (002/005/013/017): went to the actual
+  source of truth instead of assuming. Cloned `skv1ra/altrtest2` read-only
+  into a disposable OS temp directory (same discipline as Prompt 001's own
+  disposable-worktree approach — never touched the user's own separate
+  local `altrtest2` checkout, and deleted the clone once done), read the
+  real legacy `Navigation.tsx`/`LanguageSwitcher.tsx` for the patterns this
+  prompt explicitly asks to preserve, then built fresh components against
+  *this* workspace's own already-ported `lib/auth.ts`
+  (`getCurrentProfile()` -> `/api/me`, already resolves to `null` on any
+  non-2xx/network failure — exactly this prompt's required offline
+  fallback, with no extra code needed) and `lib/i18n/lang-store.ts`
+  (`useLang()`, already cookie-consent-gated and cross-tab-synced) —  both
+  already exist in this workspace and needed zero changes, just reuse.
+  **New components** (`components/site/`): `Logo.tsx` (an original
+  hand-authored SVG shard glyph — two flat facets, not a literal hero
+  raster asset, which is the wrong format/weight entirely for a 20px mark;
+  designed by cropping and eyeballing the reference image's own header
+  region, `references/altr-hero-reference.png`, not copied pixel-for-
+  pixel), `MobileMenu.tsx` (built on the shared `Dialog` primitive from
+  Prompt 010, per this prompt's own "using Dialog primitives" instruction
+  — reused its portal/focus-trap/Escape/backdrop-click/scroll-lock rather
+  than reimplementing any of that), `Header.tsx` (orchestrates both, plus
+  the scroll-driven backdrop and the `/api/me` auth check).
+  **`Dialog`'s own panel is a centered ~480px card by default** (`app/
+  styles/overlays.css` `.dialog-panel`) — this prompt wants a full-screen
+  overlay, not a modal, so `MobileMenu.module.css` overrides sizing via
+  `Dialog`'s existing `className` prop. That still left a visible margin
+  (`.dialog-backdrop`'s own `padding: var(--space-6)`, which `Dialog`
+  doesn't expose a way to override per-instance) — fixed with a scoped
+  `:global(.dialog-backdrop):has(.panel) { padding: 0; }` in
+  `MobileMenu.module.css`, which only touches a backdrop that actually
+  contains this component's own hashed panel class, leaving every other
+  `Dialog`/`ConfirmDialog` usage in the app untouched. Verified with a
+  real Playwright screenshot before and after (see below).
+  **i18n:** extended `lib/i18n/copy.ts`'s existing `sharedCopy.nav`
+  namespace (`howItWorks`, `login`, `createAltr`, `menuTitle`) rather than
+  adding a parallel namespace — `product`/`pricing`/`menu`/`closeMenu`/
+  `language` were already correct for the header's own needs and are
+  reused as-is; the signed-in-state label reuses the existing
+  `common.backDashboard` ("Dashboard"/"Кабінет") instead of a duplicate
+  key. `howItWorks`/`login` match legacy's own already-vetted UA
+  translations exactly (voice consistency); `createAltr` ("Створити свій
+  Altr") and `menuTitle` ("Меню") are new translations, this prompt's own.
+  **Real bugs found and fixed via actual testing, not just code review**
+  (both via real Playwright screenshots at specific widths, saved to the
+  session scratch dir): (1) the mobile-menu backdrop margin above; (2) at
+  exactly the Tailwind `md` (768px) breakpoint — the boundary where the
+  original implementation first switched from the mobile hamburger to the
+  full desktop nav — Ukrainian nav labels plus the CTA button read as
+  cramped (logo and "ПРОДУКТ" nearly touching) and, after a first fix
+  attempt (`gap` on the nav bar), "ЯК ПРАЦЮЄ" and "Створити свій Altr"
+  wrapped onto two lines instead. Root-caused as genuinely not enough
+  width at 768px for this content, not a spacing bug — fixed by moving
+  every `md:` breakpoint in `Header.tsx` to `lg:` (1024px), confirmed
+  clean with real screenshots at 767/768/1023/1024px (1024px has real
+  room; below it, still cleanly the mobile hamburger, no partial/broken
+  in-between state). This is this prompt's own "long UA strings in nav
+  must not wrap the bar" edge case, caught for real rather than assumed
+  fine.
+  **Auth-aware, verified two ways:** mocked `getCurrentProfile()` in
+  `tests/components/Header.test.tsx` (logged-out default, resolves-to-a-
+  profile swap to "Dashboard", and the offline-fallback case — which,
+  correctly, is indistinguishable from logged-out from this component's
+  own point of view, since `getCurrentProfile`'s contract is to resolve
+  `null`, never reject, on any failure); and, separately, confirmed no
+  live session exists to demonstrate a true signed-in preview inside the
+  styleguide demo itself (no existing override mechanism for this the way
+  `lib/motion.ts` provides one for reduced motion, and adding one isn't in
+  this prompt's allowed files) — documented as a static illustration in
+  `HeaderDemo.tsx` instead, flagged for a real spot-check once Prompt
+  025+ ships actual sign-in.
+  **Keyboard/focus, verified with Playwright, not just code review:**
+  mobile menu opens as `role="dialog"` with the correct accessible name
+  ("Menu"/"Меню"), Escape closes it and returns focus to the exact trigger
+  button (`document.activeElement` checked directly), clicking a link
+  inside the menu closes it. Focus-trap Tab/Shift+Tab wrapping is
+  `Dialog`'s own already-tested behavior (`tests/components/Dialog.test.tsx`),
+  not re-tested here.
+  **Not done / explicitly out of scope, matching this prompt's own file
+  list:** `app/(public)/page.tsx` (the real homepage) does not render
+  `<Header />` yet — that's Prompt 020's integration job; verified via the
+  new `HeaderDemo.tsx` styleguide preview only, per this prompt's own
+  Manual Verification instruction. `components/Navigation.tsx` was never
+  created (it never existed to "leave untouched" in the first place, see
+  above) — 020 has no legacy file to swap out in this workspace, only to
+  wire the new `Header` in.
+  `yarn lint`, `yarn typecheck`, `yarn test` (32 files/173 tests, including
+  the new `Header.test.tsx`), and `yarn build` (30/30 pages; `/hero-lab`
+  grew 6.46 KB -> 6.49 KB gzip, negligible, unrelated to this prompt's own
+  route) all passed via `yarn run check`.
 
 ## Failed prompts
 

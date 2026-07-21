@@ -1,0 +1,62 @@
+.header {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 40;
+}
+
+/*
+ * Prompt 019: "transparent over the hero ... gaining a fog-blur backdrop +
+ * hairline after 24px scroll (compositor-friendly)". Always mounted, at
+ * opacity 0 by default — only `opacity` (a compositor-only property) ever
+ * changes, so there's nothing for the browser to reflow/repaint beyond a
+ * single layer's alpha, regardless of scroll frequency.
+ */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgb(var(--altr-white-rgb) / 78%);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgb(var(--altr-silver-rgb) / 60%);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-altr);
+}
+
+.backdropScrolled {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop {
+    transition: none;
+  }
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /*
+   * `gap` alongside `justify-content: space-between` guarantees this much
+   * space between the logo/links/right-cluster groups even when there's no
+   * extra room to distribute (found via real testing at exactly the 768px
+   * `md` breakpoint boundary with UA strings selected — the logo and
+   * "ПРОДУКТ" nearly touched without this; this prompt's own edge case is
+   * "long UA strings ... must not wrap the bar", and while it didn't
+   * wrap, it read as cramped, not the generous letter-spacing this
+   * prompt's visual requirements ask for).
+   */
+  gap: var(--space-6);
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: var(--space-10);
+  padding-block: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .bar {
+    padding-inline: var(--space-6);
+  }
+}
