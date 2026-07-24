@@ -147,6 +147,25 @@ export const sharedCopy = {
       confirmed: "You've been signed out.",
       failed: "Couldn't sign out — please try again.",
     },
+    // Prompt 029 — dashboard shell. `common.backDashboard`/`nav.menu`/
+    // `nav.closeMenu`/`nav.language`/`pricingPage.planNames` are reused as
+    // -is (same words, no duplicate keys) for the nav rail's Dashboard
+    // link, mobile menu triggers, language switch, and plan badge text.
+    dashboard: {
+      greetingPrefix: "Hi,",
+      ofLimit: "of",
+      thisMonth: "this month",
+      memoryQuotaLabel: "active memories",
+      importsLabel: "Imports",
+      importsLastPrefix: "Last:",
+      importsEmpty: "No imports yet.",
+      twinLabel: "Twin",
+      twinQuotaLabel: "drafts",
+      twinEmpty: "No drafts yet this month.",
+      emptyAccountTitle: "Your Altr is just getting started.",
+      emptyAccountBody: "Once you import a conversation, memories and drafts will start appearing here.",
+      importStatus: { processing: "Processing", completed: "Completed", failed: "Failed", deleted: "Removed" },
+    },
   },
   UA: {
     nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
@@ -263,6 +282,21 @@ export const sharedCopy = {
       label: "Вийти",
       confirmed: "Ти вийшов з акаунта.",
       failed: "Не вдалося вийти — спробуй ще раз.",
+    },
+    dashboard: {
+      greetingPrefix: "Привіт,",
+      ofLimit: "з",
+      thisMonth: "цього місяця",
+      memoryQuotaLabel: "активних спогадів",
+      importsLabel: "Імпорти",
+      importsLastPrefix: "Останній:",
+      importsEmpty: "Поки немає імпортів.",
+      twinLabel: "Твін",
+      twinQuotaLabel: "чернеток",
+      twinEmpty: "Цього місяця ще немає чернеток.",
+      emptyAccountTitle: "Твій Altr щойно починається.",
+      emptyAccountBody: "Щойно ти імпортуєш переписку, тут з'являться спогади та чернетки.",
+      importStatus: { processing: "Обробка", completed: "Завершено", failed: "Помилка", deleted: "Видалено" },
     },
   },
 } as const satisfies Record<Lang, unknown>;

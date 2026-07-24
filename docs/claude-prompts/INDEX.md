@@ -38,7 +38,7 @@ altr_workspace only.
 | 026 | Recovery, reset, callback | 5 | Forgot/reset pages + callback + Google entry | 025 | M | done | done | yes | `feat(auth): recovery and callback flows` |
 | 027 | Protected routes and sign-out | 5 | Route guards, session UX, sign-out | 026 | S | done | done | no | `feat(auth): protected routing and sign-out UX` |
 | 028 | Auth tests and polish | 5 | Component + e2e coverage, edge polish | 027 | M | done | done | no | `test(auth): auth flow coverage and polish` |
-| 029 | Dashboard shell | 6 | Authenticated layout, nav, user state | 027 | L | todo | todo | yes | `feat(app): premium dashboard shell` |
+| 029 | Dashboard shell | 6 | Authenticated layout, nav, user state | 027 | L | done | done | yes | `feat(app): premium dashboard shell` |
 | 030 | Profile and settings | 6 | Profile surface, settings structure | 029 | M | todo | todo | yes | `feat(app): profile and settings surfaces` |
 | 031 | Onboarding and quota display | 6 | New onboarding flow + entitlement/quota UI | 030 | M | todo | todo | yes | `feat(app): onboarding and quota display` |
 | 032 | Import experience redesign | 7 | Picker, drag-drop, provider guidance | 029 | L | todo | todo | yes | `feat(import): redesigned import experience` |

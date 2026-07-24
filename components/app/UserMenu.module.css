@@ -1,0 +1,97 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--edge-hairline);
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.email {
+  overflow: hidden;
+  font-size: var(--text-label);
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planBadge {
+  flex: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--edge-hairline);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.langSwitch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.langButton {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease-altr);
+}
+
+.langButton:hover {
+  color: var(--text-primary);
+}
+
+.langButton[aria-pressed="true"] {
+  color: var(--text-primary);
+}
+
+.signOut {
+  flex: none;
+}

@@ -4,26 +4,34 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 028 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Phase 5 (auth) is now closed** — full
-coverage audit, four polish fixes (double-submit guard on all four auth
-forms, `SignOutButton`'s copy migrated into `lib/i18n/copy.ts`), and
-14 new tests closing every gap the audit found. Full entry below.
+None — Prompt 029 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Phase 6 (dashboard) has begun** —
+`/dashboard` is the first authenticated screen in this workspace, wrapped in
+a new `app/(app)/layout.tsx` + `AppShell`/`AppNav`/`UserMenu` shell. **Major
+finding, carried forward as a blocker for every future `(app)` prompt (030,
+032, 036, 039, 042, 045):** this workspace's `.env.local` has a placeholder
+`NEXT_PUBLIC_SUPABASE_URL` (`https://ci-placeholder.supabase.co`, confirmed
+via a direct DNS lookup — `ENOTFOUND`) with no real, reachable Supabase
+project behind it. Every prior authenticated-data path in this app degraded
+gracefully around that (client-side `/api/me` calls just resolve to
+`profile: null`/401, which every component already treats as "signed out").
+`/dashboard` is the first page that does its *required* data fetch
+server-side (`getProfileForUser` inside `app/(app)/layout.tsx`, must-not-
+change) — there is no graceful "signed out" fallback for that, so it
+throws and `app/error.tsx` (006) renders instead of the real shell. This
+is an environment/credentials gap, not a code defect — full detail in
+029's own entry below, including the exact repro. Real content-level manual/
+e2e verification of any `(app)` page is blocked until real Supabase
+credentials are configured (already tracked generically under "Environment
+setup still required" below; now confirmed concretely, not just assumed).
 **Carried forward, unchanged:** the `/api/billing/plans`+`/api/billing/me`
 anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
 bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
 gaps (014-018); 019's signed-in-nav-state-not-checked-against-a-real-session
-item (**partially closed by 027** — see its entry below: `SignOutButton`
-now dispatches the `altr-auth-change` event `Header` has listened for since
-019, but nothing exercises that path end-to-end yet since sign-in itself
-doesn't dispatch it either); `<Toaster />` is **still** not mounted anywhere
-in `app/layout.tsx` (027's `SignOutButton`/`handleSessionExpired` both call
-`toast.push()` correctly, but nothing renders those toasts yet — same
-deliberately-deferred gap `components/ui/Toast.tsx`'s own doc comment
-flagged since 010; `app/layout.tsx` was outside both 027's and 028's own
-"files allowed to change", so this stays open for whichever prompt next
-touches that file — likely 029, the dashboard shell, which will need a
-root-layout change anyway).
+item; `<Toaster />` is **still** not mounted anywhere in `app/layout.tsx`
+(`app/layout.tsx` was outside 029's own "files allowed to change" too —
+the dashboard shell got its own obsidian surface via `AppShell`, which
+didn't require touching the root layout after all).
 Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
@@ -2169,6 +2177,163 @@ open.
   prompt's coverage gaps were all closeable at the component/unit level,
   so no new e2e tests were needed) all passed.
 
+- **029 — Dashboard shell (2026-07-24, opens Phase 6):** Built
+  `components/app/{AppShell,AppNav,UserMenu}.tsx` (all new — LEGACY's own
+  `AppShell.tsx` was read in full and confirmed, by grepping LEGACY's
+  `app/dashboard/page.tsx`, to never actually be wired into any LEGACY
+  route; reference-only, as this prompt's own text says), plus one
+  necessary, minimal addition beyond the literal file list:
+  `components/app/DashboardHome.tsx` — see "scope note" below.
+  `app/(app)/layout.tsx` (new) fetches the session once via `requireUser()`
+  + `getProfileForUser()` (both must-not-change) and wraps `{children}` in
+  `AppShell`. `app/(app)/dashboard/page.tsx` (new) is a thin async Server
+  Component that fetches its own supplementary data and renders
+  `DashboardHome`.
+
+  **Scope note (`DashboardHome.tsx`):** the allowed-files list names
+  exactly three `components/app/` files plus `page.tsx`, but a page.tsx
+  that's simultaneously an async Server Component (`requireUser()`,
+  direct Supabase queries) *and* a bilingual client component
+  (`useLang()`, required for every piece of copy in this app since language
+  preference is `localStorage`-only, unreadable server-side) is not
+  possible in one file — React only allows one `"use client"` boundary per
+  module. Every prior prompt in this session splits exactly this way
+  (`app/(public)/pricing/page.tsx` stays a thin server wrapper;
+  `components/site/PricingTable.tsx`, separately named in 023's own file
+  list, owns the real UI) — `DashboardHome.tsx` is that same pattern
+  applied here, and was also the only way to make "dashboard empty state"
+  independently RTL-testable (Next's Server Component render isn't
+  supported by this repo's Vitest+jsdom setup at all). Documented rather
+  than silently added.
+
+  **Major finding — this environment has no reachable Supabase project.**
+  `.env.local`'s `NEXT_PUBLIC_SUPABASE_URL` is a placeholder
+  (`ci-placeholder.supabase.co`); a direct Node probe against it (same
+  client construction as `lib/supabase/admin.ts`) failed with
+  `TypeError: fetch failed` → `getaddrinfo ENOTFOUND ci-placeholder.supabase.co`.
+  Confirmed this is the actual cause of `/dashboard` erroring (not a bug in
+  this prompt's own code) by loading it through a real
+  `yarn build && ALTR_E2E_MOCKS=1 yarn start` server with a valid mock
+  identity header via Playwright: `app/(app)/layout.tsx`'s
+  `getProfileForUser(user)` call throws on the unreachable DB, and
+  `app/error.tsx` (006, unmodified) renders correctly and calmly instead of
+  a raw crash — the *error handling* is working exactly as designed; there
+  is simply no live data to fetch. Every previous prompt's authenticated-ish
+  surface (`Header`'s `getCurrentProfile()`, `PricingTable`'s
+  `/api/billing/me`) never hit this because they all fetch *client-side*
+  and already treat a failed/401 response as "signed out" — a real UX
+  fallback, not a lucky accident, but one this page's *required* server-side
+  fetch (this prompt's own "greeting (server profile name)... data from
+  existing endpoints only" instruction) can't use the same way. Not fixable
+  within this prompt's scope (`.env.local` isn't a "files allowed to
+  change" target for any prompt — it's user-owned infrastructure, already
+  tracked below under "Environment setup still required").
+
+  **Consequence for verification:** LEGACY's own dashboard e2e test
+  (`mockApi` intercepting `/api/me` client-side, then asserting the
+  rendered greeting) cannot be ported literally — LEGACY's dashboard
+  fetched client-side (interceptable by Playwright's `page.route()`); this
+  one fetches server-side inside a Server Component, which Playwright's
+  browser-level route interception cannot reach at all, real Supabase or
+  not. Given the placeholder credentials, no e2e test can reach real
+  dashboard *content* in this environment regardless of interception
+  strategy. Resolved by moving all content-level coverage (greeting, both
+  empty and populated states, per-row copy, graceful "—" unknowns on a
+  failed row-level query, language switch) into RTL tests against
+  `DashboardHome` with fully-controlled mock props — deterministic,
+  fast, and exactly what this prompt's own "Required tests: ... dashboard
+  empty state" already asked for. The one dashboard behavior that doesn't
+  need the database — the protected-route redirect for anonymous visitors —
+  was already fully covered by 027's own per-path e2e loop
+  (`tests/e2e/critical-flows.spec.ts`'s "protected routes and sign-out"
+  describe, `/dashboard` included) and 025's "already-authenticated visitor
+  on /auth is redirected to /dashboard" test; nothing new was added there to
+  avoid duplicate coverage. That 025 test's own `WebServer` log now shows
+  the same `fetch failed`/`ENOTFOUND` noise during its run (`/dashboard`'s
+  destination render fails server-side after the client-side redirect) —
+  harmless, since that test only asserts the URL changed, not the
+  destination's content, but confirms the same root cause independently.
+  LEGACY's "sign out calls the server and returns home" e2e test has the
+  same problem (needs to reach the dashboard first to click the button) and
+  wasn't ported for the same reason — `SignOutButton` itself already has 5
+  RTL tests (027/028) and `/api/auth/logout`'s own contract already has a
+  passing e2e test (027); porting this specific test would only prove
+  "the dashboard can be reached," which the redirect tests already cover
+  negatively and RTL covers positively, without being able to prove the
+  positive case for real here.
+
+  **Nav inventory:** exactly one real destination, Dashboard
+  (`/dashboard`) — this prompt's own instruction #4 ("nav entries for
+  screens that do not exist yet are omitted entirely, ADR-013") applied
+  literally: Memory (036), Imports (032), Twin (039), Billing (042),
+  Privacy (045), and Settings (030) all stay out of `AppNav`'s
+  `destinations` array (a one-line addition each, once their own page
+  exists) rather than linking anywhere dead. The same reasoning was
+  extended past the nav rail to `DashboardHome`'s own three editorial
+  rows and the empty-account state's CTA: this prompt's own Visual
+  requirements ask for each row to link to its section and for a "one
+  focal CTA (Import conversations)" on empty accounts, but
+  `/memory`/`/import-conversations`/`/assistants` don't exist either — so
+  the rows render as read-only status (numerals + labels, no
+  `<Link>`) and the empty state has no CTA at all, consistent with
+  instruction #4's own principle rather than a narrower reading of where
+  it applies. Documented explicitly rather than silently narrowed.
+
+  **Adopted/legacy screen ledger:** Dashboard — rebuilt (this prompt).
+  Memory, Assistants (Twin), Imports, Billing, Privacy, Settings — still
+  LEGACY-only, each pending its own prompt.
+
+  **Design decisions:** `Logo.tsx` (Prompt 019) is hardcoded
+  dark-text-on-light (`text-altr-obsidian`) and every existing usage sits on
+  a light surface — reusing it as-is on `AppNav`'s obsidian rail would be
+  functionally invisible. `Logo.tsx` isn't in this prompt's file scope, so
+  `AppNav` uses a plain light-colored "Altr" text wordmark instead of
+  forking or fighting the shared component's styling. `UserMenu` is a
+  persistent identity block (name/email/plan badge/language/sign-out),
+  not a click-to-open dropdown despite the name — the shared `Menu`
+  primitive (`components/ui/Menu.tsx`, Prompt 010) models a list of
+  `{id,label,onSelect}` actions behind one trigger, which doesn't fit a
+  simultaneously-visible language toggle or `SignOutButton`'s own
+  pending-state UI without flattening both into something they're not;
+  LEGACY's own (unwired) `AppShell.tsx` reference made the same call
+  (`app-sidebar-profile` is a persistent block, not a disclosure). Mobile
+  nav is a `Dialog`-based (Prompt 010) bottom sheet — same focus-trap/
+  Escape/backdrop/scroll-lock machinery `MobileMenu` (019) already reuses
+  — rather than LEGACY's own persistent bottom icon-bar, matching this
+  prompt's explicit "bottom-sheet nav" instruction, a deliberate
+  divergence from LEGACY's pattern, not a missed detail. `getProfileForUser`
+  is called twice per dashboard load (once in `layout.tsx` for the shell,
+  once in `page.tsx` for the page's own data) since Next's layout/page
+  boundary has no built-in way to share fetched data and neither
+  `lib/profileServer.ts` nor a new shared lib file for a `React.cache()`
+  wrapper is in this prompt's file scope — flagged as a real, minor,
+  known inefficiency for Prompt 050 (performance) rather than silently
+  accepted or fixed out of scope. `app/(app)/loading.tsx` (006, unmodified)
+  covers `page.tsx`'s own async work (the imports/drafts queries) but,
+  per Next.js's own layout/loading model, does *not* cover
+  `app/(app)/layout.tsx`'s own `getProfileForUser` call (a segment's
+  `loading.tsx` wraps its children, not its own sibling layout) — the very
+  first paint of any `(app)` route has no skeleton of its own; noted for
+  whichever later prompt wants to add a layout-level Suspense boundary,
+  not attempted here since it wasn't a regression against any previous
+  baseline (no authenticated page existed before this prompt).
+
+  **Required tests added:** `tests/components/AppNav.test.tsx` (4 tests —
+  active `aria-current` state, inactive state on an unrelated route, mobile
+  sheet opens with the same nav + identity content, home wordmark link),
+  `tests/components/UserMenu.test.tsx` (3 tests — name/email/plan badge
+  render, long-value `title` attribute fallback for the "long names/emails"
+  edge case, language switch updates the plan badge and sign-out label),
+  and `tests/components/DashboardHome.test.tsx` (5 tests — brand-new-account
+  empty state, populated-account editorial rows with real numerals,
+  imports-empty-but-not-brand-new copy, graceful "—" unknowns on a
+  failed row query instead of a spinner or a misleading zero, and a
+  Ukrainian-language render of the greeting/empty state).
+  `yarn lint`, `yarn typecheck`, `yarn test` (49 files/252 tests, up from
+  46/240 in 028), `yarn build` (40/40 pages — `/dashboard` newly compiled
+  as a dynamic route), and `yarn test:e2e` (29/29, unchanged — see
+  "Consequence for verification" above for why) all passed.
+
 ## Failed prompts
 
 None.
@@ -2273,6 +2438,13 @@ None recorded.
 ## Environment setup still required (user-owned)
 - Production values for all variables in `.env.example` (Supabase, Lemon Squeezy
   incl. variant IDs and webhook secret, OpenAI; optional Resend/Sentry).
+  **Confirmed concretely, not just assumed, by 029:** `.env.local`'s
+  `NEXT_PUBLIC_SUPABASE_URL` is the literal placeholder
+  `ci-placeholder.supabase.co`, which doesn't resolve (`ENOTFOUND`). Every
+  `(app)` page from here on (030, 032, 036, 039, 042, 045) will hit the
+  same wall for any real manual/e2e content verification until this is a
+  real, reachable Supabase project — see 029's own STATUS entry for the
+  full repro and how it worked around this for testing.
 - Supabase dashboard: Google OAuth provider credentials (only if Google sign-in
   stays enabled), auth redirect URLs, email templates.
 - Lemon Squeezy dashboard: webhook pointed at `<prod-url>/api/webhooks/lemonsqueezy`.
@@ -2281,4 +2453,16 @@ None recorded.
 
 ## Screen inventory (legacy vs rebuilt)
 
-All screens currently legacy. Prompts flip entries to "rebuilt" as they land.
+Public/auth surfaces (landing, pricing, legal, auth screens) already flipped
+to "rebuilt" across Phases 4-5 — see their own prompt entries above; this
+table tracks the authenticated app surfaces Phase 6+ covers.
+
+| Screen | Status | Prompt |
+| --- | --- | --- |
+| Dashboard home | rebuilt | 029 |
+| Profile and settings | legacy | 030 (todo) |
+| Memory overview | legacy | 036 (todo) |
+| Import experience | legacy | 032 (todo) |
+| Twin / assistants | legacy | 039 (todo) |
+| Billing overview | legacy | 042 (todo) |
+| Privacy center | legacy | 045 (todo) |

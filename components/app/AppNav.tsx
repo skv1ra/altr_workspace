@@ -1,0 +1,112 @@
+"use client";
+
+import { LayoutDashboard, Menu as MenuIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Dialog } from "@/components/ui/Dialog";
+import type { PlanId } from "@/lib/auth";
+import { getSharedCopy } from "@/lib/i18n/copy";
+import { useLang } from "@/lib/i18n/lang-store";
+import { UserMenu } from "./UserMenu";
+import styles from "./AppNav.module.css";
+
+export interface AppNavProps {
+  name: string;
+  email: string;
+  plan: PlanId;
+}
+
+type Destination = { href: string; label: string; icon: typeof LayoutDashboard };
+
+/**
+ * Only Dashboard is real this prompt (ADR-013 — no dead links); Memory,
+ * Imports, Twin, Billing, Privacy, Settings each get added to this same
+ * array by their own prompt (036, 032, 039, 042, 045, 030) once a real
+ * page exists for them, instead of linking here ahead of time. Written as
+ * a data-driven list, not a hardcoded JSX block, specifically so that
+ * addition is a one-line diff.
+ */
+function useDestinations(): Destination[] {
+  const [lang] = useLang("EN");
+  const t = getSharedCopy(lang);
+  return [{ href: "/dashboard", label: t.common.backDashboard, icon: LayoutDashboard }];
+}
+
+function NavLinks({ destinations, pathname, onNavigate }: { destinations: Destination[]; pathname: string; onNavigate?: () => void }) {
+  return (
+    <ul className={styles.list}>
+      {destinations.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <li key={href}>
+            <Link
+              href={href}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
+              className={active ? `${styles.item} ${styles.itemActive}` : styles.item}
+            >
+              <Icon aria-hidden="true" width={18} height={18} strokeWidth={1.6} />
+              <span>{label}</span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Desktop: a slim static rail — active state is a quiet left-edge hairline
+ * (`.itemActive`, `AppNav.module.css`), never a filled pill, per this
+ * prompt's own visual requirement. Mobile: collapses to a compact topbar
+ * (home link + a single menu trigger) that opens a bottom sheet built on
+ * the shared `Dialog` primitive (`tone="dark"`, same focus-trap/Escape/
+ * backdrop/scroll-lock machinery `MobileMenu` already reuses for the
+ * public header) rather than LEGACY's own persistent bottom icon-bar —
+ * this prompt's own spec asks for "bottom-sheet nav", a distinct pattern
+ * from LEGACY's always-visible bar.
+ */
+export function AppNav({ name, email, plan }: AppNavProps) {
+  const pathname = usePathname();
+  const [lang] = useLang("EN");
+  const t = getSharedCopy(lang);
+  const destinations = useDestinations();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <aside className={styles.rail}>
+        <Link href="/" className={styles.wordmark}>
+          Altr
+        </Link>
+        <nav aria-label="Product navigation">
+          <NavLinks destinations={destinations} pathname={pathname} />
+        </nav>
+        <UserMenu name={name} email={email} plan={plan} />
+      </aside>
+
+      <div className={styles.mobileBar}>
+        <Link href="/" className={styles.wordmark}>
+          Altr
+        </Link>
+        <button
+          type="button"
+          className={`${styles.trigger} control-focus`}
+          aria-label={t.nav.menu}
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+        >
+          <MenuIcon aria-hidden="true" width={20} height={20} strokeWidth={1.6} />
+        </button>
+      </div>
+
+      <Dialog open={open} onClose={() => setOpen(false)} title={t.nav.menuTitle} tone="dark" className={styles.sheet}>
+        <nav aria-label="Product navigation">
+          <NavLinks destinations={destinations} pathname={pathname} onNavigate={() => setOpen(false)} />
+        </nav>
+        <UserMenu name={name} email={email} plan={plan} />
+      </Dialog>
+    </>
+  );
+}

@@ -1,0 +1,105 @@
+.rail {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .rail {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    width: 260px;
+    flex: none;
+    height: 100svh;
+    padding: var(--space-8) var(--space-6);
+    border-right: 1px solid var(--edge-hairline);
+  }
+}
+
+.wordmark {
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-left: 2px solid transparent;
+  font-size: var(--text-body);
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease-altr), border-color var(--motion-fast) var(--ease-altr);
+}
+
+.item:hover {
+  color: var(--text-primary);
+}
+
+/* Quiet silver edge, not a filled pill — this prompt's own visual requirement. */
+.itemActive {
+  border-left-color: var(--altr-silver);
+  color: var(--text-primary);
+}
+
+.rail nav {
+  flex: 1;
+}
+
+.mobileBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--edge-hairline);
+}
+
+@media (min-width: 1024px) {
+  .mobileBar {
+    display: none;
+  }
+}
+
+.trigger {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+/*
+ * Overrides Dialog's default centered ~480px card into a bottom sheet —
+ * same `:has()` technique `MobileMenu.module.css` (Prompt 019) uses to
+ * reach the backdrop it doesn't otherwise expose a per-instance override
+ * for.
+ */
+:global(.dialog-backdrop):has(.sheet) {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 100%;
+  max-height: 80svh;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+@media (min-width: 1024px) {
+  .sheet {
+    display: none;
+  }
+}
