@@ -30,7 +30,12 @@
   border-bottom: 1px solid var(--edge-hairline);
 }
 
+/* `.label`/`.numeral` are plain text on the Imports/Twin rows but a real
+ * `<Link>` on the Memory row (still rendering identically either way —
+ * `display: block` here matters specifically so the Link's vertical
+ * margin isn't silently dropped, which it would be as `display: inline`). */
 .label {
+  display: block;
   font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
@@ -38,10 +43,17 @@
 }
 
 .numeral {
+  display: block;
   margin-top: var(--space-3);
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 300;
   line-height: 1;
+  color: var(--text-primary);
+  width: fit-content;
+}
+
+.numeral:hover,
+.label:hover {
   color: var(--text-primary);
 }
 

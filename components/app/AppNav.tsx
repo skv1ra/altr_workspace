@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -20,18 +20,23 @@ export interface AppNavProps {
 type Destination = { href: string; label: string; icon: typeof LayoutDashboard };
 
 /**
- * Dashboard (029) and Settings (030) are real; Memory, Imports, Twin,
- * Billing, Privacy each get added to this same array by their own prompt
- * (036, 032, 039, 042, 045) once a real page exists for them, instead of
+ * Dashboard (029), Settings (030), and now Memory (036) are real; Imports,
+ * Twin, Billing, Privacy each get added to this same array by their own
+ * prompt (032 already has its own standalone page but deliberately isn't
+ * wrapped in `AppShell` — see `app/import-conversations/page.tsx`'s own
+ * comment; 039, 042, 045) once a real page exists for them, instead of
  * linking here ahead of time (ADR-013 — no dead links). Written as a
  * data-driven list, not a hardcoded JSX block, specifically so that
- * addition is a one-line diff — exactly what Settings just was.
+ * addition is a one-line diff — exactly what Settings was, and this is.
+ * `t.nav.memory` is reused as-is from the public header (019) rather than
+ * a new duplicate string.
  */
 function useDestinations(): Destination[] {
   const [lang] = useLang("EN");
   const t = getSharedCopy(lang);
   return [
     { href: "/dashboard", label: t.common.backDashboard, icon: LayoutDashboard },
+    { href: "/memory", label: t.nav.memory, icon: BrainCircuit },
     { href: "/settings", label: t.settings.heading, icon: SettingsIcon },
   ];
 }

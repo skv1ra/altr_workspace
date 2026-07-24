@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PlanBadge } from "@/components/app/PlanBadge";
 import { QuotaMeter } from "@/components/app/QuotaMeter";
 import type { PlanId } from "@/lib/auth";
@@ -27,16 +28,19 @@ function firstName(name: string) {
 
 /**
  * Three editorial rows, not cards — hairline-separated, big quiet
- * numerals, per this prompt's own visual requirement. None of the three
- * link anywhere yet: Memory (036), Imports (032), and Twin (039) don't
- * have a page in this workspace yet, and this prompt's own instruction #4
- * ("nav entries for screens that do not exist yet are omitted entirely,
- * ADR-013 — no dead links") is applied consistently here too, not just to
- * `AppNav` — these rows are read-only status until their own section
- * exists to link to. Same reasoning drops the Visual requirements' "one
- * focal CTA (Import conversations)" for the empty-account state below:
- * that CTA's only destination, `/import-conversations`, doesn't exist in
- * this workspace either.
+ * numerals, per this prompt's own (031) visual requirement. Originally
+ * none of the three linked anywhere (ADR-013 — no dead links, since none
+ * of Memory/Imports/Twin had a real page yet). Imports/Twin still don't
+ * (032 deliberately kept `/import-conversations` standalone, outside
+ * `AppShell`/this dashboard's own nav — see that page's own comment;
+ * Twin is still 039, not yet built) — but Memory (036) now has a real
+ * page (`/memory`), and that prompt's own `components/app/DashboardHome.tsx`
+ * comment explicitly named itself as the place to close this one gap, the
+ * same way `AppNav.tsx`'s own comment did. Only the Memory row's
+ * label/numeral is wrapped in a real `<Link>` — the `QuotaMeter` beside it
+ * stays a plain sibling, not nested inside the link, since its own
+ * "reached" state can render a `<Link href="/pricing">` internally and
+ * nested `<a>` tags are invalid HTML.
  */
 export function DashboardHome({
   name,
@@ -73,8 +77,12 @@ export function DashboardHome({
       ) : (
         <div className={styles.rows}>
           <div className={styles.row}>
-            <p className={styles.label}>{nav.memory}</p>
-            <p className={styles.numeral}>{memoryCount}</p>
+            <Link href="/memory" className={styles.label}>
+              {nav.memory}
+            </Link>
+            <Link href="/memory" className={styles.numeral}>
+              {memoryCount}
+            </Link>
             <QuotaMeter used={memoryCount} limit={memoryLimit} lang={lang} ariaLabel={nav.memory} />
           </div>
 

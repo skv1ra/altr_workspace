@@ -1,0 +1,143 @@
+.wrap {
+  max-width: 880px;
+  margin-inline: auto;
+  padding: var(--space-10) var(--space-6) var(--space-20);
+}
+
+@media (min-width: 640px) {
+  .wrap {
+    padding: var(--space-12) var(--space-8) var(--space-24);
+  }
+}
+
+.toolbar {
+  margin-top: var(--space-10);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.searchField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font: inherit;
+  min-width: 10rem;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+/* Quiet text tabs — no filled pill background, per this prompt's own
+ * visual requirement — only an underline + brighter text marks the
+ * active tab. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.tab {
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  font-size: var(--text-label);
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+
+.tabCount {
+  opacity: 0.6;
+}
+
+.statusLine {
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 138, 138, 0.35);
+  background: rgba(185, 28, 28, 0.12);
+  color: #ff8a8a;
+  font-size: var(--text-body);
+}
+
+.resultsCount {
+  margin-top: var(--space-8);
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.empty {
+  margin-top: var(--space-10);
+  padding: var(--space-12) var(--space-6);
+  border: 1px dashed var(--edge-hairline);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.emptyHeading {
+  font-size: var(--text-h4);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.emptyBody {
+  margin-top: var(--space-2);
+  max-width: 42ch;
+  margin-inline: auto;
+  font-size: var(--text-body);
+  color: var(--text-muted);
+}
+
+.emptyCta {
+  display: inline-block;
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-6);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-full);
+  font-size: var(--text-label);
+  color: var(--text-primary);
+}
+
+.emptyCta:hover {
+  background: rgb(var(--altr-white-rgb) / 4%);
+}
+
+.list {
+  margin-top: var(--space-4);
+  list-style: none;
+  padding: 0;
+}
+
+.pager {
+  margin-top: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.pagerLabel {
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}

@@ -45,7 +45,7 @@ altr_workspace only.
 | 033 | Import progress, cancel, retry | 7 | Progress, cancellation, duplicates, extraction | 032 | M | done | done | yes | `feat(import): progress and recovery flows` |
 | 034 | Import history and errors | 7 | History list, provenance, error states | 033 | M | done | done | yes | `feat(import): history and error states` |
 | 035 | Import tests | 7 | Parser matrix + e2e verification | 034 | M | done | done | no | `test(import): full import flow coverage` |
-| 036 | Memory overview redesign | 8 | List, search, filters, pagination | 029 | M | todo | todo | yes | `feat(memory): redesigned memory overview` |
+| 036 | Memory overview redesign | 8 | List, search, filters, pagination | 029 | M | done | done | yes | `feat(memory): redesigned memory overview` |
 | 037 | Memory editing and provenance | 8 | Create/edit/disable/delete + provenance | 036 | M | todo | todo | yes | `feat(memory): editing and provenance UX` |
 | 038 | Memory quotas and tests | 8 | Quota surfaces + memory test coverage | 037 | S | todo | todo | no | `test(memory): quotas and coverage` |
 | 039 | Twin configuration redesign | 9 | Twin identity/style configuration | 029 | M | todo | todo | yes | `feat(twin): redesigned twin configuration` |

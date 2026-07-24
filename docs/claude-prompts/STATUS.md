@@ -4,28 +4,41 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 035 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Closes Phase 7 (imports).** Pure
-verification/closing prompt: re-ran the existing parser matrix (unmodified,
-passed byte-identically), produced a real diff-based proof that
-`workers/`, `lib/imports/`, and `app/api/imports/` are still byte-identical
-to LEGACY `a22927d` (modulo CRLF/LF), closed 5 real RTL coverage gaps
-(file-size pre-check rejection, the `rawFileStored: false` create-payload
-invariant this prompt's own security section named explicitly, cancel
-during the *saving* stage at the RTL layer — not just e2e, monthly-quota
-429, plus the taxonomy/duplicate coverage 034 already had), and added one
-new synthetic fixture (`telegram-export.zip`) plus a real-browser e2e test
-proving the actual Worker's own JSZip path works, not just the Node-side
-unit tests. **Also closed 034's own noted follow-up as a fix-level
-change** (`Import components (fix-level only)` is explicitly in this
-prompt's file scope): `DuplicatePanel`'s "View status on dashboard" link
-now points at the real `#import-history` section 034 built, not the
-now-stale `/dashboard` destination from before that section existed. See
-035's own entry below for the full diff-proof output and coverage
-delta. **Carried forward, unchanged:** the `/settings`
+None — Prompt 036 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Opens Phase 8 (memory).** Rebuilds
+`/memory` at `app/(app)/memory/page.tsx` — a real Server Component in the
+`AppShell`, following the 029/030/031 pattern, not LEGACY's own client-only
+page. **Found before writing anything:** LEGACY's own `components/memory/*`
+(6 files this prompt's "files to inspect first" named as "features to
+preserve") are dead code — a full-repo grep found zero imports of them
+anywhere; LEGACY's real `app/memory/page.tsx` reimplements everything
+inline instead, with a fictional `MemoryItem` type that doesn't match the
+real API (0-100 int confidence vs. real 0-1 float; a fixed 5-category enum
+vs. the real free-text column). Treated the live inline page as the real
+behavioral contract; brought back the dead prototypes' *visual* ideas
+(status header, connected-sources panel, category tabs) backed by real
+fields `getProfileForUser` already computes (`preferences.learning`,
+`connections`) instead of the fabricated ones the dead components had.
+**Real, empirically-verified environment finding, not assumed:** confirmed
+by curling the built server directly (with the e2e identity-mock headers)
+that `/memory` 500s identically to `/dashboard` — `requireUser()`'s e2e
+mock only fakes the auth identity, `createSupabaseAdminClient()` still
+makes real Supabase Admin calls that fail against placeholder credentials
+— so full content-level e2e coverage is blocked the same way 029/030/031
+already documented for every other Server-Component `(app)` page; the
+LEGACY memory-CRUD e2e contract this prompt asked to "migrate" was instead
+migrated to the RTL layer (`tests/components/MemoryOverview.test.tsx`),
+which exercises the identical edit/delete/clear-all flow against a mocked
+`fetch`. Also closed two real, explicitly-self-flagged nav gaps found
+along the way: `AppNav.tsx`'s own comment named 036 as the prompt to add
+Memory to its destinations array, and `DashboardHome.tsx`'s own comment
+did the same for its Memory row's link — both fixed (see 036's own entry
+for the "no nested `<a>`" detail on the dashboard fix). See 036's own
+entry below for the full field-by-field real-data mapping and command
+results. **Carried forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
-settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
+memory, settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
 anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
 bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
 gaps (014-018); 019's signed-in-nav-state item; `<Toaster />` is **still**
@@ -3234,6 +3247,166 @@ open.
   final `yarn test:e2e` pass (033's own documented gotcha, now routine
   practice for every prompt since).
 
+- **036 — Memory overview redesign (2026-07-24, opens Phase 8).** Read
+  every file this prompt's own "files to inspect first" named — LEGACY's
+  `app/memory/page.tsx` and all six `components/memory/*` files, `GET
+  /api/memories`'s real params/response, `components/memory/types.ts`,
+  the 021 `MemoryDemo`, and LEGACY's own memory e2e test — before writing
+  anything. `app/api/memories/**`, `lib/`, `supabase/` all confirmed
+  untracked-but-unmodified afterward.
+
+  **Dead-component finding, verified by grep, not assumed.** LEGACY's own
+  `app/memory/page.tsx` never imports anything from `components/memory/`
+  — confirmed with `grep -rn "components/memory" app/ components/ tests/`
+  returning zero hits outside that directory itself. Those six files
+  (`MemoryCard`, `MemoryEditModal`, `MemoryDeleteModal`,
+  `MemoryCategoryTabs`, `MemoryStatusPanel`, `DataSourcesPanel`,
+  `types.ts`) are an abandoned earlier design pass with a `MemoryItem`
+  shape that doesn't match either the real API or the real AI-extraction
+  category set: a fictional fixed 5-category enum ("Communication Style,"
+  "Frequent Phrases," ...) vs. the real free-text `category` column
+  (`app/api/memories/[id]/route.ts`'s own `updateSchema`:
+  `z.string().max(80)`) and the real 6-value AI-extraction enum
+  (`lib/ai/memory-extraction.ts`'s `categorySchema`, neither of which
+  matches the dead prototype's 5 values); 0-100 integer confidence vs. the
+  real 0-1 float; a hardcoded, always-"Not connected"
+  `DataSourcesPanel`; a `MemoryStatusPanel` "Learning Status" toggle with
+  no backing field at all. This prompt's own instruction #5 ("preserve
+  the data-sources/status panel information... inspect what they show")
+  is honored for what they *represent* (a status header, a connected-
+  sources panel, category tabs) while every fabricated data point is
+  replaced with a real one — see the field-by-field mapping below.
+
+  **Real backing fields found for both dead panels, in
+  `getProfileForUser`** (`lib/profileServer.ts`, read, not modified):
+  - "Learning Status" → `preferences.learning`
+    (`altr_user_preferences.memory_learning_enabled`) — real, and already
+    editable through `SettingsView.tsx`'s (030) own save form via the
+    same `updateCurrentProfile` helper. `MemoryStatusHeader.tsx`'s toggle
+    calls it directly for an instant write, independent of Settings' own
+    fuller form — two surfaces writing the same real field, not a
+    conflicting definition of it.
+  - "Data Sources" → `connections: { email, calendar, messages,
+    workspace }` (`altr_data_connections`) — real per-category connection
+    status. Rendered **read-only**: no connect/disconnect flow exists
+    anywhere in this workspace yet (checked directly, not assumed), so an
+    interactive "Connect" button would be a dead control (ADR-013).
+  - Active-memories QuotaMeter → a direct, trusted server-side count
+    (`altr_memories` filtered `is_active = true`) — `GET /api/memories`
+    itself has no active-only count shape, and `profile.stats.memories`
+    counts active+inactive together, so neither could supply this number;
+    same "direct query in the page, reusing an existing table" precedent
+    `app/(app)/dashboard/page.tsx` (029) already set for its own
+    "last import"/"drafts" numbers.
+  - Category tabs → derived from data, per this prompt's own instruction
+    #1, via another direct server-side query (`select("category")` for
+    every one of the user's memories, tallied into counts) — `GET
+    /api/memories` has no "distinct categories" shape either. Per-tab
+    counts are a load-time snapshot, not live-recounted after edits
+    within the session; this prompt's own "category with zero results
+    after deletion" edge case is handled by graceful degradation instead
+    — a stale-count tab still fetches real data when clicked and
+    correctly shows the "no matches for this view" empty state if it's
+    now actually empty, documented directly in `MemoryOverview.tsx`.
+  - Provenance hint ("from Telegram import · Mar 2026," this prompt's own
+    example phrasing) → **can't be built as literally specified.** `GET
+    /api/memories` never returns a platform name for extracted memories,
+    only `source_type` (`"message"`) and `source_reference`
+    (`"message:<id>"`) — no join to the originating import's `platform`
+    column exists in that must-not-change route. Implemented honestly
+    instead: `"Manual entry"` for `source_type === "manual"`,
+    `"From an approved import"` (no platform claim) otherwise, both with
+    a real month/year. A real, named data-model gap, not silently
+    smoothed over with an invented platform name.
+
+  **Category field free-text, not a `<select>`, in the edit dialog** —
+  matches the real schema (any string ≤80 chars), not the dead
+  prototype's fictional enum; documented directly in
+  `MemoryEditDialog.tsx`'s own module comment.
+
+  **Confidence rendered as a hairline meter, not a percent badge** (this
+  prompt's own instruction #2, applied literally) — `role="meter"` with
+  real `aria-valuenow`, width-driven fill, no numeral on-surface; the
+  real number stays available to assistive tech, just not displayed as
+  text.
+
+  **URL-synced state, debounced search, pagination clamp — all three of
+  this prompt's own named mechanics implemented and tested:** `q`/
+  `category`/`page` sync to the URL via `router.replace(..., { scroll:
+  false })` on every settled change (debounced 400ms for search, so
+  typing doesn't spam the URL/history); a page number beyond the real
+  `totalPages` the server reports (the literal "page beyond range
+  (URL-edited)" edge case) clamps back automatically once the first
+  response arrives.
+
+  **Two empty states, genuinely distinct, tracked independently of the
+  current filter** (this prompt's own instruction #4): "no memories at
+  all" (invite to import, real `/import-conversations` link) only shows
+  when the user truly has zero memories anywhere — tracked as its own
+  piece of client state (`remainingTotal`, seeded from the server's
+  load-time count, decremented on delete/clear-all within the session)
+  rather than being derived from whatever the *current* filtered query
+  happens to return, which would have conflated "you searched for
+  something with no matches" with "you have nothing at all."
+
+  **Real, empirically-verified environment finding (see "Current active
+  prompt" above for the short version):** built the app, started it
+  (`ALTR_E2E_MOCKS=1 yarn start`), and `curl`'d `/memory` directly with
+  the same `x-altr-e2e-user`/`x-altr-e2e-email` headers Playwright sends
+  — got a real `500`, identical to a matching `curl` against `/dashboard`
+  in the same run, both logging the same `TypeError: fetch failed` this
+  whole prompt pack's `[WebServer]` noise already shows everywhere.
+  `lib/testing/e2e-auth.ts`'s mock only fakes `requireUser()`'s identity
+  resolution (confirmed by reading `lib/supabase/server.ts`) —
+  `createSupabaseAdminClient()` still makes real network calls that fail
+  against the placeholder `ci-placeholder.supabase.co` credentials 029
+  first found. Content-level e2e for `/memory` is therefore blocked the
+  same way dashboard/settings/onboarding already are; LEGACY's own memory
+  CRUD e2e test (edit a title, save, see it update; delete, see the empty
+  state) was migrated in spirit, not literally, to
+  `tests/components/MemoryOverview.test.tsx`'s equivalent RTL flow
+  instead — the existing generic "`/memory` redirects an anonymous
+  visitor" e2e test (unaffected by any of this prompt's changes) remains
+  the only e2e coverage this route can honestly have right now.
+
+  **Two small, explicitly self-flagged nav gaps closed, both outside this
+  prompt's literal file-scope list but each named directly in an existing
+  code comment as this prompt's own job (same class of deviation
+  032-035 repeatedly documented resolving in favor of the specific,
+  actionable instruction):**
+  - `AppNav.tsx`'s own comment said "Memory... gets added to this array
+    by their own prompt (036...)" — added, reusing `t.nav.memory` as-is.
+  - `DashboardHome.tsx`'s own comment said the same for its Memory row's
+    link. Only the row's label/numeral became a real `<Link href="/memory">`
+    — the `QuotaMeter` beside them stays a plain sibling, not nested
+    inside the link, since its own "reached" state can render a
+    `<Link href="/pricing">` internally and nested `<a>` tags are invalid
+    HTML. `DashboardHome.module.css`'s `.label`/`.numeral` needed
+    `display: block` added — a `<Link>` defaults to inline, and inline
+    elements silently ignore vertical margin, which would have collapsed
+    the original spacing between them.
+
+  **Required tests added:** `tests/components/MemoryRow.test.tsx` (7
+  tests — real fields render, both real provenance branches, confidence
+  as a meter not a badge, description clamp/expand, active/disabled pill
+  with real actions, edit callback, real DELETE call gated on success),
+  `tests/components/MemoryStatusHeader.test.tsx` (4 tests — real
+  QuotaMeter number, real connection statuses with no fabricated "not
+  connected" for a connected source, learning toggle writes the real
+  field, and a failed write leaves the displayed state unchanged rather
+  than optimistically flipping), `tests/components/MemoryOverview.test.tsx`
+  (8 tests — both empty states genuinely distinct, debounced search
+  proven to not fetch immediately, category tab click re-fetches and
+  URL-syncs, page-beyond-range clamps to the server's real last page,
+  edit saves via the real PATCH and refreshes, clear-all via the real
+  bulk DELETE lands on the empty state, enable/disable sends the real
+  `active` flag).
+  `yarn lint`, `yarn typecheck`, `yarn test` (64 files/444 tests, up from
+  61/425 in 035 — 3 new files/19 new tests), `yarn build` (46/46 pages,
+  `/memory` new), and `yarn test:e2e` (39/39, unchanged — no new e2e
+  possible for the reason above, 0 regressions from the new route) all
+  passed.
+
 ## Failed prompts
 
 None.
@@ -3268,7 +3441,8 @@ pages, `/import-conversations` new) and again for 033 and 034 (45/45
 pages both times, unchanged route count — no new routes in either
 prompt, `/import-conversations` itself grew from 7.86 kB to 11.5 kB in
 034); re-confirmed again for 035 (45/45 pages, no route changes — a pure
-test/fix-level prompt). 033's own entry above records a real
+test/fix-level prompt), and again for 036 (46/46 pages, `/memory` new).
+033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -3297,6 +3471,11 @@ files, clean exit, plus `yarn test:e2e` 39/39; also re-ran the pre-
 existing parser-matrix files in isolation (`tests/unit/import-
 parsers.test.ts` + `tests/unit/phase12-import-formats.test.ts`, 29/29)
 before touching anything else, per this prompt's own step-1 instruction.
+Re-confirmed same day for 036 (opens Phase 8) — 444/444 tests across 64
+files, clean exit, plus `yarn test:e2e` 39/39 (unchanged — see 036's own
+entry for why `/memory` content-level e2e is blocked by the same
+placeholder-Supabase gap 029 first found, confirmed this session by
+directly `curl`-ing the built server).
 
 ## Known regressions
 
@@ -3383,7 +3562,7 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Dashboard home | rebuilt | 029 |
 | Profile and settings | rebuilt | 030 |
 | Onboarding | new (no LEGACY equivalent existed) | 031 |
-| Memory overview | legacy | 036 (todo) |
+| Memory overview | rebuilt | 036 |
 | Import experience | rebuilt | 032 |
 | Twin / assistants | legacy | 039 (todo) |
 | Billing overview | legacy | 042 (todo) |
