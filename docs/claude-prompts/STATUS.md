@@ -4,16 +4,28 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 032 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Phase 7 (imports) has begun** —
-`/import-conversations` is rebuilt: provider selection with accurate,
-per-platform export guidance, drag-and-drop, client-side pre-check
-rejections, and the exact proven hash/chunk/extract pipeline ported
-logic-verbatim from LEGACY. Unlike every `(app)` page since 029, this one
-has no server-side data fetch of its own (all client-side, matching
-LEGACY exactly), so it isn't blocked by the placeholder-Supabase
-environment gap — real, full e2e coverage was possible and added (31/31,
-up from 29/29). **Carried forward, unchanged:** the `/settings`
+None — Prompt 033 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Adds the live import lifecycle UX on top
+of 032's picker/upload surface: a calm four-node `StageRail`, cancellation
+that now actually aborts the chunk-upload stage (032/LEGACY only ever
+aborted the parse worker), a designed `DuplicatePanel` for the 409 in
+place of the raw error string, a monthly-quota 429 path that flips the
+already-rendered `QuotaMeter` into its own reached state, and a
+cursor-based "retry extraction" action that never re-uploads or
+re-parses. Real e2e coverage was possible for all of it, same reason 032
+had it (`/import-conversations` has no server-side data fetch of its
+own) — 35/35, up from 31/31. See 033's own entry below for full detail,
+including a real environment gotcha this session found: `yarn test:e2e`'s
+`webServer` runs `next start`, which serves whatever `.next` production
+build already exists on disk — it does **not** rebuild — so a stale
+build from before this session's code changes was silently served on the
+first `yarn test:e2e` run (4 failures, all showing 032-era UI/copy); a
+plain `yarn build` before `yarn test:e2e` fixed it. Future prompts should
+run `yarn build` before `yarn test:e2e` whenever `.next` might be stale,
+not just rely on `reuseExistingServer`. **Carried forward, unchanged:**
+Prompt 034 (import history and errors) is still `todo` — `DuplicatePanel`
+had no real history page to link to yet, so it links to `/dashboard`
+instead (see 033's own entry for the ADR-013 reasoning); the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
 settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
@@ -2709,6 +2721,193 @@ open.
   29/29 — the first `(app)`-adjacent page since 029 with full, real
   content-level e2e coverage, not just redirect-level) all passed.
 
+- **033 — Import progress, cancel, retry (2026-07-24).** Builds directly on
+  032's `ImportFlow.tsx` without touching `workers/**`, `lib/imports/**`,
+  `app/api/imports/**`, or `supabase/` (all confirmed untracked-but-
+  unmodified in `git status` afterward, same contract-parity proof 032
+  established).
+
+  **Stage rail — one honest deviation from the prompt's own naming:** the
+  prompt's own recipe names five stages including a separate "Reading
+  file" before "Parsing." Read `workers/conversation-parser.worker.ts` in
+  full (must-not-change) to check: it posts exactly one final `result`
+  message with no intermediate progress event of any kind — reading and
+  parsing both happen inside the same opaque `await file.arrayBuffer()` +
+  `parseImport()` call. There is no real signal to split on, so
+  `StageRail` (`components/app/imports/StageRail.tsx`) merges them into
+  one "Parsing" node — this prompt's own "if the worker emits no granular
+  progress, stage-level progress is the honest ceiling" instruction,
+  applied literally rather than inventing a fake checkpoint. Four nodes:
+  Parsing / Saving / Extracting memories / Done — hairline dots and
+  connectors only, `--text-primary` for done/current, the same restrained
+  red (`#ff8a8a`) already used for alert copy for an error/paused stage,
+  no percentage anywhere. The rail itself is `aria-hidden` (the real
+  `role="status"`/`role="alert"` paragraph below it is the one thing a
+  screen reader announces — the rail would otherwise duplicate it).
+  Precise chunk x/y and extraction batch numbers stayed in that existing
+  status paragraph, not duplicated into the rail — keeps the "no percent
+  theatrics" rail calm while the real numbers this prompt requires
+  ("only show numbers that are real") still exist somewhere on-screen.
+
+  **Cancel now actually reaches the upload stage.** 032/LEGACY's `Cancel`
+  button was visually present through the whole run but only functional
+  during parsing — `activeWorker.current` was already `null` by the time
+  chunk uploads started, so clicking it during "Saving" silently did
+  nothing (a real, until-now-undetected bug, found by reading 032's own
+  code closely against this prompt's own "verify cancellation must
+  actually abort work" requirement). Fixed with a per-run `AbortController`
+  (`runController`) whose `signal` is passed to the import-create POST and
+  every chunk POST; `cancelRun()` branches on whether the parse worker is
+  still active (terminate it — unchanged from 032) or whether an
+  AbortController-backed fetch is in flight (`.abort()`). The Cancel
+  button's own visibility is now keyed to `status.kind` (`parsing` /
+  `uploading` only) instead of the coarse `busy` flag 032 used, so it
+  correctly disappears during extraction, matching this prompt's own
+  "visible during parse/save" wording precisely instead of the whole run.
+  **Partial-import-on-cancel, defined and verified against the real API,
+  not assumed:** `app/api/imports/[id]/route.ts`'s `DELETE` (read, not
+  modified) already deletes `altr_conversations`/`altr_messages` rows for
+  that `import_id`, disables/detaches any memories, and marks the import
+  row `deleted` — exactly the right cleanup for a cancelled upload. 032's
+  own `run()` already called this DELETE on any non-preserved failure;
+  033 didn't need to change that logic, only make cancel actually reach
+  it during upload. `statusCancelled` copy was corrected to say so
+  (032's version only promised "no raw file was uploaded," true but
+  incomplete — it never mentioned the normalized chunks already sent to
+  the server, which cancel now visibly can interrupt).
+  **Verified with real, live evidence, not an RTL mock:** a new
+  Playwright e2e test (`tests/e2e/critical-flows.spec.ts`, "cancel
+  actually aborts the chunk-upload stage") leaves the mocked `/chunks`
+  route handler permanently pending (`return new Promise(() => undefined)`)
+  so the request can only ever settle by being aborted client-side, clicks
+  Cancel once the request has actually been sent, then asserts the chunk
+  route was called exactly once (no retry/duplicate call after abort — no
+  zombie upload) and that the real `DELETE` endpoint was hit. This is the
+  "network tab evidence" this prompt's own acceptance criteria ask for,
+  captured as a repeatable assertion instead of a one-time manual
+  screenshot.
+
+  **Duplicate 409 — designed panel, only real fields shown.**
+  `components/app/imports/DuplicatePanel.tsx` renders exactly what
+  `POST /api/imports`'s 409 body actually contains (`{ id, status,
+  created_at }`, read from `app/api/imports/route.ts`, not modified) —
+  no fabricated source name or message count. **Real interpretive
+  deviation from the prompt's own "View in history" wording:** no import-
+  history screen exists yet (034 is still `todo` in `INDEX.md`) — per
+  ADR-013 ("a route, nav entry, or button ships only when its feature
+  actually works end to end"), linking to a page that doesn't exist would
+  be worse than the raw error this panel replaces. `/dashboard` is the one
+  real surface that already shows this exact information (its own "last
+  import" row, Prompt 029), so the link points there and is labeled for
+  what it actually does ("View status on dashboard"), not for what the
+  prompt assumed existed. The "this is a different file?" guidance
+  explains *why* re-export produces a new result (Altr hashes by content,
+  not filename) rather than just suggesting it blindly.
+
+  **Retry — split into two real, distinct actions, not one.** 032's
+  single `Retry` button re-ran `run(lastFile)` (full re-parse + re-upload)
+  for every failure kind, including extraction failures — which would
+  have immediately hit a fresh 409 `DUPLICATE_IMPORT`, since the import
+  those failures happened on was already `completed` server-side. Also
+  found and fixed: 032's own `canRetry` never actually included the
+  `cancelled` kind, even though its own `statusCancelled` copy already
+  promised "you can retry safely" — a real, silent gap between the copy
+  and the button logic. Now: `canRetryFull` (re-parse + re-upload,
+  `lastFile`-based) covers `failed` / `timeout` / `cancelled` — the three
+  kinds where the import was never completed or was cleaned up by the
+  cancel-delete path above, so a fresh upload is correct and safe.
+  `canRetryExtraction` (cursor-based, `importId`-based, no file involved)
+  covers `aiNotConfigured` / `extractionPaused` / `extractionFailed` — it
+  calls `POST /api/imports/:id/extract` again, which resumes from the
+  server's own `extraction_cursor` (`lib/ai/memory-extraction.ts`, read,
+  not modified) rather than starting over. `duplicate` gets neither button
+  — retrying blindly would just re-hit the same 409 (same content hash),
+  so the panel's own re-export guidance is the only path forward, on
+  purpose.
+
+  **Extraction pause states, not a generic "failed."** Read
+  `lib/ai/memory-extraction.ts` in full: `MEMORY_LIMIT_REACHED` and
+  `MEMORY_PROCESSING_CONCURRENCY_LIMIT` are both thrown *before* the
+  batch's own try/block runs, so `extraction_status` is left exactly as
+  it was (never flipped to `failed`) and the `extraction_cursor` from any
+  prior successful batches is preserved untouched — this is a genuine
+  pause, not a failure, and the UI now says so (`extractionPaused`, not
+  `extractionFailed`), with the monthly-memory-limit case additionally
+  showing the same `/pricing` upgrade link `QuotaMeter`'s own reached
+  state uses (`getSharedCopy(lang).quota.upgradeLink`, not a new string).
+  **Honest running count, not fabricated:** `extractMemories()` now
+  accumulates `createdTotal` from each batch response's own real `created`
+  field and threads it through every extraction-related status
+  (`extracting`, `aiNotConfigured`, `extractionPaused`, `extractionFailed`,
+  `done`) — the previous "MEMORY_LIMIT_REACHED mid-extraction" edge case
+  this prompt calls out by name ("memories saved so far are real") is now
+  literally displayed, not just true-but-invisible in the database.
+
+  **Monthly import quota (429) reuses the existing `QuotaMeter`, not a
+  second one.** `IMPORT_MONTHLY_QUOTA_REACHED` from `POST /api/imports`
+  now sets `importsThisMonth` to the real `limits.importsPerMonth` value
+  before setting the `quotaReached` status — the `QuotaMeter` already
+  rendered above the drop zone (032) computes its own reached/upgrade-link
+  state purely from `used >= limit`, so it flips automatically; no second
+  meter or duplicated upgrade copy was added, satisfying this prompt's own
+  "renders the QuotaMeter reached-state" instruction literally rather than
+  approximately.
+
+  **Very-fast-import edge case — `MIN_STAGE_DISPLAY_MS` (450ms), applied
+  once per named stage, not per chunk/batch.** A `holdStage(enteredAt)`
+  helper pads a stage's exit to at least 450ms only at the three real
+  stage *boundaries* (parse-done→create, last-chunk-done→extract-start,
+  extract-terminal→return) — deliberately not inserted per-chunk or
+  per-extraction-batch, so a large import with hundreds of chunks never
+  pays this cost more than three times total, while a small fixture (the
+  telegram fixture: 1 conversation, 1 chunk, 1 extraction batch) can no
+  longer flash through all four named stages in native network-mock
+  speed.
+
+  **Environment gotcha found and fixed this session, recorded above under
+  "Current active prompt" too since future prompts will hit it:** the
+  first `yarn test:e2e` run against this prompt's own new tests failed 4/4
+  new import-experience tests, all showing stale 032-era copy/behavior
+  (`"This exact file was already imported..."` plus a `Retry safely`
+  button on the *duplicate* panel — exactly 032's pre-fix bug this
+  prompt's own diff removes). Root cause, confirmed by reading
+  `playwright.config.ts`: `webServer.command` is `yarn start -p 3000`
+  (`next start`, which only *serves* an existing `.next` build) with
+  `reuseExistingServer: !process.env.CI` — outside CI this reuses
+  whatever's already listening, and even a fresh start never rebuilds.
+  No stray server was actually listening (checked directly via
+  `netstat`), so Playwright's own `yarn start` served the `.next` output
+  left over from before this session's `ImportFlow.tsx` changes. Running
+  a plain `yarn build` first produced a fresh `.next`, and the full suite
+  (35/35, all 5 import-experience tests) passed cleanly afterward — not a
+  code bug, an environment/workflow gap in how this repo's own e2e
+  command is invoked.
+
+  **Required tests added:** `tests/components/StageRail.test.tsx` (4
+  tests — done/current/pending states, error state, real stage-name text
+  with no `%` anywhere, `aria-hidden` decorative status),
+  `tests/components/DuplicatePanel.test.tsx` (3 tests — only the real 409
+  fields render, the `/dashboard` link with its real label, the
+  different-file hint), and 4 new cases in
+  `tests/components/ImportFlow.test.tsx` (cancel-during-parsing → real
+  `worker.terminate()` call + designed cancelled state + restart action;
+  stage rail progressing to a real non-fabricated done count via a
+  `MockWorker` stand-in, since jsdom has no real `Worker`; duplicate 409
+  end-to-end through the real component tree; extraction-pause →
+  cursor-based retry with call-count proof that create/chunks are never
+  called again). 5 new Playwright e2e cases in
+  `tests/e2e/critical-flows.spec.ts`'s "import experience" block: the
+  cancel-network-evidence test described above, duplicate-panel
+  end-to-end, monthly-quota-429 end-to-end, and extraction-pause-retry
+  end-to-end (call-count proof again, this time against the real routing
+  layer).
+  `yarn lint`, `yarn typecheck`, `yarn test` (58 files/300 tests, up from
+  56/289 in 032), `yarn build` (45/45 pages, unchanged — no new routes
+  this prompt), and `yarn test:e2e` (35/35, up from 31/31 — 5 new,
+  0 regressions) all passed, in that order, with `yarn build` re-run
+  immediately before the final `yarn test:e2e` pass per the environment
+  gotcha above.
+
 ## Failed prompts
 
 None.
@@ -2738,7 +2937,13 @@ draft temporarily stashed out (see 013's STATUS entry); that draft's own
 build/test state is unverified and not this prompt's concern. Re-confirmed
 again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production), and
 again same-day for 015 (30/30 pages), and again for 016 (30/30 pages,
-`/hero-lab` 404s in production).
+`/hero-lab` 404s in production). Re-confirmed 2026-07-24 for 032 (45/45
+pages, `/import-conversations` new) and again for 033 (45/45 pages,
+unchanged route count — no new routes this prompt); 033's own entry
+above records a real `yarn test:e2e` gotcha worth reading before running
+that command again: `webServer` serves whatever `.next` build already
+exists (`next start`, not `next dev`) — always run `yarn build` first if
+`.next` might predate the latest code changes.
 
 ## Last successful test run
 
@@ -2751,6 +2956,11 @@ isn't a clean pass to cite blindly). WORKSPACE: `yarn test`, 2026-07-20 —
 Re-confirmed 2026-07-21 for 014 — 160/160 tests across 28 files, clean exit.
 Re-confirmed same day for 015 — 161/161 tests across 29 files, clean exit.
 Re-confirmed for 016 — 163/163 tests across 30 files, clean exit.
+Re-confirmed 2026-07-24 for 032 — 289/289 tests across 56 files, clean
+exit, plus `yarn test:e2e` 31/31. Re-confirmed same day for 033 —
+300/300 tests across 58 files, clean exit, plus `yarn test:e2e` 35/35
+(see 033's own entry for the `yarn build`-before-`yarn test:e2e` gotcha
+this session found and worked around).
 
 ## Known regressions
 

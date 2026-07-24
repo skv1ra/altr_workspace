@@ -419,4 +419,184 @@ test.describe("import experience", () => {
     await expect(page.locator('p[role="alert"]')).toContainText("Confirm that normalized data may be stored.");
     expect(createCalled).toBe(false);
   });
+
+  /*
+   * Prompt 033 — import progress, cancel, retry. Real, live evidence (not
+   * an RTL mock) that clicking Cancel during the "Saving" stage actually
+   * aborts the in-flight chunk upload, rather than just hiding the UI:
+   * the `/chunks` route handler is deliberately left pending (never
+   * fulfilled) so the request only ever resolves by being aborted
+   * client-side; the assertion is that no second chunk POST is ever sent
+   * after cancel, and that the real DELETE cleanup contract fires
+   * (`app/api/imports/[id]/route.ts`'s own policy: "normalized
+   * conversations/messages deleted").
+   */
+  test("cancel actually aborts the chunk-upload stage — no further chunk requests after cancel, and the partial import is deleted", async ({
+    page,
+  }) => {
+    const limits = {
+      importsPerMonth: 5,
+      maxFileBytes: 5_242_880,
+      maxMessagesPerImport: 2000,
+      maxConversationsPerImport: 100,
+      maxActiveMemories: 250,
+      aiDraftsPerMonth: 10,
+      concurrentImports: 1,
+      concurrentMemoryJobs: 1,
+    };
+    let chunkCalls = 0;
+    let deleteCalled = false;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits }));
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        return route.fulfill(json({ import: { id: "33333333-3333-4333-8333-333333333333" }, planId: "free" }, 201));
+      }
+      if (path.endsWith("/chunks")) {
+        chunkCalls += 1;
+        return new Promise(() => undefined); // never resolves — only settles by client-side abort
+      }
+      if (/^\/api\/imports\/[^/]+$/.test(path) && route.request().method() === "DELETE") {
+        deleteCalled = true;
+        return route.fulfill(json({ ok: true }));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect.poll(() => chunkCalls, { timeout: 10_000 }).toBeGreaterThan(0);
+    await page.getByRole("button", { name: /Cancel local parsing/ }).click();
+
+    await expect(page.getByText("Import cancelled", { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect.poll(() => deleteCalled).toBe(true);
+    expect(chunkCalls).toBe(1); // no zombie retries/duplicates after abort
+    await expect(page.getByRole("button", { name: /Retry safely/ })).toBeVisible();
+  });
+
+  test("duplicate 409 renders the designed resolution panel — existing import's real status/date, a dashboard link, never a raw error", async ({
+    page,
+  }) => {
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(
+          json({
+            imports: [],
+            planId: "free",
+            limits: { importsPerMonth: 1, maxFileBytes: 5_242_880, maxMessagesPerImport: 2000, maxConversationsPerImport: 100, maxActiveMemories: 250, aiDraftsPerMonth: 10, concurrentImports: 1, concurrentMemoryJobs: 1 },
+          }),
+        );
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        return route.fulfill(
+          json(
+            {
+              error: "DUPLICATE_IMPORT",
+              import: { id: "44444444-4444-4444-8444-444444444444", status: "completed", created_at: "2026-07-20T10:00:00.000Z" },
+            },
+            409,
+          ),
+        );
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect(page.getByText("This file was already imported")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Completed/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "View status on dashboard" })).toHaveAttribute("href", "/dashboard");
+    await expect(page.getByText("DUPLICATE_IMPORT")).toHaveCount(0);
+  });
+
+  test("monthly import quota reached (429) flips the existing QuotaMeter into its reached state with an upgrade link, not a raw error", async ({
+    page,
+  }) => {
+    const limits = {
+      importsPerMonth: 1,
+      maxFileBytes: 5_242_880,
+      maxMessagesPerImport: 2000,
+      maxConversationsPerImport: 100,
+      maxActiveMemories: 250,
+      aiDraftsPerMonth: 10,
+      concurrentImports: 1,
+      concurrentMemoryJobs: 1,
+    };
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits }));
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        return route.fulfill(json({ error: "IMPORT_MONTHLY_QUOTA_REACHED", limits }, 429));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect(page.getByText("You've reached your monthly import limit.")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("link", { name: "Upgrade plan" })).toHaveAttribute("href", "/pricing");
+  });
+
+  test("extraction pause (monthly memory limit) offers a retry that resumes via the extract endpoint's cursor, never re-uploading", async ({
+    page,
+  }) => {
+    const limits = {
+      importsPerMonth: 5,
+      maxFileBytes: 5_242_880,
+      maxMessagesPerImport: 2000,
+      maxConversationsPerImport: 100,
+      maxActiveMemories: 250,
+      aiDraftsPerMonth: 10,
+      concurrentImports: 1,
+      concurrentMemoryJobs: 1,
+    };
+    let createCalls = 0;
+    let chunkCalls = 0;
+    let extractCalls = 0;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits }));
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        createCalls += 1;
+        return route.fulfill(json({ import: { id: "55555555-5555-4555-8555-555555555555" }, planId: "free" }, 201));
+      }
+      if (path.endsWith("/chunks")) {
+        chunkCalls += 1;
+        return route.fulfill(json({ ok: true }));
+      }
+      if (path.endsWith("/extract")) {
+        extractCalls += 1;
+        if (extractCalls === 1) return route.fulfill(json({ error: "MEMORY_LIMIT_REACHED" }, 429));
+        return route.fulfill(json({ done: true, created: 3 }));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect(page.getByText("Extraction paused: you've reached your monthly memory limit.", { exact: false })).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByRole("button", { name: "Retry memory extraction" }).click();
+    await expect(page.getByText(/3 memories saved\./)).toBeVisible({ timeout: 10_000 });
+
+    expect(createCalls).toBe(1);
+    expect(chunkCalls).toBe(1);
+    expect(extractCalls).toBe(2);
+  });
 });

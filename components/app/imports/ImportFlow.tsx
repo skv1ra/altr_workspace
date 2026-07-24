@@ -12,6 +12,8 @@ import { IMPORT_LIMITS } from "@/lib/imports/limits";
 import type { ImportPlatform, ParseResult } from "@/lib/imports/types";
 import { QuotaMeter } from "@/components/app/QuotaMeter";
 import { ProviderGuide } from "./ProviderGuide";
+import { StageRail } from "./StageRail";
+import { DuplicatePanel, type DuplicateExisting } from "./DuplicatePanel";
 import styles from "./ImportFlow.module.css";
 
 const MIME: Record<string, string> = {
@@ -25,18 +27,30 @@ const MIME: Record<string, string> = {
 };
 const SUPPORTED_EXTENSIONS = Object.keys(MIME);
 
+/** Below this, a stage's own transition would visually flash — this
+ *  prompt's own "very fast small imports must not flash-skip unreadably"
+ *  edge case. Applied once per named stage (parsing / saving / extracting),
+ *  never per chunk/batch inside a stage — a large import with hundreds of
+ *  chunks must not pay this cost hundreds of times. */
+const MIN_STAGE_DISPLAY_MS = 450;
+
 type ActiveWorker = { worker: Worker; requestId: string; reject: (error: Error) => void; timeoutId: number };
+
+type ExtractionPauseReason = "MEMORY_LIMIT_REACHED" | "MEMORY_PROCESSING_CONCURRENCY_LIMIT";
 
 type StatusState =
   | { kind: "idle" }
   | { kind: "parsing" }
   | { kind: "uploading"; index: number; total: number }
-  | { kind: "extracting"; batch: number }
-  | { kind: "aiNotConfigured" }
-  | { kind: "done" }
+  | { kind: "extracting"; batch: number; createdTotal: number }
+  | { kind: "aiNotConfigured"; importId: string; createdTotal: number }
+  | { kind: "extractionPaused"; importId: string; createdTotal: number; reason: ExtractionPauseReason }
+  | { kind: "extractionFailed"; importId: string; message: string; createdTotal: number }
+  | { kind: "done"; createdTotal: number }
   | { kind: "cancelled" }
   | { kind: "timeout" }
-  | { kind: "duplicate" }
+  | { kind: "duplicate"; existing: DuplicateExisting }
+  | { kind: "quotaReached" }
   | { kind: "rejected"; message: string }
   | { kind: "failed"; message: string };
 
@@ -49,27 +63,28 @@ function extensionOf(name: string) {
   return name.toLowerCase().split(".").pop() ?? "";
 }
 
+function holdStage(enteredAt: number) {
+  const elapsed = Date.now() - enteredAt;
+  if (elapsed >= MIN_STAGE_DISPLAY_MS) return Promise.resolve();
+  return new Promise<void>((resolve) => setTimeout(resolve, MIN_STAGE_DISPLAY_MS - elapsed));
+}
+
 /**
  * Orchestration logic (hashing, chunk size of 10, the extract-poll loop,
- * the cleanup-on-failure rules, every status transition) is ported line-
- * for-line from LEGACY's `app/import-conversations/page.tsx` (pinned
- * `a22927d`, read in full for this prompt) — this prompt's own "do not
- * re-derive hashing or chunking, reuse the current [proven] logic"
- * instruction, applied the same way 030 ported `/legacy-migration`
- * verbatim. Only the two client-side pre-checks below (empty file,
- * unsupported extension) are new — LEGACY only ever checked file size
- * before parsing; this prompt's own instruction #2 asks for "precise
- * designed rejections BEFORE parsing" beyond just size.
+ * every error-message mapping) is ported line-for-line from LEGACY's
+ * `run()`/`extractMemories()` (Prompt 032) — this prompt (033) adds real
+ * cancellation during upload (LEGACY/032 only ever aborted the parse
+ * worker; the chunk-upload loop had no way to stop), a designed duplicate
+ * resolution panel in place of the raw 409 message, a monthly-quota 429
+ * path that flips the existing `QuotaMeter` above into its own reached
+ * state rather than rendering a second one, and a cursor-based "retry
+ * extraction" action that never re-uploads or re-parses.
  *
- * The consent checkbox does NOT call `/api/consents/grant` — verified by
- * reading LEGACY's page in full: that endpoint is only ever called from
- * `components/legal/PrivacySettingsPanel.tsx`, an unrelated account-level
- * privacy surface. LEGACY's import consent is, and always was, a local,
- * unpersisted gate in front of the upload — preserved exactly as that,
- * not upgraded to call an endpoint the reference implementation never
- * actually used for this purpose (this prompt's own "behavior preserved
- * exactly" instruction, read literally against the real, verified
- * behavior rather than the instruction's own parenthetical assumption).
+ * The consent checkbox does NOT call `/api/consents/grant` — verified in
+ * 032 by reading LEGACY's page in full: that endpoint is only ever called
+ * from `components/legal/PrivacySettingsPanel.tsx`, an unrelated
+ * account-level privacy surface. LEGACY's import consent is, and always
+ * was, a local, unpersisted gate in front of the upload.
  */
 export function ImportFlow() {
   const [lang] = useLang("EN");
@@ -85,6 +100,11 @@ export function ImportFlow() {
   const [planId, setPlanId] = useState("");
   const [importsThisMonth, setImportsThisMonth] = useState<number | null>(null);
   const activeWorker = useRef<ActiveWorker | null>(null);
+  const runController = useRef<AbortController | null>(null);
+  /** Furthest stage actually reached this run — lets a cancel/timeout/
+   *  generic failure freeze the stage rail on the real stage it stopped at,
+   *  instead of guessing. 0 parsing / 1 saving / 2 extracting. */
+  const lastStageIndex = useRef(0);
 
   useEffect(() => {
     fetch("/api/imports")
@@ -103,7 +123,19 @@ export function ImportFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const stopWorker = (reason: "IMPORT_CANCELLED" | "PROCESSING_TIMEOUT") => {
+  const cancelRun = () => {
+    const active = activeWorker.current;
+    if (active) {
+      window.clearTimeout(active.timeoutId);
+      active.worker.terminate();
+      activeWorker.current = null;
+      active.reject(new Error("IMPORT_CANCELLED"));
+      return;
+    }
+    runController.current?.abort();
+  };
+
+  const stopWorker = (reason: "PROCESSING_TIMEOUT") => {
     const active = activeWorker.current;
     if (!active) return;
     window.clearTimeout(active.timeoutId);
@@ -112,18 +144,44 @@ export function ImportFlow() {
     active.reject(new Error(reason));
   };
 
-  const extractMemories = async (importId: string) => {
+  /** Cursor-based — the server's own `extraction_cursor` (`lib/ai/memory-
+   *  extraction.ts`) resumes from where the last successful batch left
+   *  off, so calling this again after a pause/failure never re-imports or
+   *  re-uploads anything. `createdTotal` is a running, honest count across
+   *  every batch this run has actually persisted (each batch response's
+   *  own `created` field) — never fabricated. */
+  const extractMemories = async (importId: string, startingTotal = 0) => {
+    let createdTotal = startingTotal;
+    const stageStart = Date.now();
     for (let batch = 0; batch < 250; batch += 1) {
-      setStatus({ kind: "extracting", batch: batch + 1 });
+      setStatus({ kind: "extracting", batch: batch + 1, createdTotal });
       const response = await fetch(`/api/imports/${importId}/extract`, { method: "POST" });
       const body = await response.json();
       if (!response.ok) {
-        if (body.error === "AI_PROVIDER_NOT_CONFIGURED") return setStatus({ kind: "aiNotConfigured" });
-        throw new Error(body.error);
+        await holdStage(stageStart);
+        if (body.error === "AI_PROVIDER_NOT_CONFIGURED") return setStatus({ kind: "aiNotConfigured", importId, createdTotal });
+        if (body.error === "MEMORY_LIMIT_REACHED" || body.error === "MEMORY_PROCESSING_CONCURRENCY_LIMIT") {
+          return setStatus({ kind: "extractionPaused", importId, createdTotal, reason: body.error });
+        }
+        return setStatus({ kind: "extractionFailed", importId, message: body.error ?? "MEMORY_EXTRACTION_FAILED", createdTotal });
       }
-      if (body.done) return setStatus({ kind: "done" });
+      createdTotal += typeof body.created === "number" ? body.created : 0;
+      if (body.done) {
+        await holdStage(stageStart);
+        return setStatus({ kind: "done", createdTotal });
+      }
     }
-    throw new Error("MEMORY_EXTRACTION_BATCH_LIMIT");
+    await holdStage(stageStart);
+    return setStatus({ kind: "extractionFailed", importId, message: "MEMORY_EXTRACTION_BATCH_LIMIT", createdTotal });
+  };
+
+  const retryExtraction = async (importId: string, createdTotal: number) => {
+    setBusy(true);
+    try {
+      await extractMemories(importId, createdTotal);
+    } finally {
+      setBusy(false);
+    }
   };
 
   /** This prompt's own "precise designed rejections BEFORE parsing" —
@@ -148,7 +206,11 @@ export function ImportFlow() {
 
     setLastFile(file);
     setBusy(true);
+    const controller = new AbortController();
+    runController.current = controller;
+    lastStageIndex.current = 0;
     setStatus({ kind: "parsing" });
+    const parseStageStart = Date.now();
     const worker = new Worker(new URL("../../../workers/conversation-parser.worker.ts", import.meta.url));
     const requestId = crypto.randomUUID();
     let createdImportId: string | null = null;
@@ -170,6 +232,7 @@ export function ImportFlow() {
         };
         worker.postMessage({ type: "parse", requestId, file, platform });
       });
+      await holdStage(parseStageStart);
 
       if (parsed.conversations.length > limits.maxConversationsPerImport) throw new Error("CONVERSATION_LIMIT_REACHED");
       const parsedMessageCount = parsed.conversations.reduce((sum, conversation) => sum + conversation.messages.length, 0);
@@ -182,6 +245,7 @@ export function ImportFlow() {
       const create = await fetch("/api/imports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           platform,
           sourceName: file.name,
@@ -196,37 +260,46 @@ export function ImportFlow() {
       });
       const created = await create.json();
       if (!create.ok) {
-        if (created.error === "DUPLICATE_IMPORT") throw new Error("DUPLICATE_IMPORT");
+        if (created.error === "DUPLICATE_IMPORT") return setStatus({ kind: "duplicate", existing: created.import });
+        if (created.error === "IMPORT_MONTHLY_QUOTA_REACHED") {
+          setImportsThisMonth(limits.importsPerMonth);
+          return setStatus({ kind: "quotaReached" });
+        }
         throw new Error(created.error);
       }
       createdImportId = created.import.id;
 
+      lastStageIndex.current = 1;
+      const uploadStageStart = Date.now();
       const chunks: (typeof parsed.conversations)[] = [];
       for (let index = 0; index < parsed.conversations.length; index += 10) chunks.push(parsed.conversations.slice(index, index + 10));
       for (let index = 0; index < chunks.length; index += 1) {
+        setStatus({ kind: "uploading", index: index + 1, total: chunks.length });
         const response = await fetch(`/api/imports/${created.import.id}/chunks`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({ chunkIndex: index, final: index === chunks.length - 1, conversations: chunks[index] }),
         });
         if (!response.ok) throw new Error((await response.json()).error);
-        setStatus({ kind: "uploading", index: index + 1, total: chunks.length });
       }
-      await extractMemories(created.import.id);
+      await holdStage(uploadStageStart);
+      lastStageIndex.current = 2;
       setImportsThisMonth((current) => (current ?? 0) + 1);
+      await extractMemories(created.import.id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "IMPORT_FAILED";
-      const preserveImport = message === "AI_PROVIDER_NOT_CONFIGURED" || message.startsWith("MEMORY_");
-      if (createdImportId && !preserveImport) await fetch(`/api/imports/${createdImportId}`, { method: "DELETE" }).catch(() => undefined);
+      const aborted = error instanceof DOMException && error.name === "AbortError";
+      const message = aborted ? "IMPORT_CANCELLED" : error instanceof Error ? error.message : "IMPORT_FAILED";
+      if (createdImportId) await fetch(`/api/imports/${createdImportId}`, { method: "DELETE" }).catch(() => undefined);
       if (message === "IMPORT_CANCELLED") setStatus({ kind: "cancelled" });
       else if (message === "PROCESSING_TIMEOUT") setStatus({ kind: "timeout" });
-      else if (message === "DUPLICATE_IMPORT") setStatus({ kind: "duplicate" });
       else setStatus({ kind: "failed", message });
     } finally {
       if (activeWorker.current?.worker === worker) {
         window.clearTimeout(activeWorker.current.timeoutId);
         activeWorker.current = null;
       }
+      runController.current = null;
       worker.terminate();
       setBusy(false);
     }
@@ -244,7 +317,10 @@ export function ImportFlow() {
     if (!busy) handleFiles(event.dataTransfer.files);
   }
 
-  const canRetry = !busy && lastFile && (status.kind === "failed" || status.kind === "timeout" || status.kind === "duplicate");
+  const cancellable = status.kind === "parsing" || status.kind === "uploading";
+  const canRetryFull = !busy && lastFile && (status.kind === "failed" || status.kind === "timeout" || status.kind === "cancelled");
+  const canRetryExtraction =
+    !busy && (status.kind === "aiNotConfigured" || status.kind === "extractionPaused" || status.kind === "extractionFailed");
 
   return (
     <div className={styles.wrap}>
@@ -307,24 +383,43 @@ export function ImportFlow() {
         <p className={styles.dropHint}>{t.dropMultipleNote}</p>
       </div>
 
-      {busy && (
-        <Button variant="ghost" className="mt-4" onClick={() => stopWorker("IMPORT_CANCELLED")}>
+      {status.kind !== "idle" && status.kind !== "duplicate" && status.kind !== "rejected" && status.kind !== "quotaReached" && (
+        <StageRail currentIndex={deriveStageIndex(status, lastStageIndex.current)} error={deriveStageError(status)} lang={lang} />
+      )}
+
+      {cancellable && (
+        <Button variant="ghost" className="mt-4" onClick={cancelRun}>
           <Ban aria-hidden="true" width={16} height={16} strokeWidth={1.6} />
           {t.cancel}
         </Button>
       )}
-      {canRetry && (
+      {canRetryFull && (
         <Button variant="ghost" className="mt-4" onClick={() => lastFile && void run(lastFile)}>
           <RefreshCw aria-hidden="true" width={16} height={16} strokeWidth={1.6} />
           {t.retry}
         </Button>
       )}
+      {canRetryExtraction && "importId" in status && (
+        <Button variant="ghost" className="mt-4" onClick={() => void retryExtraction(status.importId, status.createdTotal)}>
+          <RefreshCw aria-hidden="true" width={16} height={16} strokeWidth={1.6} />
+          {t.retryExtraction}
+        </Button>
+      )}
+      {status.kind === "extractionPaused" && status.reason === "MEMORY_LIMIT_REACHED" && (
+        <p className="mt-2 text-label text-text-muted">
+          <Link href="/pricing" className="underline underline-offset-[3px]">
+            {getSharedCopy(lang).quota.upgradeLink}
+          </Link>
+        </p>
+      )}
 
-      {status.kind !== "idle" && (
+      {status.kind === "duplicate" && <DuplicatePanel existing={status.existing} lang={lang} />}
+
+      {status.kind !== "idle" && status.kind !== "duplicate" && (
         <p
-          role={status.kind === "failed" || status.kind === "rejected" ? "alert" : "status"}
+          role={status.kind === "failed" || status.kind === "rejected" || status.kind === "extractionFailed" ? "alert" : "status"}
           className={
-            status.kind === "failed" || status.kind === "rejected"
+            status.kind === "failed" || status.kind === "rejected" || status.kind === "extractionFailed"
               ? `${styles.statusLine} ${styles.statusAlert}`
               : styles.statusLine
           }
@@ -333,6 +428,41 @@ export function ImportFlow() {
         </p>
       )}
     </div>
+  );
+}
+
+function deriveStageIndex(status: StatusState, lastKnown: number): number {
+  switch (status.kind) {
+    case "parsing":
+      return 0;
+    case "uploading":
+      return 1;
+    case "extracting":
+    case "aiNotConfigured":
+    case "extractionPaused":
+    case "extractionFailed":
+      return 2;
+    case "done":
+      return 3;
+    case "cancelled":
+    case "timeout":
+    case "quotaReached":
+    case "failed":
+      return lastKnown;
+    default:
+      return lastKnown;
+  }
+}
+
+function deriveStageError(status: StatusState): boolean {
+  return (
+    status.kind === "aiNotConfigured" ||
+    status.kind === "extractionPaused" ||
+    status.kind === "extractionFailed" ||
+    status.kind === "cancelled" ||
+    status.kind === "timeout" ||
+    status.kind === "quotaReached" ||
+    status.kind === "failed"
   );
 }
 
@@ -351,19 +481,45 @@ function StatusText({ status, t }: { status: StatusState; t: ReturnType<typeof g
     case "extracting":
       return (
         <>
-          {t.statusExtractingPrefix} {status.batch}…
+          {t.statusExtractingPrefix} {status.batch}
+          {status.createdTotal > 0 ? ` (${status.createdTotal} ${t.savedSoFarSuffix})` : "…"}
         </>
       );
     case "aiNotConfigured":
-      return <>{t.statusAiNotConfigured}</>;
+      return (
+        <>
+          {t.statusAiNotConfigured}
+          {status.createdTotal > 0 ? ` ${status.createdTotal} ${t.memoriesCreatedSuffix}` : ""}
+        </>
+      );
+    case "extractionPaused":
+      return (
+        <>
+          {status.reason === "MEMORY_LIMIT_REACHED" ? t.statusExtractionMemoryLimit : t.statusExtractionConcurrency}
+          {status.createdTotal > 0 ? ` ${status.createdTotal} ${t.memoriesCreatedSuffix}` : ""}
+        </>
+      );
+    case "extractionFailed":
+      return (
+        <>
+          {t.statusExtractionFailedPrefix} {status.message}. {t.statusExtractionFailedSuffix}
+          {status.createdTotal > 0 ? ` ${status.createdTotal} ${t.memoriesCreatedSuffix}` : ""}
+        </>
+      );
     case "done":
-      return <>{t.statusDone}</>;
+      return (
+        <>
+          {t.statusDone} {status.createdTotal} {t.memoriesCreatedSuffix}
+        </>
+      );
     case "cancelled":
       return <>{t.statusCancelled}</>;
     case "timeout":
       return <>{t.statusTimeout}</>;
     case "duplicate":
       return <>{t.statusDuplicate}</>;
+    case "quotaReached":
+      return <>{t.statusQuotaReached}</>;
     case "rejected":
       return <>{status.message}</>;
     case "failed":

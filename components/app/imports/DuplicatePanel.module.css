@@ -1,0 +1,58 @@
+.panel {
+  margin-top: var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge-hairline);
+  background: rgb(var(--altr-white-rgb) / 3%);
+}
+
+.heading {
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.facts {
+  margin-top: var(--space-3);
+}
+
+.facts dt {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  margin-top: var(--space-1);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+}
+
+.link {
+  display: inline-block;
+  margin-top: var(--space-4);
+  font-size: var(--text-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--text-primary);
+}
+
+.hint {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.hintHeading {
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.hint p:not(.hintHeading) {
+  margin-top: var(--space-1);
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
