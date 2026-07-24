@@ -4,16 +4,27 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 026 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. `/auth/forgot-password` and
-`/auth/reset-password` are now live in the new visual system, and the
-callback matrix (email-confirm, recovery, OAuth) has been traced against
-the real, unmodified `app/auth/callback/route.ts`. Full entry below.
+None — Prompt 027 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Protected-route redirect behavior (all
+seven `pages` from `lib/supabase/middleware.ts`) is now verified live and
+covered by a standing e2e regression test; `SignOutButton` and a standardized
+client-side session-expiry helper (`handleSessionExpired`) are built and
+tested but have no live consumer yet — no page in this workspace is
+authenticated-gated UI yet (dashboard is 029). Full entry below.
 **Carried forward, unchanged:** the `/api/billing/plans`+`/api/billing/me`
 anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
 bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
 gaps (014-018); 019's signed-in-nav-state-not-checked-against-a-real-session
-item. Note: Prompt 004 itself
+item (**partially closed by 027** — see its entry below: `SignOutButton`
+now dispatches the `altr-auth-change` event `Header` has listened for since
+019, but nothing exercises that path end-to-end yet since sign-in itself
+doesn't dispatch it either); `<Toaster />` is still not mounted anywhere in
+`app/layout.tsx` (027's `SignOutButton`/`handleSessionExpired` both call
+`toast.push()` correctly, but nothing renders those toasts yet — same
+deliberately-deferred gap `components/ui/Toast.tsx`'s own doc comment
+flagged since 010; `app/layout.tsx` is outside 027's own "files allowed to
+change", so this stays open for whichever prompt next touches that file).
+Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1912,6 +1923,151 @@ open.
   files, 218/218 tests. `yarn build` passed (39/39 pages; both new routes
   compiled as dynamic, matching every interactive public page since 020).
   `yarn test:e2e` passed 21/21 (up from 20/20 in 025 — 1 new test).
+
+- **027 — Protected routes and sign-out (2026-07-24):** No `components`/
+  `middleware`/`API` files were modified — everything server-side was
+  already legacy-audited complete per this prompt's own "Current project
+  state", confirmed by re-reading `middleware.ts`, `lib/supabase/server.ts`,
+  and `lib/auth/server.ts` (a thin re-export shim over
+  `lib/supabase/server.ts`'s `getOptionalUser`/`requireUser`/`requireUserId`)
+  in full. Work was: (1) verify and regression-test the existing protection
+  layer, (2) build the two pieces of user-facing UX around it that didn't
+  exist yet.
+
+  **Protected-page inventory — verified live against a real
+  `yarn build && yarn start -p 3100` server, not just read from source:**
+
+  | Path | Anonymous (curl, no header) | Anonymous body leaked? | Authenticated (`ALTR_E2E_MOCKS=1` + valid mock UUID) | Page exists in this workspace? |
+  | --- | --- | --- | --- | --- |
+  | `/dashboard` | `307` → `/auth?mode=login&next=%2Fdashboard` | No — 34-byte body, just the redirect target | `404` (middleware passed it through; Next 404s, no page file) | No — Prompt 029 |
+  | `/memory` | `307` → `/auth?mode=login&next=%2Fmemory` | No | not separately curled (same code path) | No — Prompt 036 |
+  | `/assistants` | `307` → `/auth?mode=login&next=%2Fassistants` | No | not separately curled | No — Prompt 039 |
+  | `/import-conversations` | `307` → `/auth?mode=login&next=%2Fimport-conversations` | No | not separately curled | No — Prompt 032 |
+  | `/billing` | `307` → `/auth?mode=login&next=%2Fbilling` | No | not separately curled | No — Prompt 042 |
+  | `/billing?tab=invoices` | `307` → `/auth?mode=login&next=%2Fbilling%3Ftab%3Dinvoices` (query string preserved) | No | — | No |
+  | `/payment/success` | `307` → `/auth?mode=login&next=%2Fpayment%2Fsuccess` | No | not separately curled | No prompt yet |
+  | `/legacy-migration` | `307` → `/auth?mode=login&next=%2Flegacy-migration` | No | not separately curled | No prompt yet |
+
+  The real finding here: **none of the seven protected pages have an
+  `app/**/page.tsx` in this workspace yet** — every one is still LEGACY-only
+  UI, scheduled for a later prompt (029, 032, 036, 039, 042; the last two
+  have no prompt number assigned at all yet). This doesn't weaken the
+  protection, though — Next.js middleware runs *before* route resolution,
+  so the redirect fires purely off the URL pattern in
+  `lib/supabase/middleware.ts`'s `pages` array regardless of whether a page
+  file exists, confirmed by the authenticated case above 404ing (middleware
+  let it through; Next.js then legitimately had nothing to render) instead
+  of ever serving protected content. So "fix any page that leaks a flash of
+  protected UI" (this prompt's own instruction #1) has nothing to fix yet:
+  a flash requires a page component to mount first, and the redirect
+  already happens one layer below that, before any React tree exists for
+  an anonymous request. Whichever prompt builds each real page should
+  re-verify this same table against actual authenticated content once
+  there's real UI to check for flashes — noted as a re-verification, not a
+  currently-open gap. All seven paths are now also covered by a standing
+  e2e regression test (`tests/e2e/critical-flows.spec.ts`'s new "protected
+  routes and sign-out" describe block) so this can't silently regress.
+
+  **`components/auth/SignOutButton.tsx`** (new): thin wrapper over the
+  existing `Button` (ghost variant, keyboard-accessible by construction —
+  it's a native `<button>`), calling the already-implemented
+  `signOutAccount()` (`lib/auth.ts`, unchanged — it already POSTed
+  `/api/auth/logout` correctly, it just had no UI caller anywhere). Pending
+  state uses `Button`'s existing `loading` prop (`disabled` + `aria-busy`,
+  same convention as every submit button since 025). On success: dispatches
+  a plain `altr-auth-change` window event — the exact event `Header`
+  (Prompt 019) has subscribed to since it was built, with nothing ever
+  dispatching it until now — so `Header`'s own in-memory `signedIn` state
+  re-syncs against a real `/api/me` call, satisfying this prompt's "clears
+  client caches of user data held in memory" requirement for the one
+  component that currently holds any such state, with zero changes to
+  `Header.tsx` itself (out of this prompt's file scope, and none needed).
+  Also calls `toast.push()` for a confirmation, and `router.replace("/")` +
+  `router.refresh()`. **No page in this workspace mounts this component
+  yet** — LEGACY's own equivalent lived inside `app/dashboard/page.tsx`
+  (sidebar nav item + a second copy in the settings tab, both calling
+  `signOutAccount()` directly with no loading state, no toast, no keyboard
+  affordance beyond a bare `<button>`), confirmed by cloning LEGACY
+  read-only and grepping for `signOutAccount`/`LogOut`/`/api/auth/logout` —
+  that's Prompt 029's scope (dashboard shell), not this one's. Built and
+  fully tested standalone (5 RTL tests in
+  `tests/components/SignOutButton.test.tsx`: pending/disabled+aria-busy
+  while in flight then re-enabled, Enter-key activation, the full success
+  path including the `altr-auth-change` dispatch and toast content, and a
+  calm error-toast path on failure with no navigation) so 029+ can drop it
+  in directly. Copy (`Sign out`/`Ти вийшов з акаунта.`/etc.) is a small
+  local bilingual object inside the component rather than joining
+  `sharedCopy` — `lib/i18n/copy.ts` isn't in this prompt's own "files
+  allowed to change" list, same reasoning LEGACY itself used for pages
+  whose copy was never centralized.
+
+  **`lib/auth.ts` — `handleSessionExpired(nextOverride?)`** (new export,
+  every existing export's behavior unchanged — confirmed by the full
+  existing test/e2e suite still passing unmodified): a session-expiry
+  helper explicitly *not* wired into the shared `api()` helper, because
+  `api()` also backs `signInAccount`/`registerAccount`, where a 401/400
+  means "wrong credentials" — auto-redirecting on every 401 there would
+  break the login form outright. Instead this is a standalone function a
+  component calls explicitly once it knows, from context, that a 401 on an
+  authenticated-only endpoint really does mean the session died mid-use. It
+  pushes a bilingual toast (same local-copy reasoning as `SignOutButton`,
+  same `lib/i18n/copy.ts` file-scope constraint) and redirects to
+  `/auth?mode=login&next=<path>`, defaulting `next` to
+  `window.location.pathname + search` when no override is passed (so it
+  always lands back exactly where the session died) and re-validating any
+  explicit override against the same same-origin rule as `safeNextPath`
+  (`lib/auth/validation.ts`) and `safeRedirectPath`
+  (`lib/supabase/middleware.ts`, must-not-change) — reimplemented locally
+  rather than imported, since this module ships in client bundles
+  (`Header`, `PricingTable`, ...) and `lib/supabase/middleware.ts` pulls in
+  server-only `@supabase/ssr`/`next/server` APIs that don't belong there.
+  **No component in this workspace calls it yet** — every existing
+  authenticated-fetch component (`Header`'s `getCurrentProfile()` call,
+  `PricingTable`'s `/api/billing/me`/`/api/billing/checkout` calls) is
+  outside this prompt's own file scope, and per this prompt's own "adopt in
+  new components only" instruction, retrofitting it into already-shipped
+  components wasn't attempted. 3 unit tests added
+  (`tests/components/handleSessionExpired.test.ts`, testing the lib
+  function directly rather than through a component — the only test
+  directories this prompt's own file list allows are `tests/components/`
+  and e2e, so it lives there despite not being a component test):
+  explicit-path redirect + toast content, current-page fallback when no
+  override given, and the off-origin-override-rejected edge case named in
+  this prompt's own edge-case list.
+
+  **Sign-out flow, e2e:** since `SignOutButton` has no page mounting it
+  yet, there's no UI click-through path to drive in Playwright. What's
+  real and live right now is the `/api/auth/logout` route itself
+  (unmodified) — confirmed via a direct curl (`{"ok":true}`, 200, even for
+  a fully anonymous request with no session, which is the route's actual
+  unconditional behavior) and re-asserted as a Playwright `request`-fixture
+  e2e test (`tests/e2e/critical-flows.spec.ts`'s new describe block) that
+  hits the same real endpoint and checks the exact `{ ok: true }` shape
+  `signOutAccount()`/`SignOutButton` depend on. Documented explicitly as an
+  API-contract-level e2e test standing in for a UI-level one that isn't
+  possible yet, rather than silently claiming full click-through coverage.
+
+  **`<Toaster />` still isn't mounted** in `app/layout.tsx` — both new
+  `toast.push()` call sites are correct, real usage of the existing Toast
+  module (`components/ui/Toast.tsx`, Prompt 010), but nothing renders the
+  toast region yet. `app/layout.tsx` is outside this prompt's own file
+  scope, so this is flagged here (and in "Current active prompt" above)
+  rather than fixed ad hoc, per this session's established discipline
+  around the "files allowed to change" boundary.
+
+  **Required tests added:** `tests/components/SignOutButton.test.tsx` (5
+  tests, listed above), `tests/components/handleSessionExpired.test.ts` (3
+  tests, not formally "required" by this prompt's own required-tests list
+  but added anyway since it's cheap and this is new, security-relevant
+  logic), and one new `protected routes and sign-out` describe block in
+  `tests/e2e/critical-flows.spec.ts` (8 tests — one per protected path,
+  each using the same "anonymous" `x-altr-e2e-user` header override the
+  existing dashboard-only redirect test already established, plus the
+  `/api/auth/logout` contract test).
+  `yarn lint`, `yarn typecheck`, `yarn test` (45 files/225 tests, up from
+  43/218 in 026), `yarn build` (39/39 pages, unchanged route count — no new
+  pages this prompt), and `yarn test:e2e` (29/29, up from 21/21 in 026 — 8
+  new tests) all passed.
 
 ## Failed prompts
 

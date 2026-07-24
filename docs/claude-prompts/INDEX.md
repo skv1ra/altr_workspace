@@ -36,7 +36,7 @@ altr_workspace only.
 | 024 | Footer, legal restyle, SEO, mobile | 4 | Footer, legal pages skin, metadata, polish | 023 | M | done | done | yes | `feat(site): footer, legal restyle and SEO` |
 | 025 | Auth screens redesign | 5 | Login/register in new visual system | 011 | M | done | done | yes | `feat(auth): redesigned auth screens` |
 | 026 | Recovery, reset, callback | 5 | Forgot/reset pages + callback + Google entry | 025 | M | done | done | yes | `feat(auth): recovery and callback flows` |
-| 027 | Protected routes and sign-out | 5 | Route guards, session UX, sign-out | 026 | S | todo | todo | no | `feat(auth): protected routing and sign-out UX` |
+| 027 | Protected routes and sign-out | 5 | Route guards, session UX, sign-out | 026 | S | done | done | no | `feat(auth): protected routing and sign-out UX` |
 | 028 | Auth tests and polish | 5 | Component + e2e coverage, edge polish | 027 | M | todo | todo | no | `test(auth): auth flow coverage and polish` |
 | 029 | Dashboard shell | 6 | Authenticated layout, nav, user state | 027 | L | todo | todo | yes | `feat(app): premium dashboard shell` |
 | 030 | Profile and settings | 6 | Profile surface, settings structure | 029 | M | todo | todo | yes | `feat(app): profile and settings surfaces` |

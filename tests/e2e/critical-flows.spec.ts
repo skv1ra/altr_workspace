@@ -276,3 +276,52 @@ test.describe("password recovery", () => {
     await expect(page.getByText("Check your email")).toBeVisible();
   });
 });
+
+/*
+ * Prompt 027 — protected routes and sign-out. None of these seven pages
+ * (`lib/supabase/middleware.ts`'s own `pages` list, must-not-change) have
+ * an `app/**\/page.tsx` in this workspace yet — dashboard is 029, memory is
+ * 036, assistants/twin config is 039, imports is 032, billing is 042,
+ * legacy-migration and payment/success have no prompt of their own yet
+ * either. Middleware runs before route resolution though, so the redirect
+ * contract is real and verifiable right now regardless of page existence —
+ * confirmed live via curl against a real `yarn build && yarn start` server
+ * during this prompt's own manual verification (see STATUS.md's 027 entry
+ * for the full table with response bodies/sizes), and re-asserted here as
+ * a standing regression test so a future prompt can't silently narrow the
+ * protected-page list without a test failing.
+ *
+ * `SignOutButton` has no page mounting it yet for the same reason (no
+ * dashboard to hold it — LEGACY's own equivalent lived inside
+ * `app/dashboard/page.tsx`, Prompt 029's scope), so there is no click-
+ * through UI path to drive here. What *is* real and live right now is the
+ * `/api/auth/logout` contract itself (unmodified) that `SignOutButton`
+ * calls via `signOutAccount()` — exercised directly via Playwright's
+ * `request` fixture rather than faking a page to click a button on.
+ */
+test.describe("protected routes and sign-out", () => {
+  for (const path of ["/dashboard", "/memory", "/assistants", "/import-conversations", "/billing", "/payment/success", "/legacy-migration"]) {
+    test(`${path} redirects an anonymous visitor to /auth?mode=login&next=<path>, preserving the exact path`, async ({ browser, baseURL }) => {
+      // Same "anonymous" override as the existing dashboard-only test
+      // above: the global config's default `x-altr-e2e-user` is a real
+      // UUID (signed in, for the other describes' own needs), and this
+      // literal string fails `getE2EIdentity()`'s UUID check, correctly
+      // simulating a logged-out visitor instead.
+      const context = await browser.newContext({
+        extraHTTPHeaders: { "x-altr-e2e-user": "anonymous", "x-altr-e2e-email": "anonymous@example.com" },
+      });
+      const page = await context.newPage();
+      await page.goto(`${baseURL}${path}`);
+      await expect(page).toHaveURL(new RegExp(`/auth\\?mode=login&next=${encodeURIComponent(path)}$`));
+      await context.close();
+    });
+  }
+
+  test("the real /api/auth/logout contract returns { ok: true }, the exact shape signOutAccount()/SignOutButton depend on", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/auth/logout");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+  });
+});

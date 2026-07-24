@@ -1,0 +1,63 @@
+import { toast } from "@/components/ui/Toast";
+import { getStoredLanguage } from "@/lib/i18n/lang-store";
+
+export type ToneMode = "balanced" | "warm" | "direct" | "formal";
+export type PlanId = "free" | "personal" | "work";
+export const planRank: Record<PlanId, number> = { free: 0, personal: 1, work: 2 };
+export const hasPlanAccess = (current: PlanId, required: PlanId) => planRank[current] >= planRank[required];
+export type BillingSubscription = { status: "on_trial" | "active" | "paused" | "past_due" | "unpaid" | "cancelled" | "expired"; plan: PlanId; startedAt: string; expiresAt?: string | null; autoRenew: boolean; provider: "lemon_squeezy"; orderId?: string | null; subscriptionId?: string | null };
+export type BillingInvoice = { id: string; orderId: string; plan: PlanId; amount: number; currency: string; status: string; createdAt: string; paidAt?: string | null; receiptUrl?: string | null };
+export type AltrProfile = { id: string; name: string; email: string; role: string; altrName: string; bio: string; createdAt: string; updatedAt: string; plan: PlanId; trainingProgress: number; tone: ToneMode; stats: { conversations: number; memories: number; drafts: number }; connections: { email: boolean; calendar: boolean; messages: boolean; workspace: boolean }; preferences: { learning: boolean; autoDrafts: boolean; weeklyDigest: boolean; privacyMode: boolean }; consents: { policyVersion: string; termsAcceptedAt: string; conversationProcessingAcceptedAt: string; aiMemoryAcceptedAt: string }; subscription?: BillingSubscription | null; invoices?: BillingInvoice[] };
+async function api<T>(path: string, init: RequestInit = {}): Promise<T> { const response = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...(init.headers ?? {}) } }); const payload = await response.json().catch(() => ({})); if (!response.ok) throw new Error(typeof payload.error === "string" ? payload.error : `REQUEST_FAILED_${response.status}`); return payload as T; }
+export async function getCurrentProfile(): Promise<AltrProfile | null> { try { return (await api<{ profile: AltrProfile | null }>("/api/me")).profile; } catch { return null; } }
+export async function registerAccount(input: { name: string; email: string; password: string; policyVersion: string; termsAccepted: true; conversationProcessingAccepted: true; aiMemoryAccepted: true; locale: string }) { return api<{ ok: true; requiresEmailVerification: boolean }>("/api/auth/register", { method: "POST", body: JSON.stringify(input) }); }
+export async function signInAccount(email: string, password: string) { return api<{ ok: true }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }); }
+export async function requestPasswordReset(email: string) { return api<{ ok: true; message: string }>("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }); }
+export async function resetPassword(password: string) { return api<{ ok: true }>("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ password, confirmPassword: password }) }); }
+export async function signInWithGoogle() { window.location.href = "/api/auth/google/start"; }
+export type EditableProfileUpdate = Partial<Pick<AltrProfile, "name" | "role" | "altrName" | "bio" | "tone" | "preferences">>;
+export async function updateCurrentProfile(update: Partial<AltrProfile>) { const safe: EditableProfileUpdate = { name: update.name, role: update.role, altrName: update.altrName, bio: update.bio, tone: update.tone, preferences: update.preferences }; return api<{ profile: AltrProfile }>("/api/me", { method: "PATCH", body: JSON.stringify(safe) }).then((payload) => payload.profile); }
+export async function signOutAccount() { await api<{ ok: true }>("/api/auth/logout", { method: "POST" }); }
+export async function deleteCurrentAccount(confirmText = "DELETE") { await api<{ ok: true }>("/api/me", { method: "DELETE", body: JSON.stringify({ confirmText }) }); }
+export function redeemPromoCode(): never { throw new Error("PROMO_CODES_DISABLED_IN_PRODUCTION"); }
+export function activatePaidSubscription(): never { throw new Error("PAID_PLANS_CAN_ONLY_BE_ACTIVATED_BY_VERIFIED_LEMON_SQUEEZY_WEBHOOKS"); }
+
+/**
+ * Prompt 027 — standardized client-side 401 handling for an authenticated
+ * call that discovers mid-use that its session has died. Deliberately NOT
+ * wired into the shared `api()` helper above: `api()` also backs
+ * `signInAccount`/`registerAccount`, where a 401/400 means "wrong
+ * credentials", not "session expired" — auto-redirecting there would break
+ * the login/register forms outright. This is a separate, explicitly-called
+ * helper for components that know, from context, that the 401 they just
+ * got really does mean an expired session (an authenticated-only endpoint
+ * that previously succeeded). No component in this workspace calls it yet —
+ * every existing authenticated-fetch component (`Header`, `PricingTable`)
+ * is outside this prompt's own "files allowed to change" list — it's built
+ * and unit-tested here for the first new authenticated surface (029+) to
+ * adopt, per this prompt's own "adopt in new components only" instruction.
+ */
+const SESSION_EXPIRED_MESSAGE = { EN: "Session expired — sign in again.", UA: "Сесія завершилася — увійди ще раз." } as const;
+
+/**
+ * Same same-origin rule as `safeNextPath` (`lib/auth/validation.ts`) and
+ * `safeRedirectPath` (`lib/supabase/middleware.ts`, must-not-change) —
+ * reimplemented locally rather than imported: this module is bundled into
+ * client components (`Header`, `PricingTable`, ...) and
+ * `lib/supabase/middleware.ts` pulls in server-only `@supabase/ssr`/
+ * `next/server` APIs that don't belong in a client bundle.
+ */
+function sameOriginPath(value: string | undefined): string | null {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return null;
+  return value;
+}
+
+/** `nextOverride` exists mainly so tests don't need to mock `window.location`;
+ *  real call sites can omit it and this always lands back on the exact page
+ *  the session died on. */
+export function handleSessionExpired(nextOverride?: string) {
+  if (typeof window === "undefined") return;
+  toast.push(SESSION_EXPIRED_MESSAGE[getStoredLanguage()]);
+  const next = sameOriginPath(nextOverride) ?? `${window.location.pathname}${window.location.search}`;
+  window.location.assign(`/auth?mode=login&next=${encodeURIComponent(next)}`);
+}
