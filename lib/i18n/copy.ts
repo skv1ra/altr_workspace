@@ -138,6 +138,15 @@ export const sharedCopy = {
       successBody: "Your password has been changed. You're signed in and ready to continue.",
       successCta: "Continue to your Altr",
     },
+    // Prompt 028 — auth polish. Migrated out of `SignOutButton.tsx`'s own
+    // local copy object (027 couldn't touch this file; 028 can) so every
+    // auth surface's copy lives in one place, per this prompt's own
+    // "verify no hardcoded strings remain... all via i18n" instruction.
+    signOut: {
+      label: "Sign out",
+      confirmed: "You've been signed out.",
+      failed: "Couldn't sign out — please try again.",
+    },
   },
   UA: {
     nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
@@ -249,6 +258,11 @@ export const sharedCopy = {
       successTitle: "Пароль оновлено",
       successBody: "Твій пароль змінено. Ти увійшов і можеш продовжити.",
       successCta: "Перейти до свого Altr",
+    },
+    signOut: {
+      label: "Вийти",
+      confirmed: "Ти вийшов з акаунта.",
+      failed: "Не вдалося вийти — спробуй ще раз.",
     },
   },
 } as const satisfies Record<Lang, unknown>;

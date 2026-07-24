@@ -6,18 +6,8 @@ import { useState } from "react";
 import { Button, type ButtonProps } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
 import { signOutAccount } from "@/lib/auth";
+import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
-
-/**
- * `lib/i18n/copy.ts` isn't in this prompt's own "files allowed to change"
- * list, so this copy stays local rather than joining `sharedCopy` — same
- * precedent LEGACY itself used for pages whose copy wasn't ported into the
- * shared file yet (e.g. its own forgot-password page, see 026's notes).
- */
-const COPY = {
-  EN: { label: "Sign out", confirmed: "You've been signed out.", failed: "Couldn't sign out — please try again." },
-  UA: { label: "Вийти", confirmed: "Ти вийшов з акаунта.", failed: "Не вдалося вийти — спробуй ще раз." },
-} as const;
 
 /**
  * No page in this workspace mounts this yet — LEGACY's own equivalent lived
@@ -37,9 +27,10 @@ export function SignOutButton({ variant = "ghost", className, ...rest }: Omit<Bu
   const router = useRouter();
   const [lang] = useLang("EN");
   const [pending, setPending] = useState(false);
-  const t = COPY[lang];
+  const t = getSharedCopy(lang).signOut;
 
   async function handleClick() {
+    if (pending) return;
     setPending(true);
     try {
       await signOutAccount();

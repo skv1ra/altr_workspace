@@ -59,4 +59,23 @@ describe("ForgotPasswordForm", () => {
 
     expect(await screen.findByRole("link", { name: "Return to sign in" })).toHaveAttribute("href", "/auth?mode=login");
   });
+
+  it("a rapid double-click on submit only triggers one recovery request (double-submit guard)", async () => {
+    let resolveRequest: () => void = () => {};
+    mockedRequestPasswordReset.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = () => resolve({ ok: true, message: "irrelevant" });
+      }),
+    );
+    render(<ForgotPasswordForm />);
+
+    await userEvent.type(screen.getByLabelText(/^Email/), "real@example.com");
+    const button = screen.getByRole("button", { name: "Send instructions" });
+    await userEvent.click(button);
+    await userEvent.click(button);
+    resolveRequest();
+
+    await screen.findByText("Check your email");
+    expect(mockedRequestPasswordReset).toHaveBeenCalledTimes(1);
+  });
 });

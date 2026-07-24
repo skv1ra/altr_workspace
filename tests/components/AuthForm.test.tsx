@@ -159,4 +159,59 @@ describe("AuthForm", () => {
     expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
   });
+
+  it("shows a role=alert validation error for a too-short password without ever calling the server", async () => {
+    mockedGetCurrentProfile.mockResolvedValue(null);
+    render(<AuthForm initialMode="login" next="/dashboard" />);
+
+    await fillCredentials("real@example.com", "short1");
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Password must be at least 8 characters.");
+    expect(mockedSignInAccount).not.toHaveBeenCalled();
+  });
+
+  it("navigates straight to next (no verification notice) when registration already returns a live session", async () => {
+    mockedGetCurrentProfile.mockResolvedValue(null);
+    mockedRegisterAccount.mockResolvedValue({ ok: true, requiresEmailVerification: false });
+    render(<AuthForm initialMode="register" next="/pricing" />);
+
+    await fillCredentials("real@example.com", "realpassword1");
+    await checkAllConsents();
+    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/pricing"));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("a rapid double-click on submit only triggers one login request (double-submit guard)", async () => {
+    mockedGetCurrentProfile.mockResolvedValue(null);
+    let resolveSignIn: (value: { ok: true }) => void = () => {};
+    mockedSignInAccount.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSignIn = resolve;
+      }),
+    );
+    render(<AuthForm initialMode="login" next="/dashboard" />);
+
+    await fillCredentials("real@example.com", "realpassword1");
+    const submit = screen.getByRole("button", { name: "Log in" });
+    await userEvent.click(submit);
+    await userEvent.click(submit);
+    resolveSignIn({ ok: true });
+
+    await waitFor(() => expect(replace).toHaveBeenCalled());
+    expect(mockedSignInAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it("sets the exact autoComplete values password managers rely on to distinguish new vs. existing credentials", async () => {
+    mockedGetCurrentProfile.mockResolvedValue(null);
+    render(<AuthForm initialMode="register" next="/dashboard" />);
+
+    expect(screen.getByLabelText(/^Email/)).toHaveAttribute("autocomplete", "email");
+    expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "new-password");
+
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "current-password");
+  });
 });

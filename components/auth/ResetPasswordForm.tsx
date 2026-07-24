@@ -65,6 +65,7 @@ export function ResetPasswordForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
     setError("");
 
     if (password.length < 8) return setError(authT.errors.password);

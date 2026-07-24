@@ -31,8 +31,11 @@ describe("ResetPasswordForm", () => {
     render(<ResetPasswordForm />);
 
     expect(await screen.findByRole("heading", { name: "Choose a new password" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Password/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Confirm password/)).toBeInTheDocument();
+    // Both fields use "new-password" (not "current-password") — the
+    // autocomplete token password managers use to recognize a two-field
+    // "set a new password" form and offer to fill/generate accordingly.
+    expect(screen.getByLabelText(/^Password/)).toHaveAttribute("autocomplete", "new-password");
+    expect(screen.getByLabelText(/^Confirm password/)).toHaveAttribute("autocomplete", "new-password");
   });
 
   it("rejects mismatched passwords client-side without ever calling the server", async () => {
@@ -73,5 +76,53 @@ describe("ResetPasswordForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save password" }));
 
     expect(await screen.findByText("This link is invalid or has expired")).toBeInTheDocument();
+  });
+
+  it("shows the calm rate-limited copy (not the invalid-link state) for the exact 429 string the route throws", async () => {
+    mockedGetCurrentProfile.mockResolvedValue({ id: "u1" } as never);
+    mockedResetPassword.mockRejectedValue(new Error("Забагато спроб. Спробуй пізніше."));
+    render(<ResetPasswordForm />);
+    await screen.findByRole("heading", { name: "Choose a new password" });
+
+    await userEvent.type(screen.getByLabelText(/^Password/), "realpassword1");
+    await userEvent.type(screen.getByLabelText(/^Confirm password/), "realpassword1");
+    await userEvent.click(screen.getByRole("button", { name: "Save password" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Too many attempts");
+  });
+
+  it("shows a generic (non-enumerating) error for any other reset failure", async () => {
+    mockedGetCurrentProfile.mockResolvedValue({ id: "u1" } as never);
+    mockedResetPassword.mockRejectedValue(new Error("Не вдалося оновити пароль."));
+    render(<ResetPasswordForm />);
+    await screen.findByRole("heading", { name: "Choose a new password" });
+
+    await userEvent.type(screen.getByLabelText(/^Password/), "realpassword1");
+    await userEvent.type(screen.getByLabelText(/^Confirm password/), "realpassword1");
+    await userEvent.click(screen.getByRole("button", { name: "Save password" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't complete that");
+  });
+
+  it("a rapid double-click on save password only triggers one reset request (double-submit guard)", async () => {
+    mockedGetCurrentProfile.mockResolvedValue({ id: "u1" } as never);
+    let resolveReset: () => void = () => {};
+    mockedResetPassword.mockReturnValue(
+      new Promise((resolve) => {
+        resolveReset = () => resolve({ ok: true });
+      }),
+    );
+    render(<ResetPasswordForm />);
+    await screen.findByRole("heading", { name: "Choose a new password" });
+
+    await userEvent.type(screen.getByLabelText(/^Password/), "realpassword1");
+    await userEvent.type(screen.getByLabelText(/^Confirm password/), "realpassword1");
+    const submit = screen.getByRole("button", { name: "Save password" });
+    await userEvent.click(submit);
+    await userEvent.click(submit);
+    resolveReset();
+
+    await waitFor(() => expect(screen.getByText("Password updated")).toBeInTheDocument());
+    expect(mockedResetPassword).toHaveBeenCalledTimes(1);
   });
 });

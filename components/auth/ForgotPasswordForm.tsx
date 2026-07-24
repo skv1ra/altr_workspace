@@ -45,6 +45,7 @@ export function ForgotPasswordForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
     setError("");
     setSubmitting(true);
     try {

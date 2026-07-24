@@ -4,13 +4,11 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 027 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Protected-route redirect behavior (all
-seven `pages` from `lib/supabase/middleware.ts`) is now verified live and
-covered by a standing e2e regression test; `SignOutButton` and a standardized
-client-side session-expiry helper (`handleSessionExpired`) are built and
-tested but have no live consumer yet — no page in this workspace is
-authenticated-gated UI yet (dashboard is 029). Full entry below.
+None — Prompt 028 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Phase 5 (auth) is now closed** — full
+coverage audit, four polish fixes (double-submit guard on all four auth
+forms, `SignOutButton`'s copy migrated into `lib/i18n/copy.ts`), and
+14 new tests closing every gap the audit found. Full entry below.
 **Carried forward, unchanged:** the `/api/billing/plans`+`/api/billing/me`
 anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
 bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
@@ -18,12 +16,14 @@ gaps (014-018); 019's signed-in-nav-state-not-checked-against-a-real-session
 item (**partially closed by 027** — see its entry below: `SignOutButton`
 now dispatches the `altr-auth-change` event `Header` has listened for since
 019, but nothing exercises that path end-to-end yet since sign-in itself
-doesn't dispatch it either); `<Toaster />` is still not mounted anywhere in
-`app/layout.tsx` (027's `SignOutButton`/`handleSessionExpired` both call
+doesn't dispatch it either); `<Toaster />` is **still** not mounted anywhere
+in `app/layout.tsx` (027's `SignOutButton`/`handleSessionExpired` both call
 `toast.push()` correctly, but nothing renders those toasts yet — same
 deliberately-deferred gap `components/ui/Toast.tsx`'s own doc comment
-flagged since 010; `app/layout.tsx` is outside 027's own "files allowed to
-change", so this stays open for whichever prompt next touches that file).
+flagged since 010; `app/layout.tsx` was outside both 027's and 028's own
+"files allowed to change", so this stays open for whichever prompt next
+touches that file — likely 029, the dashboard shell, which will need a
+root-layout change anyway).
 Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
@@ -2068,6 +2068,106 @@ open.
   43/218 in 026), `yarn build` (39/39 pages, unchanged route count — no new
   pages this prompt), and `yarn test:e2e` (29/29, up from 21/21 in 026 — 8
   new tests) all passed.
+
+- **028 — Auth tests and polish (2026-07-24, closes Phase 5):** No
+  server-side auth file was touched (`app/api/auth/**`,
+  `lib/auth/validation.ts`, `lib/supabase/**`, `middleware.ts`, `supabase/`
+  all confirmed unmodified) — this prompt's own scope was a coverage audit
+  plus polish-level fixes to the five `components/auth/**` files and
+  `lib/i18n/copy.ts`.
+
+  **Coverage audit — every behavior in this prompt's own list, against
+  what existed before this prompt ran:**
+
+  | Behavior | Before 028 | Gap found | Closed by |
+  | --- | --- | --- | --- |
+  | Register validation | Email + all-3-consents tested | Password-too-short never tested (schema *or* UI) | +1 schema test (`auth-validation.test.ts`), +1 UI test (`AuthForm.test.tsx`) |
+  | Login errors | Generic + invalid-email tested | — | none needed |
+  | 429 (rate limit) | Login, register, forgot-password all tested | Reset-password's own 429 branch never tested | +1 test (`ResetPasswordForm.test.tsx`) |
+  | Mode switch | Tested (component + e2e) | — | none needed |
+  | `next` propagation | Login's `next` navigation tested | Register's own `router.replace(next)` branch (session issued immediately, no email verification) never tested | +1 test (`AuthForm.test.tsx`) |
+  | Forgot neutral response | Tested (component + e2e) | — | none needed |
+  | Reset states | invalid/form/success/mismatch/session-expiry-on-submit tested | 429 and generic-error branches untested (see 429 row) | see 429 row; +1 generic-error test |
+  | Callback redirects | Traced from source only (026/027 STATUS entries), zero automated coverage | No test exercised the actual route handler | New file `tests/unit/auth-callback.test.ts`, 5 tests (no-code, exchange-failure, email-confirm/OAuth shape, recovery shape, off-origin `next` rejected) |
+  | Protected redirect | All 7 paths tested (027) | — | none needed |
+  | Sign-out | 4 tests (027) | Double-click guard untested | +1 test |
+
+  **Polish pass findings (styleguide open, `DESIGN_DIRECTION.md`'s
+  "premium hardware brand" bar re-read in full first) — everything found
+  was fixed, none deferred:**
+
+  1. **No re-entrant-submit guard on any of the four auth forms**
+     (`AuthForm`, `ForgotPasswordForm`, `ResetPasswordForm`,
+     `SignOutButton`) — this prompt's own "double-click on submit" edge
+     case. The `disabled` attribute from `Button`'s `loading` prop only
+     takes effect after React commits the next render; a fast enough
+     double-click could fire the handler twice in the gap. Fixed with an
+     `if (submitting) return;` (or `pending`) guard at the top of each
+     handler — the actual protection, with the disabled button as the
+     visible half. 4 new double-submit-guard regression tests added (one
+     per component).
+  2. **`SignOutButton`'s bilingual copy lived in a local object**, not
+     `lib/i18n/copy.ts` — correct at the time (027's own file scope didn't
+     include `copy.ts`), but this prompt's own "verify no hardcoded
+     strings remain... all via i18n" instruction is exactly the license to
+     fix it now. Migrated into `sharedCopy.{EN,UA}.signOut`; existing tests
+     needed no changes since the rendered strings are identical.
+  3. Everything else checked came back clean: focus order (verified live
+     via a real keyboard-only Tab walk against a production server on both
+     register and login mode — Logo → Back-home → Google → Email →
+     Password → show/hide toggle → [Forgot-password link, login mode
+     only] → [consent disclosure, register mode only] → Submit → mode-
+     switch link, exactly matching visual top-to-bottom order, no
+     `tabIndex` overrides anywhere in `components/auth/`, confirmed via
+     grep), autofill appearance (the `.field-input:-webkit-autofill`
+     override from Prompt 009's `controls.css` already applies globally —
+     no auth-specific gap), password-manager field contracts (both
+     register's single password field and reset-password's two fields use
+     the exact `autocomplete` tokens managers key off: `new-password` for
+     register/reset, `current-password` for login — now asserted directly
+     in `AuthForm.test.tsx` and `ResetPasswordForm.test.tsx`, not just
+     read from source), submit micro-interaction and error-state
+     transitions (shared `Button`/`Field` primitives, unchanged, already
+     consistent with the landing/pricing material family), and "browser
+     back after successful login" (verified by design: both `AuthForm` and
+     `ResetPasswordForm` use `router.replace`, never `push`, so `/auth`
+     never becomes a history entry to land back on).
+
+  **Hardcoded-locale-string audit:** `grep` for Cyrillic characters across
+  every file in `components/auth/` and the three auth page wrappers turned
+  up exactly two matches, both in `AuthForm.tsx` and `ResetPasswordForm.tsx`
+  — `RATE_LIMIT_MESSAGE`/`RATE_LIMITED`, the literal-string sentinels used
+  to detect the must-not-change API routes' own hardcoded Ukrainian 429
+  text and map it to the correct bilingual `t.errors.rateLimited` copy.
+  Neither is ever rendered — confirmed by reading both call sites — so
+  both are legitimate and already carried their own explanatory comments
+  from 025/026. Zero strings found that render to the user outside the
+  i18n system, after item 2 above closed the one real instance
+  (`SignOutButton`).
+
+  **Security check (this prompt's own requirement):** no test embeds a
+  real credential (all emails/passwords across every auth test file are
+  synthetic `@example.com` addresses and placeholder passwords), and no
+  existing security-relevant assertion was loosened to make a test pass —
+  confirmed by diffing every pre-existing test file against its 025-027
+  version; only new tests and additive assertions were introduced, no
+  existing `expect(...)` was weakened or removed.
+
+  **Required tests added (14, all listed above):**
+  `tests/unit/auth-validation.test.ts` (+1), `tests/unit/auth-callback.test.ts`
+  (new file, 5), `tests/components/AuthForm.test.tsx` (+4: short-password
+  UI error, register-without-verification navigation, double-submit guard,
+  autocomplete attributes), `tests/components/ForgotPasswordForm.test.tsx`
+  (+1: double-submit guard), `tests/components/ResetPasswordForm.test.tsx`
+  (+4: rate-limited, generic error, double-submit guard, autocomplete
+  attributes folded into the existing form-state test), and
+  `tests/components/SignOutButton.test.tsx` (+1: double-submit guard).
+  `yarn lint`, `yarn typecheck`, `yarn test` (46 files/240 tests, up from
+  45/225 in 027 — 1 new file, 15 net new tests: 14 new `it()` blocks plus
+  1 test gaining 2 extra assertions with no new `it()`), `yarn build`
+  (39/39 pages, unchanged), and `yarn test:e2e` (29/29, unchanged — this
+  prompt's coverage gaps were all closeable at the component/unit level,
+  so no new e2e tests were needed) all passed.
 
 ## Failed prompts
 

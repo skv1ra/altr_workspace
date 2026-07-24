@@ -84,4 +84,22 @@ describe("SignOutButton", () => {
 
     pushSpy.mockRestore();
   });
+
+  it("a rapid double-click only triggers one sign-out request (double-submit guard)", async () => {
+    let resolveSignOut: () => void = () => {};
+    mockedSignOutAccount.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSignOut = () => resolve(undefined);
+      }),
+    );
+    render(<SignOutButton />);
+
+    const button = screen.getByRole("button", { name: "Sign out" });
+    await userEvent.click(button);
+    await userEvent.click(button);
+    resolveSignOut();
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/"));
+    expect(mockedSignOutAccount).toHaveBeenCalledTimes(1);
+  });
 });

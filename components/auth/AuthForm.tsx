@@ -91,6 +91,10 @@ export function AuthForm({ initialMode, next }: { initialMode: AuthMode; next: s
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // A double-click can fire this handler twice before React commits the
+    // `disabled` state onto the submit button — this guard is the actual
+    // protection, the disabled button is only the visible half of it.
+    if (submitting) return;
     setError("");
     setNotice("");
 
