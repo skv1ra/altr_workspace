@@ -240,6 +240,105 @@ export const sharedCopy = {
       upgradeLink: "Upgrade plan",
       unknownNote: "Unavailable right now.",
     },
+    // Prompt 032 — import experience. `common.backDashboard` is reused
+    // as-is for the page's own back link.
+    imports: {
+      eyebrow: "Local parser / private by default",
+      title: "Import normalized conversations.",
+      intro: "The raw export stays in your browser. Only normalized plain text is uploaded, then server-side AI extraction creates reviewable memories.",
+      privacyStatement: "Your file is read in your browser. The original archive is never uploaded.",
+      providerHeading: "Choose the source",
+      consentLabel: "I authorize storage of normalized results. The raw file will not be uploaded.",
+      consentRequired: "Confirm that normalized data may be stored.",
+      limitsLoading: "Server-enforced plan limits are still loading.",
+      limitsUnavailable: "Could not load server-enforced import limits.",
+      dropHeading: "Choose export",
+      dropHint: "Drag a file here, or click to browse.",
+      dropMultipleNote: "Only the first file is used if you drop more than one.",
+      unsupportedFormat: "This file format isn't supported. Export as JSON, TXT, HTML, CSV, ZIP, or MBOX.",
+      emptyFile: "This file is empty.",
+      cancel: "Cancel local parsing",
+      retry: "Retry safely",
+      statusParsing: "Parsing locally in your browser…",
+      statusUploadingPrefix: "Uploading normalized chunk",
+      statusExtractingPrefix: "Import complete. Extracting memories, batch",
+      statusAiNotConfigured: "Import complete. AI provider is not configured, so memory extraction is paused.",
+      statusDone: "Import and memory extraction complete. Raw source file was not uploaded.",
+      statusCancelled: "Import cancelled. No raw file was uploaded. You can retry safely.",
+      statusTimeout: "Import stopped after 30 seconds. Try a smaller export or split the archive.",
+      statusDuplicate: "This exact file was already imported. Delete or review the existing import before retrying.",
+      statusFailedPrefix: "Import failed:",
+      statusFailedSuffix: "You can safely retry with the same local file.",
+      importsThisMonthLabel: "Imports this month",
+      messagesLabel: "messages",
+      perMonthLabel: "imports/month",
+      providers: {
+        telegram: {
+          label: "Telegram",
+          steps: [
+            "Open Telegram Desktop, then the chat's ⋮ menu.",
+            "Choose \"Export chat history.\"",
+            "Select JSON (recommended) or HTML, then save the file.",
+          ],
+        },
+        gmail: {
+          label: "Gmail",
+          steps: [
+            "Open Google Takeout.",
+            "Select Mail and choose the label to export.",
+            "Download the .mbox file when it's ready.",
+          ],
+        },
+        whatsapp: {
+          label: "WhatsApp",
+          steps: [
+            "Open the chat in WhatsApp, then More → Export chat.",
+            "Choose \"Without media\" for a plain text file.",
+            "Save the exported file.",
+          ],
+        },
+        instagram: {
+          label: "Instagram",
+          steps: [
+            "Open Accounts Center → Your information and permissions.",
+            "Choose Download your information → Messages.",
+            "Select JSON format and download.",
+          ],
+        },
+        messenger: {
+          label: "Messenger",
+          steps: [
+            "Open Accounts Center → Your information and permissions.",
+            "Choose Download your information → Messages.",
+            "Select JSON format and download.",
+          ],
+        },
+        slack: {
+          label: "Slack",
+          steps: [
+            "Open your workspace's data export tools in Settings & administration.",
+            "Export the conversations you have access to.",
+            "Altr reads the resulting JSON generically — fidelity may vary by workspace plan.",
+          ],
+        },
+        discord: {
+          label: "Discord",
+          steps: [
+            "Open User Settings → Privacy & Safety → Request all of my data.",
+            "Wait for Discord's email with your download link — this can take a few days.",
+            "Altr reads the resulting JSON generically.",
+          ],
+        },
+        manual: {
+          label: "Manual",
+          steps: [
+            "Write or paste conversation text into a plain .txt, .csv, or .json file.",
+            "One message per line, or simple JSON fields like text and date.",
+            "Useful for notes that don't come from a specific provider.",
+          ],
+        },
+      },
+    },
   },
   UA: {
     nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
@@ -437,6 +536,103 @@ export const sharedCopy = {
       reachedNote: "Ліміт вичерпано.",
       upgradeLink: "Покращити план",
       unknownNote: "Тимчасово недоступно.",
+    },
+    imports: {
+      eyebrow: "Локальний парсер / приватність за замовчуванням",
+      title: "Імпортуй нормалізовані переписки.",
+      intro: "Оригінальний файл лишається у твоєму браузері. Завантажується лише нормалізований текст, а серверний AI створює спогади для перегляду.",
+      privacyStatement: "Файл читається у твоєму браузері. Оригінальний архів ніколи не завантажується.",
+      providerHeading: "Обери джерело",
+      consentLabel: "Я дозволяю зберігати нормалізовані дані. Оригінальний файл не завантажується.",
+      consentRequired: "Підтвердь, що нормалізовані дані можна зберігати.",
+      limitsLoading: "Серверні ліміти плану ще завантажуються.",
+      limitsUnavailable: "Не вдалося завантажити серверні ліміти імпорту.",
+      dropHeading: "Обрати файл",
+      dropHint: "Перетягни файл сюди або натисни, щоб обрати.",
+      dropMultipleNote: "Якщо перетягнути кілька файлів, використається лише перший.",
+      unsupportedFormat: "Цей формат файлу не підтримується. Експортуй як JSON, TXT, HTML, CSV, ZIP або MBOX.",
+      emptyFile: "Цей файл порожній.",
+      cancel: "Скасувати локальний розбір",
+      retry: "Спробувати ще раз",
+      statusParsing: "Розбираємо локально у твоєму браузері…",
+      statusUploadingPrefix: "Завантажуємо нормалізований фрагмент",
+      statusExtractingPrefix: "Імпорт завершено. Створюємо спогади, партія",
+      statusAiNotConfigured: "Імпорт завершено. AI-провайдер не налаштований, тож створення спогадів призупинено.",
+      statusDone: "Імпорт і створення спогадів завершено. Оригінальний файл не завантажувався.",
+      statusCancelled: "Імпорт скасовано. Оригінальний файл не завантажувався. Можна спокійно спробувати ще раз.",
+      statusTimeout: "Імпорт зупинено через 30 секунд. Спробуй менший файл або розділи архів.",
+      statusDuplicate: "Цей самий файл уже імпортовано. Видали або переглянь наявний імпорт перед повторною спробою.",
+      statusFailedPrefix: "Помилка імпорту:",
+      statusFailedSuffix: "Можна спокійно повторити спробу з тим самим локальним файлом.",
+      importsThisMonthLabel: "Імпортів цього місяця",
+      messagesLabel: "повідомлень",
+      perMonthLabel: "імпортів/місяць",
+      providers: {
+        telegram: {
+          label: "Telegram",
+          steps: [
+            "Відкрий Telegram Desktop і меню ⋮ потрібного чату.",
+            "Обери «Експортувати історію чату».",
+            "Обери JSON (рекомендовано) або HTML і збережи файл.",
+          ],
+        },
+        gmail: {
+          label: "Gmail",
+          steps: [
+            "Відкрий Google Takeout.",
+            "Обери Пошту та потрібну мітку для експорту.",
+            "Завантаж файл .mbox, коли він буде готовий.",
+          ],
+        },
+        whatsapp: {
+          label: "WhatsApp",
+          steps: [
+            "Відкрий чат у WhatsApp, тоді Ще → Експортувати чат.",
+            "Обери «Без медіафайлів» для звичайного текстового файлу.",
+            "Збережи експортований файл.",
+          ],
+        },
+        instagram: {
+          label: "Instagram",
+          steps: [
+            "Відкрий Accounts Center → Інформація та дозволи.",
+            "Обери Завантажити інформацію → Повідомлення.",
+            "Обери формат JSON і завантаж.",
+          ],
+        },
+        messenger: {
+          label: "Messenger",
+          steps: [
+            "Відкрий Accounts Center → Інформація та дозволи.",
+            "Обери Завантажити інформацію → Повідомлення.",
+            "Обери формат JSON і завантаж.",
+          ],
+        },
+        slack: {
+          label: "Slack",
+          steps: [
+            "Відкрий інструменти експорту даних робочого простору в Налаштуваннях.",
+            "Експортуй доступні тобі переписки.",
+            "Altr читає отриманий JSON узагальнено — точність залежить від плану робочого простору.",
+          ],
+        },
+        discord: {
+          label: "Discord",
+          steps: [
+            "Відкрий Налаштування користувача → Приватність і безпека → Запросити всі мої дані.",
+            "Зачекай на лист від Discord з посиланням на завантаження — це може зайняти кілька днів.",
+            "Altr читає отриманий JSON узагальнено.",
+          ],
+        },
+        manual: {
+          label: "Вручну",
+          steps: [
+            "Напиши або встав текст переписки у звичайний файл .txt, .csv або .json.",
+            "По одному повідомленню на рядок, або прості поля JSON на кшталт text і date.",
+            "Корисно для нотаток, які не походять від конкретного провайдера.",
+          ],
+        },
+      },
     },
   },
 } as const satisfies Record<Lang, unknown>;

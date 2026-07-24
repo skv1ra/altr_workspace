@@ -1,0 +1,116 @@
+.wrap {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+@media (min-width: 640px) {
+  .wrap {
+    padding: var(--space-10) var(--space-8) var(--space-20);
+  }
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.back:hover {
+  color: var(--text-primary);
+}
+
+.limits {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--edge-hairline);
+  max-width: 22rem;
+}
+
+.limitsLine {
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+/*
+ * "Cinematic moment... fog surface that responds to drag-over with a slow
+ * light bloom" — same white/silver radial-gradient family `.surface-fog`
+ * (app/styles) already uses for the hero's own fog layer, applied directly
+ * here since this element is interactive content, not `Surface`'s own
+ * decorative absolutely-positioned overlay use case.
+ */
+.dropZone {
+  position: relative;
+  margin-top: var(--space-10);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  border: 1px dashed var(--edge-hairline);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--text-muted);
+  background: radial-gradient(60% 60% at 50% 40%, rgb(var(--altr-white-rgb) / 0%), transparent 75%);
+  transition: background var(--motion-slow) var(--ease-altr), border-color var(--motion-fast) var(--ease-altr);
+}
+
+.dropZoneActive {
+  border-color: rgb(var(--altr-white-rgb) / 45%);
+  background: radial-gradient(60% 60% at 50% 40%, rgb(var(--altr-white-rgb) / 16%), transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropZone {
+    transition: border-color var(--motion-fast) linear;
+  }
+}
+
+.dropLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge-hairline);
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.dropHint {
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.statusLine {
+  margin-top: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge-hairline);
+  font-size: var(--text-body);
+  color: var(--text-muted);
+}
+
+.statusAlert {
+  border-color: rgba(255, 138, 138, 0.35);
+  background: rgba(185, 28, 28, 0.12);
+  color: #ff8a8a;
+}

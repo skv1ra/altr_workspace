@@ -4,23 +4,29 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 031 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Phase 6 (dashboard) is now closed** —
-`/onboarding` (new users, shown once) and reusable `QuotaMeter`/`PlanBadge`
-components (now live on the dashboard) round it out. A suitable existing
-column (`altr_profiles.onboarding_completed`, added in the phase_3
-migration, never previously exposed anywhere in app code) covered the
-onboarding-completion flag — no new migration was needed. **Carried
-forward, unchanged:** the `/settings` middleware-protection gap (030,
-still not fixed, same reasoning); the placeholder Supabase credentials
-blocker (029) — still applies to `/onboarding` too, worked around the same
-way (RTL tests with controlled props; no e2e content assertions since
-`getProfileForUser` can't succeed here); the `/api/billing/plans`+
-`/api/billing/me` anonymous-401 middleware bug and its dormant
-`/api/billing/me` status-code bug (023); 020's CSP/`force-dynamic` item;
-Phase 3's manual-verification gaps (014-018); 019's signed-in-nav-state item;
-`<Toaster />` is **still** not mounted anywhere in `app/layout.tsx` (still
-outside every `(app)` prompt's own file scope so far).
+None — Prompt 032 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Phase 7 (imports) has begun** —
+`/import-conversations` is rebuilt: provider selection with accurate,
+per-platform export guidance, drag-and-drop, client-side pre-check
+rejections, and the exact proven hash/chunk/extract pipeline ported
+logic-verbatim from LEGACY. Unlike every `(app)` page since 029, this one
+has no server-side data fetch of its own (all client-side, matching
+LEGACY exactly), so it isn't blocked by the placeholder-Supabase
+environment gap — real, full e2e coverage was possible and added (31/31,
+up from 29/29). **Carried forward, unchanged:** the `/settings`
+middleware-protection gap (030); the placeholder Supabase credentials
+blocker (029) — still applies to every *other* `(app)` page (dashboard,
+settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
+anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
+bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
+gaps (014-018); 019's signed-in-nav-state item; `<Toaster />` is **still**
+not mounted anywhere in `app/layout.tsx`. **New, minor, low-priority
+follow-up noted (not fixed, out of this prompt's own scope):** neither
+`components/app/DashboardHome.tsx`'s Imports row nor `AppNav.tsx`'s
+destinations list link to `/import-conversations` now that it's real —
+this prompt's own instructions didn't explicitly call for that wiring
+(unlike 030's explicit Settings-nav instruction or 031's explicit
+QuotaMeter-wiring instruction), so it was left alone rather than assumed.
 Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
@@ -2585,6 +2591,124 @@ open.
   the dashboard's and onboarding's own redirect checks require a
   successful `getProfileForUser` call first) all passed.
 
+- **032 — Import experience redesign (2026-07-24, opens Phase 7):**
+  `app/import-conversations/page.tsx` didn't exist in this workspace at
+  all before this prompt (only the ported pipeline it sits on top of did)
+  — this was a from-scratch build against LEGACY's own page (pinned
+  `a22927d`) as the "contract," not a rebuild of an existing WORKSPACE
+  file, despite the prompt's own "(rebuild — keep the URL)" phrasing.
+
+  **Guidance accuracy sources:** every one of the 8 providers' export
+  steps in `components/app/imports/ProviderGuide.tsx` was written only
+  after reading `lib/imports/parsers.ts` (must-not-change) in full to
+  confirm what each platform's branch actually accepts, not assumed from
+  provider names alone:
+
+  | Platform | Real parser behavior | Guidance reflects |
+  | --- | --- | --- |
+  | Telegram | Bespoke `parseTelegramJson` (`chats.list[].messages`) + generic HTML/ZIP fallback | Export chat history as JSON (recommended) or HTML |
+  | Gmail | Bespoke `parseMbox` (RFC-2822-ish header/body split) | Google Takeout → Mail → `.mbox` |
+  | WhatsApp | Bespoke `parseWhatsApp` regex line format, `.txt` only (also reachable inside a ZIP entry) | Export chat → "Without media" for `.txt` |
+  | Instagram / Messenger | Bespoke `parseMetaJson` (`participants[]`/`messages[]` shape) | Meta Accounts Center → Download your information → Messages → JSON |
+  | Slack | **No bespoke branch** — falls through to the same generic JSON/CSV/TXT candidate detection any unrecognized platform gets | Phrased honestly as "Altr reads the resulting JSON generically — fidelity may vary," not a claim of native Slack support |
+  | Discord | Same as Slack — no bespoke branch | Same honest generic-JSON phrasing; only Discord's own official "Request all of my data" tool named, never a third-party scraper (this prompt's own security requirement) |
+  | Manual | Generic candidate detection only | Framed as a plain-text/CSV/JSON fallback for notes with no specific provider |
+
+  All 8 fixtures already existed on disk at `tests/fixtures/imports/`
+  (`telegram.json`, `gmail.mbox`, `whatsapp.txt`, `instagram.json`,
+  `messenger.json`, `slack.json`, `discord.json`, `generic.json` for
+  manual) from Prompt 004's port — `telegram.json` is the one committed
+  here (the only one an actual test now depends on; the other seven stay
+  as uncommitted, pre-existing fixtures until a prompt that needs them
+  commits them, same precedent as `lib/auth.ts` in 027).
+
+  **Contract-parity proof:** `workers/**`, `lib/imports/**`,
+  `app/api/imports/**`, `lib/billing/**`, and `supabase/` all show as
+  untracked-but-unmodified in `git status` — none were ever opened with an
+  edit tool this prompt, only read. The hash computation
+  (`crypto.subtle.digest("SHA-256", ...)`), the chunk size (10
+  conversations per request), the extract-poll loop (up to 250 batches),
+  and every error-message mapping in `components/app/imports/ImportFlow.tsx`
+  are ported line-for-line from LEGACY's own `run()`/`extractMemories()`
+  functions (read in full, not summarized from memory) — this prompt's own
+  "do not re-derive hashing or chunking, reuse the current [proven] logic"
+  instruction, same porting discipline `/legacy-migration` (030) already
+  established.
+
+  **Consent finding:** this prompt's own instruction assumed the import
+  consent checkbox "persists via `/api/consents/grant`" — verified this is
+  incorrect for the actual reference implementation: that endpoint is only
+  ever called from `components/legal/PrivacySettingsPanel.tsx`, an
+  unrelated account-level privacy surface. LEGACY's import consent has
+  always been a local, unpersisted gate in front of the upload. Preserved
+  exactly that (this prompt's own "behavior preserved exactly" instruction,
+  read against the verified real behavior rather than the instruction's own
+  mistaken parenthetical) rather than newly wiring a persistence call
+  LEGACY's actual import flow never made.
+
+  **Pre-check rejections (new, beyond LEGACY):** LEGACY only ever checked
+  file size before parsing. This prompt's own "precise designed rejections
+  BEFORE parsing" instruction added two more, both before the worker is
+  ever instantiated: a 0-byte file, and an extension outside the exact
+  allow-list `app/api/imports/route.ts`'s own `mimeExtensions` map already
+  enforces server-side (json/txt/html/htm/csv/zip/mbox) — client-mirrored
+  so a doomed upload never even starts. Multiple-file drops use the first
+  file only, stated directly in the UI (`dropMultipleNote`), per this
+  prompt's own edge case.
+
+  **`QuotaMeter` reused for "imports this month":** `GET /api/imports`
+  already returns the full import history; the meter's `used` value is a
+  client-side count of that array filtered to the current UTC month (same
+  `monthStartIso()` logic already duplicated in `app/(app)/dashboard/page.tsx`
+  and `app/api/imports/route.ts` — display-only, not a new entitlement
+  computation, so this prompt's own "no client-side entitlement inference"
+  requirement still holds: the *limit* itself always comes straight from
+  the server's own `limits.importsPerMonth`).
+
+  **A real, incidental bug found and fixed along the way:**
+  `limits.maxMessagesPerImport.toLocaleString()` (ported from LEGACY
+  verbatim at first) formats using the *runtime's* default locale, not
+  this app's own EN/UA toggle state — caught by a failing RTL test
+  expecting "2,000" and getting "2 000" (space-separated) in this
+  environment's actual default locale. Fixed by passing an explicit
+  `"en-US"`/`"uk-UA"` locale argument tied to the real `lang` state, so
+  the number format now actually follows the language toggle instead of
+  leaking whatever locale the OS/CI runner happens to default to — this
+  wasn't a pre-existing bug surfaced from LEGACY (LEGACY was Ukrainian-only
+  and never had this ambiguity), it's new because this app is bilingual.
+
+  **A real, incidental Playwright-only finding:** the shared `Checkbox`
+  primitive's real (but `sr-only`) `<input>` is flaky for Playwright's own
+  actionability checks specifically — clicking it directly intermittently
+  reports "element is outside of the viewport" against a real running
+  server, even though it renders and behaves correctly for actual users
+  (confirmed with a full-page screenshot) and for RTL/jsdom. Not a code
+  bug in `Checkbox.tsx` (out of this prompt's file scope regardless, and
+  every real interaction — mouse, keyboard, screen reader — works)
+  worked around in both the new e2e test and manual verification by
+  clicking the associated `<label>` text instead, a standard, equally
+  valid way to toggle a native checkbox.
+
+  **Required tests added:** `tests/components/ProviderGuide.test.tsx` (5
+  tests — all 8 platforms listed, active state + steps shown, selection
+  calls back, honest generic-JSON phrasing for Slack, no third-party-tool
+  guidance for Discord), `tests/components/ImportFlow.test.tsx` (7 tests —
+  real plan limits displayed, consent gating blocks upload before any
+  network call, 0-byte and unsupported-extension pre-check rejections both
+  proven to never reach `fetch` a second time, the multiple-files-uses-
+  first-only UI copy, the true privacy statement on-surface, and a real
+  QuotaMeter for imports-this-month), and two new e2e tests in
+  `tests/e2e/critical-flows.spec.ts`'s new "import experience" describe
+  block (the full telegram-fixture happy path through real consent →
+  provider selection → drop → chunked upload → extraction → done, and the
+  consent-gating rejection proven against the real `/api/imports` POST
+  endpoint never being called).
+  `yarn lint`, `yarn typecheck`, `yarn test` (56 files/289 tests, up from
+  54/277 in 031 — 2 new files, 12 new tests), `yarn build` (45/45 pages —
+  `/import-conversations` new), and `yarn test:e2e` (31/31, up from
+  29/29 — the first `(app)`-adjacent page since 029 with full, real
+  content-level e2e coverage, not just redirect-level) all passed.
+
 ## Failed prompts
 
 None.
@@ -2714,7 +2838,7 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Profile and settings | rebuilt | 030 |
 | Onboarding | new (no LEGACY equivalent existed) | 031 |
 | Memory overview | legacy | 036 (todo) |
-| Import experience | legacy | 032 (todo) |
+| Import experience | rebuilt | 032 |
 | Twin / assistants | legacy | 039 (todo) |
 | Billing overview | legacy | 042 (todo) |
 | Privacy center | legacy | 045 (todo) |

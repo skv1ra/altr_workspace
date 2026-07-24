@@ -325,3 +325,98 @@ test.describe("protected routes and sign-out", () => {
     expect(await response.json()).toEqual({ ok: true });
   });
 });
+
+/*
+ * Prompt 032 — import experience. Ported from LEGACY's own "imports a
+ * small local fixture with mocked persistence" e2e test (pinned `a22927d`)
+ * — same fixture (`tests/fixtures/imports/telegram.json`), same mocked
+ * `/api/imports`+`/chunks`+`/extract` contract, same final assertion text
+ * (preserved verbatim in `ImportFlow.tsx`'s own status copy) — only the
+ * selectors changed for the new UI. Unlike the dashboard/settings/
+ * onboarding pages (029-031), `/import-conversations` has no server-side
+ * data fetch of its own (`app/import-conversations/page.tsx` never calls
+ * `requireUser()`/`getProfileForUser()` — all data comes from the client-
+ * side `/api/imports` GET, exactly like LEGACY's own page), so this test
+ * isn't blocked by the placeholder-Supabase environment gap 029 found —
+ * real, full content-level e2e coverage is possible here.
+ *
+ * The consent checkbox is clicked via its label text rather than
+ * `getByRole("checkbox")` directly: manual verification against a real
+ * `yarn build && yarn start` server found the shared `Checkbox` primitive's
+ * real (but `sr-only`) `<input>` is flaky for Playwright's own
+ * actionability checks specifically (works fine for a real user, and for
+ * RTL/jsdom) — clicking the associated `<label>` text is a standard,
+ * equally-valid way to toggle a native checkbox and sidesteps it
+ * entirely, without needing to touch `Checkbox.tsx` (out of this prompt's
+ * own file scope regardless).
+ */
+test.describe("import experience", () => {
+  test("imports the telegram fixture through the real UI: consent, provider selection, drop, chunked upload, and memory extraction all the way to done", async ({
+    page,
+  }) => {
+    const limits = {
+      importsPerMonth: 1,
+      maxFileBytes: 5_242_880,
+      maxMessagesPerImport: 2000,
+      maxConversationsPerImport: 100,
+      maxActiveMemories: 250,
+      aiDraftsPerMonth: 10,
+      concurrentImports: 1,
+      concurrentMemoryJobs: 1,
+    };
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits }));
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        return route.fulfill(json({ import: { id: "22222222-2222-4222-8222-222222222222" }, planId: "free" }, 201));
+      }
+      if (path.endsWith("/chunks")) return route.fulfill(json({ ok: true }));
+      if (path.endsWith("/extract")) return route.fulfill(json({ done: true }));
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+
+    // Telegram is the default provider and has its own bespoke guidance —
+    // confirms the editorial provider list and per-provider steps render.
+    await expect(page.getByRole("radio", { name: /Telegram/ })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByText('Choose "Export chat history."')).toBeVisible();
+
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect(page.getByText("Import and memory extraction complete", { exact: false })).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("consent gating: selecting a file without checking consent shows the designed rejection and never calls the create endpoint", async ({
+    page,
+  }) => {
+    let createCalled = false;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(
+          json({
+            imports: [],
+            planId: "free",
+            limits: { importsPerMonth: 1, maxFileBytes: 5_242_880, maxMessagesPerImport: 2000, maxConversationsPerImport: 100, maxActiveMemories: 250, aiDraftsPerMonth: 10, concurrentImports: 1, concurrentMemoryJobs: 1 },
+          }),
+        );
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        createCalled = true;
+        return route.fulfill(json({ import: { id: "22222222-2222-4222-8222-222222222222" }, planId: "free" }, 201));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('input[type="file"]').setInputFiles("tests/fixtures/imports/telegram.json");
+
+    await expect(page.locator('p[role="alert"]')).toContainText("Confirm that normalized data may be stored.");
+    expect(createCalled).toBe(false);
+  });
+});
