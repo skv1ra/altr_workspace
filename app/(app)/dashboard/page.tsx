@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { DashboardHome } from "@/components/app/DashboardHome";
 import { getPlanLimits } from "@/lib/billing/limits";
 import { getProfileForUser } from "@/lib/profileServer";
@@ -36,6 +37,10 @@ function monthStartIso() {
 export default async function DashboardPage() {
   const user = await requireUser();
   const profile = await getProfileForUser(user);
+  // Prompt 031 — new users land here once (instruction #2); already-
+  // onboarded users never see it, including on a direct re-visit to
+  // /onboarding itself (that page's own redirect handles that direction).
+  if (!profile.onboardingCompleted) redirect("/onboarding");
   const limits = getPlanLimits(profile.plan);
   const admin = createSupabaseAdminClient();
 
@@ -72,6 +77,7 @@ export default async function DashboardPage() {
   return (
     <DashboardHome
       name={profile.name}
+      plan={profile.plan}
       memoryCount={profile.stats.memories}
       memoryLimit={limits.maxActiveMemories}
       draftsUsed={draftsUsed}

@@ -29,6 +29,7 @@ const profile: AltrProfile = {
   plan: "free",
   trainingProgress: 12,
   tone: "balanced",
+  onboardingCompleted: true,
   stats: { conversations: 2, memories: 1, drafts: 3 },
   connections: { email: false, calendar: false, messages: false, workspace: false },
   preferences: { learning: true, autoDrafts: false, weeklyDigest: false, privacyMode: true },

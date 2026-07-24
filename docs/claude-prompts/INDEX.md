@@ -40,7 +40,7 @@ altr_workspace only.
 | 028 | Auth tests and polish | 5 | Component + e2e coverage, edge polish | 027 | M | done | done | no | `test(auth): auth flow coverage and polish` |
 | 029 | Dashboard shell | 6 | Authenticated layout, nav, user state | 027 | L | done | done | yes | `feat(app): premium dashboard shell` |
 | 030 | Profile and settings | 6 | Profile surface, settings structure | 029 | M | done | done | yes | `feat(app): profile and settings surfaces` |
-| 031 | Onboarding and quota display | 6 | New onboarding flow + entitlement/quota UI | 030 | M | todo | todo | yes | `feat(app): onboarding and quota display` |
+| 031 | Onboarding and quota display | 6 | New onboarding flow + entitlement/quota UI | 030 | M | done | done | yes | `feat(app): onboarding and quota display` |
 | 032 | Import experience redesign | 7 | Picker, drag-drop, provider guidance | 029 | L | todo | todo | yes | `feat(import): redesigned import experience` |
 | 033 | Import progress, cancel, retry | 7 | Progress, cancellation, duplicates, extraction | 032 | M | todo | todo | yes | `feat(import): progress and recovery flows` |
 | 034 | Import history and errors | 7 | History list, provenance, error states | 033 | M | todo | todo | yes | `feat(import): history and error states` |

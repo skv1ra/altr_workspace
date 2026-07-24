@@ -7,6 +7,7 @@ describe("DashboardHome", () => {
     render(
       <DashboardHome
         name="Max Golyba"
+        plan="free"
         memoryCount={0}
         memoryLimit={250}
         draftsUsed={0}
@@ -27,6 +28,7 @@ describe("DashboardHome", () => {
     render(
       <DashboardHome
         name="Max Golyba"
+        plan="free"
         memoryCount={42}
         memoryLimit={250}
         draftsUsed={3}
@@ -50,6 +52,7 @@ describe("DashboardHome", () => {
     render(
       <DashboardHome
         name="Max"
+        plan="free"
         memoryCount={5}
         memoryLimit={250}
         draftsUsed={0}
@@ -67,6 +70,7 @@ describe("DashboardHome", () => {
     render(
       <DashboardHome
         name="Max"
+        plan="free"
         memoryCount={0}
         memoryLimit={250}
         draftsUsed={0}
@@ -87,6 +91,7 @@ describe("DashboardHome", () => {
     render(
       <DashboardHome
         name="Макс"
+        plan="free"
         memoryCount={0}
         memoryLimit={250}
         draftsUsed={0}

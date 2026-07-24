@@ -2,6 +2,13 @@
   max-width: 720px;
 }
 
+.greetingRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .empty {
   margin-top: var(--space-8);
   padding-top: var(--space-8);

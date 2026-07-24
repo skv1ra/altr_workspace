@@ -1,0 +1,54 @@
+.wrap {
+  margin-top: var(--space-3);
+}
+
+.headRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.numbers {
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.track {
+  margin-top: var(--space-2);
+  height: 2px;
+  width: 100%;
+  background: var(--edge-hairline);
+}
+
+.fill {
+  height: 100%;
+  background: var(--text-muted);
+  transition: width var(--motion-fast) var(--ease-altr);
+}
+
+.fillReached {
+  background: #b91c1c;
+}
+
+.note {
+  margin-top: var(--space-2);
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.noteReached {
+  color: #b91c1c;
+}
+
+.upgradeLink {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

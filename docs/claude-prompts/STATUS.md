@@ -4,22 +4,18 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 030 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. `/settings` and `/legacy-migration` are now
-live; the "Settings" nav entry 029 anticipated resolves for real. **New
-security-relevant finding:** `/settings` is not in `lib/supabase/middleware.ts`'s
-protected `pages` list — confirmed live (anonymous request returns a plain
-404/broken page, not a redirect to `/auth`, unlike every other authenticated
-route). No profile data is exposed (`requireUser()` throws before
-`SettingsView` ever mounts), so this is a UX/consistency gap, not a data
-leak, but it's flagged prominently rather than fixed: `middleware.ts` and
-`lib/supabase/middleware.ts` were named in neither this prompt's "allowed"
-nor "must not change" list, and treating them as untouchable has been this
-session's own consistent rule since 026 — see 030's own entry below for the
-full repro and reasoning. **Carried forward, unchanged:** the placeholder
-Supabase credentials blocker (029) — still applies to `/settings` and
-`/legacy-migration` too, worked around here the same way (RTL tests with
-controlled props instead of live content e2e); the `/api/billing/plans`+
+None — Prompt 031 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Phase 6 (dashboard) is now closed** —
+`/onboarding` (new users, shown once) and reusable `QuotaMeter`/`PlanBadge`
+components (now live on the dashboard) round it out. A suitable existing
+column (`altr_profiles.onboarding_completed`, added in the phase_3
+migration, never previously exposed anywhere in app code) covered the
+onboarding-completion flag — no new migration was needed. **Carried
+forward, unchanged:** the `/settings` middleware-protection gap (030,
+still not fixed, same reasoning); the placeholder Supabase credentials
+blocker (029) — still applies to `/onboarding` too, worked around the same
+way (RTL tests with controlled props; no e2e content assertions since
+`getProfileForUser` can't succeed here); the `/api/billing/plans`+
 `/api/billing/me` anonymous-401 middleware bug and its dormant
 `/api/billing/me` status-code bug (023); 020's CSP/`force-dynamic` item;
 Phase 3's manual-verification gaps (014-018); 019's signed-in-nav-state item;
@@ -2460,6 +2456,135 @@ open.
   e2e test was added asserting the `/settings` middleware gap either,
   since that would encode a known bug as expected behavior) all passed.
 
+- **031 — Onboarding and quota display (2026-07-24, closes Phase 6):**
+
+  **Migration decision: existing column, no new migration.** This
+  prompt's own instructions asked to first look for a suitable existing
+  column before writing an additive migration — found one:
+  `supabase/migrations/20260714210000_phase_3_core_product_schema.sql`
+  already has `alter table public.altr_profiles add column if not exists
+  onboarding_completed boolean not null default false` (`RLS`-covered by
+  the pre-existing `profiles_owner_all` policy on `altr_profiles`, which
+  applies to every column on that table, not per-column). Grepped the
+  entire `lib/`/`app/` tree first and confirmed this column was never
+  referenced anywhere in application code before this prompt — a real,
+  genuinely dormant column, not one this prompt is claiming credit for
+  finding by coincidence. No new migration, so `supabase/schema.sql`
+  (itself only a 4-line "retired, do not use this file" placeholder, not
+  a real generated snapshot — confirmed by reading it) was correctly left
+  untouched per this prompt's own "IF needed" conditional.
+
+  **API changes — minimal and additive, exactly as this prompt's own
+  file list conditioned them on:**
+  - `lib/auth.ts`: `AltrProfile` gained `onboardingCompleted: boolean`;
+    `EditableProfileUpdate`'s field allowlist and `updateCurrentProfile`'s
+    `safe` payload both extended to include it. Not explicitly named in
+    this prompt's own file list, but necessary for the same reason
+    `lib/profileServer.ts`/`app/api/me/route.ts` were explicitly
+    conditioned on "if the flag needs exposure" — all three had to move
+    together for the contract to work at all; 027 already established
+    `lib/auth.ts` as an extend-don't-break file for exactly this kind of
+    addition.
+  - `lib/profileServer.ts`: `getProfileForUser` now returns
+    `onboardingCompleted: profile?.onboarding_completed ?? false` — no new
+    query, `select("*")` (unchanged) already returns the column.
+  - `app/api/me/route.ts`: PATCH's `updateSchema` gained one optional
+    `onboardingCompleted: z.boolean()` field, and the handler writes
+    `onboarding_completed` when present. No existing field's behavior
+    changed — verified by the full pre-existing test/e2e suite passing
+    unmodified.
+
+  **Edge case — old frontend deployed after this migration lands:**
+  moot in practice here (the column already existed before this prompt;
+  no migration is being newly applied), but the underlying property still
+  holds and was verified by reading the column definition itself: additive
+  (`add column if not exists`), `not null default false`, so any
+  frontend — old or new — that doesn't know about the column continues to
+  work exactly as before; only code that explicitly reads/writes
+  `onboarding_completed` (all new, all in this commit) is affected.
+
+  **Onboarding flow:** `app/(app)/onboarding/page.tsx` (Server Component,
+  redirects already-onboarded users straight back to `/dashboard` — this
+  prompt's own "re-visit after completion" edge case) renders
+  `components/app/onboarding/OnboardingFlow.tsx` (client), exactly three
+  steps — name the Altr (`altrName`), choose a tone (`tone`, same enum
+  Settings' own tone selector uses, verified identical), and an
+  informational "import your first conversation" step with no functional
+  link (`/import-conversations` doesn't exist yet — Prompt 032 — so
+  ADR-013 applies here exactly as it already has to every prior `(app)`
+  surface). "Skip for now" renders at the same size/position as
+  "Continue" on every single step (this prompt's own "as easy as
+  completing, no dark patterns" requirement) and does the exact same
+  thing "Continue" does on the last step: write `onboardingCompleted:
+  true` (with no other field) and leave — verified with a dedicated test
+  asserting the untouched name field is never sent on a skip. No progress
+  dots or step counter anywhere — only a small per-step eyebrow label
+  ("One"/"Two"/"Three"), verified absent via a dedicated test assertion
+  (`queryByText(/step 1/i)`/`1\s*\/\s*3` both checked not present).
+  `app/(app)/dashboard/page.tsx` now redirects new users
+  (`!profile.onboardingCompleted`) to `/onboarding` before rendering
+  anything else — not in this prompt's own literal file list, but
+  instruction #2 names this exact behavior explicitly, the same class of
+  minimal, pre-instructed scope extension 029/030 already established
+  precedent for.
+
+  **`QuotaMeter`/`PlanBadge`:** both read `plan`/`used`/`limit` straight
+  from server-computed values passed down as props — no client-side
+  entitlement inference (this prompt's own security requirement).
+  `QuotaMeter` supports an optional `label` (omitted where the caller,
+  the dashboard's own editorial rows, already renders its own heading —
+  avoids a redundant duplicate label) with a required `ariaLabel`
+  fallback so the `role="progressbar"` always has an accessible name
+  either way. Three real states plus one degraded state, all tested:
+  normal (<80%), near-limit (≥80%, no upgrade link yet), reached (100%,
+  real `/pricing` link, percentage clamped so an over-quota `used` value
+  never renders past 100%), and `unknown` (this prompt's own "quota
+  endpoint failing" edge case — a quiet "—" and a note, never a
+  misleading zero, and no progressbar element at all in that state).
+  `PlanBadge` is a plain read of the server entitlement string through
+  the same `pricingPage.planNames` copy the pricing page itself already
+  uses (023) — no new plan-name strings. `UserMenu` (029) already has its
+  own separate inline plan badge with the same source of truth; not
+  consolidated onto the new shared component since `UserMenu.tsx` is
+  outside this prompt's own file scope — a small, noted duplication, not
+  an oversight.
+
+  **Dashboard wiring:** `DashboardHome.tsx` (029) gained a `plan` prop
+  (rendered via `PlanBadge` next to the greeting) and both its
+  Memory and Twin rows now render a `QuotaMeter` beneath the existing big
+  numeral, wired to the exact same `memoryCount`/`memoryLimit`/
+  `draftsUsed`/`draftsLimit`/`draftsError` data `page.tsx` already
+  computed in 029 — no new data-fetching. The Imports row was left as its
+  029 "last import state" shape rather than forced into a quota meter: it
+  has no natural `used/limit` semantics (LEGACY-equivalent concept, if
+  it existed, would be "imports this month," a number `page.tsx` doesn't
+  currently compute and this prompt's own instructions don't ask for).
+  Three now-unused copy keys (`dashboard.ofLimit`/`.memoryQuotaLabel`/
+  `.twinQuotaLabel`, EN+UA) were removed from `lib/i18n/copy.ts` rather
+  than left as dead weight, once `QuotaMeter` took over rendering that
+  exact information itself.
+
+  **Required tests added:** `tests/components/QuotaMeter.test.tsx` (5
+  tests — normal/near-limit/reached/unknown states plus the label-omitted-
+  but-still-accessible case), `tests/components/OnboardingFlow.test.tsx`
+  (6 tests — single-step-at-a-time with no progress indicator, skip
+  available immediately with equal weight, skip persists without saving
+  the untouched field, the full continue-through-all-three-steps path
+  with each step's own field verified sent, the no-real-import-link
+  assertion, and a save-failure keeping the user on the same step with a
+  calm inline error), and `tests/components/PlanBadge.test.tsx` (2 tests).
+  `tests/components/DashboardHome.test.tsx` and
+  `tests/components/SettingsView.test.tsx` needed a `plan`/
+  `onboardingCompleted` fixture update respectively (new required fields)
+  with no behavioral changes to their own assertions.
+  `yarn lint`, `yarn typecheck`, `yarn test` (54 files/277 tests, up from
+  51/264 in 030), `yarn build` (44/44 pages — `/onboarding` new), and
+  `yarn test:e2e` (29/29, unchanged — same placeholder-Supabase blocker;
+  "new-user routing" couldn't get a real e2e assertion for the same
+  reason 029/030's own dashboard/settings content couldn't, since both
+  the dashboard's and onboarding's own redirect checks require a
+  successful `getProfileForUser` call first) all passed.
+
 ## Failed prompts
 
 None.
@@ -2587,6 +2712,7 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | --- | --- | --- |
 | Dashboard home | rebuilt | 029 |
 | Profile and settings | rebuilt | 030 |
+| Onboarding | new (no LEGACY equivalent existed) | 031 |
 | Memory overview | legacy | 036 (todo) |
 | Import experience | legacy | 032 (todo) |
 | Twin / assistants | legacy | 039 (todo) |

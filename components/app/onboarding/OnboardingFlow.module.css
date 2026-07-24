@@ -1,0 +1,58 @@
+.wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: var(--space-8) var(--space-6);
+}
+
+.shardField {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.shardImg {
+  width: min(50%, 420px);
+  height: auto;
+  filter: drop-shadow(0 24px 70px rgb(0 0 0 / 45%));
+}
+
+@media (max-width: 767px) {
+  .shardField {
+    justify-content: center;
+    opacity: 0.25;
+  }
+}
+
+.card {
+  position: relative;
+  width: min(640px, 100%);
+}
+
+.field {
+  margin-top: var(--space-8);
+  max-width: 24rem;
+}
+
+.alert {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(185, 28, 28, 0.35);
+  background: rgba(185, 28, 28, 0.1);
+  color: #ff8a8a;
+  font-size: var(--text-body);
+}
+
+.actions {
+  margin-top: var(--space-10);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}

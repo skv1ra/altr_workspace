@@ -1,5 +1,8 @@
 "use client";
 
+import { PlanBadge } from "@/components/app/PlanBadge";
+import { QuotaMeter } from "@/components/app/QuotaMeter";
+import type { PlanId } from "@/lib/auth";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
 import styles from "./DashboardHome.module.css";
@@ -8,6 +11,7 @@ type ImportStatus = "processing" | "completed" | "failed" | "deleted";
 
 export interface DashboardHomeProps {
   name: string;
+  plan: PlanId;
   memoryCount: number;
   memoryLimit: number;
   draftsUsed: number;
@@ -36,6 +40,7 @@ function firstName(name: string) {
  */
 export function DashboardHome({
   name,
+  plan,
   memoryCount,
   memoryLimit,
   draftsUsed,
@@ -46,15 +51,19 @@ export function DashboardHome({
 }: DashboardHomeProps) {
   const [lang] = useLang("EN");
   const t = getSharedCopy(lang).dashboard;
+  const nav = getSharedCopy(lang).nav;
 
   const isNewAccount =
     memoryCount === 0 && draftsUsed === 0 && !lastImport && !lastImportError && !draftsError;
 
   return (
     <div className={styles.wrap}>
-      <p className="text-h1 font-normal text-text-primary">
-        {t.greetingPrefix} {firstName(name)}.
-      </p>
+      <div className={styles.greetingRow}>
+        <p className="text-h1 font-normal text-text-primary">
+          {t.greetingPrefix} {firstName(name)}.
+        </p>
+        <PlanBadge plan={plan} lang={lang} />
+      </div>
 
       {isNewAccount ? (
         <div className={styles.empty}>
@@ -64,11 +73,9 @@ export function DashboardHome({
       ) : (
         <div className={styles.rows}>
           <div className={styles.row}>
-            <p className={styles.label}>{getSharedCopy(lang).nav.memory}</p>
+            <p className={styles.label}>{nav.memory}</p>
             <p className={styles.numeral}>{memoryCount}</p>
-            <p className={styles.meta}>
-              {t.ofLimit} {memoryLimit} {t.memoryQuotaLabel}
-            </p>
+            <QuotaMeter used={memoryCount} limit={memoryLimit} lang={lang} ariaLabel={nav.memory} />
           </div>
 
           <div className={styles.row}>
@@ -89,16 +96,9 @@ export function DashboardHome({
 
           <div className={styles.row}>
             <p className={styles.label}>{t.twinLabel}</p>
-            {draftsError ? (
-              <p className={styles.unknown}>—</p>
-            ) : (
-              <>
-                <p className={styles.numeral}>{draftsUsed}</p>
-                <p className={styles.meta}>
-                  {t.ofLimit} {draftsLimit} {t.twinQuotaLabel} · {t.thisMonth}
-                </p>
-              </>
-            )}
+            {!draftsError && <p className={styles.numeral}>{draftsUsed}</p>}
+            <QuotaMeter used={draftsUsed} limit={draftsLimit} lang={lang} unknown={draftsError} ariaLabel={t.twinLabel} />
+            {!draftsError && <p className={styles.meta}>{t.thisMonth}</p>}
           </div>
         </div>
       )}
