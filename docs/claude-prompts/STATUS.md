@@ -4,34 +4,27 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 029 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Phase 6 (dashboard) has begun** —
-`/dashboard` is the first authenticated screen in this workspace, wrapped in
-a new `app/(app)/layout.tsx` + `AppShell`/`AppNav`/`UserMenu` shell. **Major
-finding, carried forward as a blocker for every future `(app)` prompt (030,
-032, 036, 039, 042, 045):** this workspace's `.env.local` has a placeholder
-`NEXT_PUBLIC_SUPABASE_URL` (`https://ci-placeholder.supabase.co`, confirmed
-via a direct DNS lookup — `ENOTFOUND`) with no real, reachable Supabase
-project behind it. Every prior authenticated-data path in this app degraded
-gracefully around that (client-side `/api/me` calls just resolve to
-`profile: null`/401, which every component already treats as "signed out").
-`/dashboard` is the first page that does its *required* data fetch
-server-side (`getProfileForUser` inside `app/(app)/layout.tsx`, must-not-
-change) — there is no graceful "signed out" fallback for that, so it
-throws and `app/error.tsx` (006) renders instead of the real shell. This
-is an environment/credentials gap, not a code defect — full detail in
-029's own entry below, including the exact repro. Real content-level manual/
-e2e verification of any `(app)` page is blocked until real Supabase
-credentials are configured (already tracked generically under "Environment
-setup still required" below; now confirmed concretely, not just assumed).
-**Carried forward, unchanged:** the `/api/billing/plans`+`/api/billing/me`
-anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
-bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
-gaps (014-018); 019's signed-in-nav-state-not-checked-against-a-real-session
-item; `<Toaster />` is **still** not mounted anywhere in `app/layout.tsx`
-(`app/layout.tsx` was outside 029's own "files allowed to change" too —
-the dashboard shell got its own obsidian surface via `AppShell`, which
-didn't require touching the root layout after all).
+None — Prompt 030 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. `/settings` and `/legacy-migration` are now
+live; the "Settings" nav entry 029 anticipated resolves for real. **New
+security-relevant finding:** `/settings` is not in `lib/supabase/middleware.ts`'s
+protected `pages` list — confirmed live (anonymous request returns a plain
+404/broken page, not a redirect to `/auth`, unlike every other authenticated
+route). No profile data is exposed (`requireUser()` throws before
+`SettingsView` ever mounts), so this is a UX/consistency gap, not a data
+leak, but it's flagged prominently rather than fixed: `middleware.ts` and
+`lib/supabase/middleware.ts` were named in neither this prompt's "allowed"
+nor "must not change" list, and treating them as untouchable has been this
+session's own consistent rule since 026 — see 030's own entry below for the
+full repro and reasoning. **Carried forward, unchanged:** the placeholder
+Supabase credentials blocker (029) — still applies to `/settings` and
+`/legacy-migration` too, worked around here the same way (RTL tests with
+controlled props instead of live content e2e); the `/api/billing/plans`+
+`/api/billing/me` anonymous-401 middleware bug and its dormant
+`/api/billing/me` status-code bug (023); 020's CSP/`force-dynamic` item;
+Phase 3's manual-verification gaps (014-018); 019's signed-in-nav-state item;
+`<Toaster />` is **still** not mounted anywhere in `app/layout.tsx` (still
+outside every `(app)` prompt's own file scope so far).
 Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
@@ -2334,6 +2327,139 @@ open.
   as a dynamic route), and `yarn test:e2e` (29/29, unchanged — see
   "Consequence for verification" above for why) all passed.
 
+- **030 — Profile and settings (2026-07-24):** Built
+  `app/(app)/settings/page.tsx` (thin async Server Component, same
+  `requireUser()` + `getProfileForUser()` pattern as 029's dashboard) +
+  `components/app/settings/SettingsView.tsx` (the real form, same
+  server/client split rationale as 029's `DashboardHome`) and
+  `app/legacy-migration/page.tsx` (new — LEGACY's own page at this URL was
+  ported logic-verbatim, confirmed against the pinned `a22927d` clone).
+
+  **Fields implemented vs. schema — nothing invented, everything checked
+  against the real migrations, not assumed:**
+
+  | Field | Source | UI |
+  | --- | --- | --- |
+  | `name`, `altr_name`, `role`, `bio`, `tone` | `altr_profiles` columns (`supabase/migrations/202607130001_production_foundation.sql`) | Identity section — `TextField`×3, `Select` (tone), a `Field`-wrapped `<textarea>` (bio; no shared `Textarea` primitive exists yet and none was in this prompt's file scope, so this stays local to `SettingsView.tsx`) |
+  | `memory_learning_enabled` | `altr_user_preferences` column | Preferences → "Allow Altr to learn..." `Checkbox` |
+  | `settings.autoDrafts` / `.weeklyDigest` / `.privacyMode` | `altr_user_preferences.settings` jsonb (same three keys `getProfileForUser`, must-not-change, already reads) | Preferences → three more `Checkbox`es |
+
+  Tone options (`balanced`/`warm`/`direct`/`formal`) verified against the
+  `altr_profiles` table's own `check (tone in (...))` constraint, not just
+  the `ToneMode` TypeScript type — both agree. LEGACY's own dashboard
+  settings tab only ever exposed the five identity fields inline (no
+  Preferences UI existed anywhere) — this prompt's own "gives it a proper
+  home and structure for later settings" framing is why Preferences is new,
+  real UI here rather than a port; every field it touches was already
+  storable and already read by `getProfileForUser`, satisfying this
+  prompt's own "no new PII fields introduced" requirement.
+
+  **Save contract:** `updateCurrentProfile()` (`lib/auth.ts`, unmodified)
+  is called with only the changed top-level field(s), and a `preferences`
+  key containing only the changed sub-field(s) — never the full profile —
+  confirmed by two dedicated RTL tests. Optimistic-free: local state (the
+  "baseline" identity/preferences the dirty-check compares against) only
+  updates once the server call resolves, using the server's own returned
+  profile (not an assumed merge), which is also this prompt's own "refresh
+  state after save" answer to the concurrent-two-tabs edge case — this
+  tab's view stays in sync with whatever the server actually holds after
+  save, last-write-wins preserved exactly as LEGACY behaved. Save failures
+  show a generic toast and preserve every typed value (nothing is cleared
+  or reset); client-side validation mirrors `/api/me`'s own PATCH zod
+  bounds (name 2-120, altrName/role 1-120, bio ≤2000) so most invalid
+  submissions never reach the server at all — the closest approximation of
+  "field-level error mapping" achievable without the server itself
+  returning per-field errors (it only ever returns one generic
+  `INVALID_PROFILE_UPDATE` code, unmodified).
+
+  **Dirty-state guard:** `Dialog`-based (via `ConfirmDialog`, Prompt 010)
+  as instructed, plus a `beforeunload` listener for tab-close/refresh/typed-
+  URL navigation. The in-app-navigation half needed a document-level
+  capture-phase click listener rather than a scoped one: `AppNav` (029) is
+  a *sibling* of this page inside `AppShell`, not a descendant, so nothing
+  attached within `SettingsView`'s own subtree could ever see a click on
+  the nav rail's links — confirmed with a dedicated test that clicks a
+  link rendered *outside* `SettingsView`'s own JSX entirely. `AppNav.tsx`
+  itself wasn't touched for this; the guard works against any link
+  anywhere in the document by construction.
+
+  **Empty profile / new user:** verified this has no real edge case to
+  design for — `name` is the only nullable `altr_profiles` column, and
+  `getProfileForUser` (must-not-change) already resolves it to
+  `user.email`'s local part or `"Altr User"` before this page ever sees
+  it; every other identity column has a non-empty SQL default
+  (`altr_name` → `'My Altr'`, `role` → `'Founder'`, `bio` → a real sentence,
+  `tone` → `'balanced'`). Confirmed by reading the migration, not assumed.
+
+  **Bridged links (no dead links, 045 not landed yet):** Danger zone links
+  to `/privacy` (real, built in 024) with copy explaining that account
+  deletion and full data controls are moving to the privacy center: "Danger
+  zone pointer" was read literally — no delete-account button was wired up
+  here (`deleteCurrentAccount()` in `lib/auth.ts` stays uncalled from this
+  surface), since that's explicitly Prompt 045's own scope
+  ("Consents, export, deletion in one surface") and `SignOutButton` is
+  already reachable globally from `UserMenu` (027), so nothing needed
+  duplicating here either.
+
+  **`app/legacy-migration/page.tsx` — logic-verbatim port, diffed:** the
+  scan pattern (`LEGACY_PATTERN`, `collectLegacyEntries`), the safe-profile
+  field allowlist (`name`/`altrName`/`bio`/`tone`/`preferences`, with the
+  same length clamps and tone-enum check), and all four actions
+  (export/migrate/delete/continue, including the exact
+  `POST /api/auth/legacy-migration/complete` → `DONE_KEY` → `router.replace
+  ("/dashboard")` finish sequence) are unchanged line-for-line logic from
+  the pinned `a22927d` clone — confirmed by direct side-by-side comparison
+  while writing this file, not just by memory of an earlier read. Only the
+  JSX/CSS changed: new `Surface`/`Button` primitives, obsidian material,
+  bilingual copy via `lib/i18n/copy.ts`'s new `legacyMigration` namespace
+  (LEGACY's own version was Ukrainian-only with no language switch). Sits
+  outside `app/(app)/` and is deliberately not wrapped in `AppShell` — same
+  one-time-gate role it played in LEGACY, not a dashboard destination, so
+  it has no nav entry.
+
+  **Scope note (`AppNav.tsx`):** this prompt's own instruction #5
+  ("Nav 'Settings' entry (029) now resolves here") calls for exactly the
+  one-line addition 029's own comment already anticipated
+  (`{ href: "/settings", ... }` added to `useDestinations()`'s array) —
+  `AppNav.tsx` isn't in 030's own "files allowed to change" list, but the
+  instruction is explicit and the change is the minimal, pre-announced one;
+  made and documented rather than skipped or silently expanded further.
+
+  **New finding — `/settings` isn't in the protected-pages list:**
+  `lib/supabase/middleware.ts`'s `pages` array (must-not-change, and unlike
+  `/legacy-migration`, which *is* already on it) doesn't include
+  `/settings`. Confirmed live: an anonymous request to `/settings` against
+  a real `yarn build && yarn start` server returns a broken/generic page
+  (no session, `requireUser()` throws before any profile data renders — no
+  data exposure, just no redirect to `/auth`, unlike every other
+  authenticated route). Not fixed — `middleware.ts`/`lib/supabase/
+  middleware.ts` weren't named in this prompt's own file lists at all (not
+  "allowed", not "forbidden" either), and treating them as untouchable
+  without explicit authorization has been consistent practice since 026;
+  flagged here for whoever next has explicit permission to add one array
+  entry, the same way the `/api/billing/plans` 401 bug has stayed flagged,
+  not silently patched, since 023.
+
+  **Required tests added:** `tests/components/SettingsView.test.tsx` (7
+  tests — identity form prefilled from the profile payload, preference
+  checkboxes reflecting server values, Save disabled until dirty, save
+  sends only the one changed identity field, save sends only the one
+  changed preference sub-field nested under `preferences`, the
+  cross-sibling dirty-guard intercepting a link click outside the form's
+  own subtree with a confirm/cancel path each tested), and
+  `tests/components/LegacyMigrationPage.test.tsx` (4 tests — no-old-data
+  Continue path, entries-found lists the real keys and swaps in
+  export/migrate/delete, migration sends only the allowlisted fields and
+  clears just those keys, and a failed migration shows a `role="alert"`
+  error without losing the listed entries). `tests/components/AppNav.test.tsx`
+  gained one more test for the new Settings destination's active state.
+  `yarn lint`, `yarn typecheck`, `yarn test` (51 files/264 tests, up from
+  49/252 in 029), `yarn build` (42/42 pages — `/settings` and
+  `/legacy-migration` both new), and `yarn test:e2e` (29/29, unchanged —
+  same placeholder-Supabase content-verification blocker as 029; no new
+  e2e test was added asserting the `/settings` middleware gap either,
+  since that would encode a known bug as expected behavior) all passed.
+
 ## Failed prompts
 
 None.
@@ -2460,7 +2586,7 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Screen | Status | Prompt |
 | --- | --- | --- |
 | Dashboard home | rebuilt | 029 |
-| Profile and settings | legacy | 030 (todo) |
+| Profile and settings | rebuilt | 030 |
 | Memory overview | legacy | 036 (todo) |
 | Import experience | legacy | 032 (todo) |
 | Twin / assistants | legacy | 039 (todo) |

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Menu as MenuIcon } from "lucide-react";
+import { LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -20,17 +20,20 @@ export interface AppNavProps {
 type Destination = { href: string; label: string; icon: typeof LayoutDashboard };
 
 /**
- * Only Dashboard is real this prompt (ADR-013 — no dead links); Memory,
- * Imports, Twin, Billing, Privacy, Settings each get added to this same
- * array by their own prompt (036, 032, 039, 042, 045, 030) once a real
- * page exists for them, instead of linking here ahead of time. Written as
- * a data-driven list, not a hardcoded JSX block, specifically so that
- * addition is a one-line diff.
+ * Dashboard (029) and Settings (030) are real; Memory, Imports, Twin,
+ * Billing, Privacy each get added to this same array by their own prompt
+ * (036, 032, 039, 042, 045) once a real page exists for them, instead of
+ * linking here ahead of time (ADR-013 — no dead links). Written as a
+ * data-driven list, not a hardcoded JSX block, specifically so that
+ * addition is a one-line diff — exactly what Settings just was.
  */
 function useDestinations(): Destination[] {
   const [lang] = useLang("EN");
   const t = getSharedCopy(lang);
-  return [{ href: "/dashboard", label: t.common.backDashboard, icon: LayoutDashboard }];
+  return [
+    { href: "/dashboard", label: t.common.backDashboard, icon: LayoutDashboard },
+    { href: "/settings", label: t.settings.heading, icon: SettingsIcon },
+  ];
 }
 
 function NavLinks({ destinations, pathname, onNavigate }: { destinations: Destination[]; pathname: string; onNavigate?: () => void }) {

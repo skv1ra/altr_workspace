@@ -52,4 +52,13 @@ describe("AppNav", () => {
     render(<AppNav name="Max" email="max@example.com" plan="free" />);
     expect(screen.getAllByRole("link", { name: "Altr" })[0]).toHaveAttribute("href", "/");
   });
+
+  it("030 — Settings is now a real destination, active only on its own route", () => {
+    mockPathname = "/settings";
+    render(<AppNav name="Max" email="max@example.com" plan="free" />);
+
+    const rail = screen.getByRole("navigation", { name: "Product navigation" });
+    expect(within(rail).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+    expect(within(rail).getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
+  });
 });

@@ -1,0 +1,80 @@
+.wrap {
+  max-width: 760px;
+}
+
+.section {
+  margin-top: var(--space-10);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.sectionHeading {
+  font-size: var(--text-h4);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionBody {
+  margin-top: var(--space-2);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+.grid {
+  margin-top: var(--space-6);
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.gridFull {
+  grid-column: 1 / -1;
+}
+
+.checkboxList {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Distinct but not alarmist — a quiet hairline tint, not a filled red panel. */
+.danger {
+  border-top-color: rgb(185 28 28 / 25%);
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  margin-top: var(--space-10);
+  padding-block: var(--space-6);
+  border-top: 1px solid var(--edge-hairline);
+  background: var(--surface-inverse);
+}
+
+.langSwitch {
+  margin-top: var(--space-4);
+  display: flex;
+  gap: var(--space-4);
+}
+
+.langButton {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--ease-altr);
+}
+
+.langButton:hover {
+  color: var(--text-primary);
+}
+
+.langButton[aria-pressed="true"] {
+  color: var(--text-primary);
+}
