@@ -43,7 +43,7 @@ altr_workspace only.
 | 031 | Onboarding and quota display | 6 | New onboarding flow + entitlement/quota UI | 030 | M | done | done | yes | `feat(app): onboarding and quota display` |
 | 032 | Import experience redesign | 7 | Picker, drag-drop, provider guidance | 029 | L | done | done | yes | `feat(import): redesigned import experience` |
 | 033 | Import progress, cancel, retry | 7 | Progress, cancellation, duplicates, extraction | 032 | M | done | done | yes | `feat(import): progress and recovery flows` |
-| 034 | Import history and errors | 7 | History list, provenance, error states | 033 | M | todo | todo | yes | `feat(import): history and error states` |
+| 034 | Import history and errors | 7 | History list, provenance, error states | 033 | M | done | done | yes | `feat(import): history and error states` |
 | 035 | Import tests | 7 | Parser matrix + e2e verification | 034 | M | todo | todo | no | `test(import): full import flow coverage` |
 | 036 | Memory overview redesign | 8 | List, search, filters, pagination | 029 | M | todo | todo | yes | `feat(memory): redesigned memory overview` |
 | 037 | Memory editing and provenance | 8 | Create/edit/disable/delete + provenance | 036 | M | todo | todo | yes | `feat(memory): editing and provenance UX` |

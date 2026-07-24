@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ImportFlow } from "@/components/app/imports/ImportFlow";
+import { ImportHistory } from "@/components/app/imports/ImportHistory";
 import { Surface } from "@/components/ui/Surface";
 
 export const metadata: Metadata = { title: "Import conversations" };
@@ -22,6 +23,7 @@ export default function ImportConversationsPage() {
   return (
     <Surface variant="inverse" className="min-h-screen">
       <ImportFlow />
+      <ImportHistory />
     </Surface>
   );
 }

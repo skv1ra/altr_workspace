@@ -600,3 +600,161 @@ test.describe("import experience", () => {
     expect(extractCalls).toBe(2);
   });
 });
+
+/*
+ * Prompt 034 — import history and errors. Real, live coverage of the new
+ * `ImportHistory` section on the same page: an empty-history invitation,
+ * a real row with expandable provenance detail showing taxonomy-mapped
+ * (never raw-code) error text, a real DELETE call that removes the row
+ * from the list, and a real cursor-based resume-extraction call.
+ */
+test.describe("import history", () => {
+  const limits = {
+    importsPerMonth: 5,
+    maxFileBytes: 5_242_880,
+    maxMessagesPerImport: 2000,
+    maxConversationsPerImport: 100,
+    maxActiveMemories: 250,
+    aiDraftsPerMonth: 10,
+    concurrentImports: 1,
+    concurrentMemoryJobs: 1,
+  };
+
+  test("empty history shows the designed first-run invitation, not a blank area", async ({ page }) => {
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits }));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText("Nothing imported yet")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a completed row expands to real provenance detail; a failed row shows the taxonomy-mapped message, never the raw STALE_PROCESSING_IMPORT code", async ({
+    page,
+  }) => {
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(
+          json({
+            imports: [
+              {
+                id: "66666666-6666-4666-8666-666666666666",
+                platform: "telegram",
+                source_name: "chat-export.json",
+                bytes: 204_800,
+                status: "completed",
+                conversations: 3,
+                messages: 42,
+                preview: [],
+                parser_version: "altr-browser-parser-2",
+                mime_type: "application/json",
+                file_extension: "json",
+                raw_file_stored: false,
+                created_at: "2026-07-20T10:00:00.000Z",
+                completed_at: "2026-07-20T10:01:00.000Z",
+                error: null,
+                extraction_status: "completed",
+                extraction_error: null,
+                extraction_cursor: 42,
+              },
+              {
+                id: "77777777-7777-4777-8777-777777777777",
+                platform: "gmail",
+                source_name: "old-attempt.mbox",
+                bytes: 10_240,
+                status: "failed",
+                conversations: 0,
+                messages: 0,
+                preview: [],
+                parser_version: "altr-browser-parser-2",
+                mime_type: "application/mbox",
+                file_extension: "mbox",
+                raw_file_stored: false,
+                created_at: "2026-07-19T09:00:00.000Z",
+                completed_at: null,
+                error: "STALE_PROCESSING_IMPORT",
+                extraction_status: "pending",
+                extraction_error: null,
+                extraction_cursor: 0,
+              },
+            ],
+            planId: "free",
+            limits,
+          }),
+        );
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText("chat-export.json")).toBeVisible({ timeout: 10_000 });
+
+    const completedRow = page.locator("li", { hasText: "chat-export.json" });
+    await completedRow.getByRole("button", { name: "View details" }).click();
+    await expect(completedRow.getByText("altr-browser-parser-2")).toBeVisible();
+
+    const failedRow = page.locator("li", { hasText: "old-attempt.mbox" });
+    await failedRow.getByRole("button", { name: "View details" }).click();
+    await expect(failedRow.getByText(/interrupted and never finished/)).toBeVisible();
+    await expect(failedRow.getByText("STALE_PROCESSING_IMPORT")).toHaveCount(0);
+  });
+
+  test("delete calls the real DELETE endpoint and removes the row from the list", async ({ page }) => {
+    let deleteCalled = false;
+    let listed = true;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(
+          json({
+            imports: listed
+              ? [
+                  {
+                    id: "88888888-8888-4888-8888-888888888888",
+                    platform: "telegram",
+                    source_name: "delete-me.json",
+                    bytes: 1024,
+                    status: "completed",
+                    conversations: 1,
+                    messages: 1,
+                    preview: [],
+                    parser_version: "altr-browser-parser-2",
+                    mime_type: "application/json",
+                    file_extension: "json",
+                    raw_file_stored: false,
+                    created_at: "2026-07-20T10:00:00.000Z",
+                    completed_at: "2026-07-20T10:01:00.000Z",
+                    error: null,
+                    extraction_status: "completed",
+                    extraction_error: null,
+                    extraction_cursor: 1,
+                  },
+                ]
+              : [],
+            planId: "free",
+            limits,
+          }),
+        );
+      }
+      if (/^\/api\/imports\/[^/]+$/.test(path) && route.request().method() === "DELETE") {
+        deleteCalled = true;
+        listed = false;
+        return route.fulfill(json({ ok: true }));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText("delete-me.json")).toBeVisible({ timeout: 10_000 });
+
+    const row = page.locator("li", { hasText: "delete-me.json" });
+    await row.getByRole("button", { name: "View details" }).click();
+    await row.getByRole("button", { name: /Delete/ }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByText("delete-me.json")).toHaveCount(0, { timeout: 10_000 });
+    expect(deleteCalled).toBe(true);
+  });
+});

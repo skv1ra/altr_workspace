@@ -4,28 +4,25 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 033 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Adds the live import lifecycle UX on top
-of 032's picker/upload surface: a calm four-node `StageRail`, cancellation
-that now actually aborts the chunk-upload stage (032/LEGACY only ever
-aborted the parse worker), a designed `DuplicatePanel` for the 409 in
-place of the raw error string, a monthly-quota 429 path that flips the
-already-rendered `QuotaMeter` into its own reached state, and a
-cursor-based "retry extraction" action that never re-uploads or
-re-parses. Real e2e coverage was possible for all of it, same reason 032
-had it (`/import-conversations` has no server-side data fetch of its
-own) — 35/35, up from 31/31. See 033's own entry below for full detail,
-including a real environment gotcha this session found: `yarn test:e2e`'s
-`webServer` runs `next start`, which serves whatever `.next` production
-build already exists on disk — it does **not** rebuild — so a stale
-build from before this session's code changes was silently served on the
-first `yarn test:e2e` run (4 failures, all showing 032-era UI/copy); a
-plain `yarn build` before `yarn test:e2e` fixed it. Future prompts should
-run `yarn build` before `yarn test:e2e` whenever `.next` might be stale,
-not just rely on `reuseExistingServer`. **Carried forward, unchanged:**
-Prompt 034 (import history and errors) is still `todo` — `DuplicatePanel`
-had no real history page to link to yet, so it links to `/dashboard`
-instead (see 033's own entry for the ADR-013 reasoning); the `/settings`
+None — Prompt 034 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Adds the import history surface on top of
+033's live lifecycle UX: `ImportHistory`/`ImportHistoryRow` (editorial
+rows, expandable provenance detail), an exhaustively-tested error-code
+taxonomy (`describeImportErrorCode`, 53 real codes mapped in both
+languages), a client-mirrored stale-processing "Interrupted" state, and a
+cursor-based "Resume memory extraction" row action. **`DuplicatePanel`'s
+033-era "View status on dashboard" link was deliberately left pointing at
+`/dashboard`, not retargeted to the new history section** — 033's own
+ADR-013 reasoning was "no real history page exists yet," which is no
+longer true, but `DuplicatePanel.tsx` isn't in this prompt's own file
+scope (`components/app/imports/ImportHistory*.tsx` only), so retargeting
+it is explicitly left as a small, noted follow-up rather than an
+undocumented gap. Real e2e coverage was possible again, same reason
+032/033 had it — 38/38, up from 35/35. See 034's own entry below for the
+full taxonomy table and the two real data-model gaps found (no
+`source_hash`/parse-warnings persistence, so the prompt's own "provenance
+hash" and "human-readable warnings" detail fields don't exist to show).
+**Carried forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
 settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
@@ -2908,6 +2905,184 @@ open.
   immediately before the final `yarn test:e2e` pass per the environment
   gotcha above.
 
+- **034 — Import history and errors (2026-07-24).** Read every file this
+  prompt's own "files to inspect first" named — `GET /api/imports`'s exact
+  `select(...)` list, every `throw new Error(...)` in `lib/imports/parsers.ts`
+  and `lib/imports/zip.ts`, every route under `app/api/imports/**`, and
+  `lib/ai/memory-extraction.ts` — before writing any copy, per this
+  prompt's own "build the taxonomy from the REAL codes" instruction.
+  `app/api/**`, `lib/imports/**`, `workers/**`, `supabase/` all confirmed
+  untracked-but-unmodified afterward (same contract-parity proof
+  032/033 already established).
+
+  **Two real data-model gaps found, not fabricated around:** this
+  prompt's own step 1 asks the expandable detail to show "provenance hash
+  (shortened)" and "warnings (human-readable)." `GET /api/imports`'s own
+  `select("id,platform,source_name,bytes,status,conversations,messages,
+  preview,parser_version,mime_type,file_extension,raw_file_stored,
+  created_at,completed_at,error,extraction_status,extraction_error,
+  extraction_cursor")` has no `source_hash` at all (the column exists in
+  the schema — `app/api/imports/route.ts`'s own duplicate-check query
+  selects it elsewhere — just never in the list this page's own GET
+  returns); and `POST /api/imports`'s `createSchema` (the only place a row
+  is ever created) has no `warnings` field, so the parser's own
+  `ParseResult.warnings` (e.g. `SOURCE_ENCODING_FALLBACK_WINDOWS_1252`)
+  are computed client-side in 032/033's `ImportFlow.tsx` and then simply
+  discarded — never sent to the server, never persisted anywhere. Since
+  `app/api/**` is explicitly outside this prompt's own file scope, neither
+  gap could be closed here; the detail view shows every field that
+  genuinely exists (parser version, file size, MIME type/extension,
+  conversation/message counts, started/completed timestamps, extraction
+  status) and omits the two that don't, rather than inventing a fake hash
+  or an empty "no warnings" line that would misrepresent real data as
+  having been checked.
+
+  **Error taxonomy — 53 real codes, both languages, exhaustively tested.**
+  `describeImportErrorCode(code, lang)` (exported from
+  `components/app/imports/ImportHistory.tsx`, backed by a plain
+  `imports.errors` dictionary in `lib/i18n/copy.ts`) maps:
+
+  | Group | Codes |
+  | --- | --- |
+  | Encoding/format (`lib/imports/parsers.ts`) | `MALFORMED_ENCODING`, `UNSUPPORTED_BINARY_FILE`, `JSON_MALFORMED`, `JSON_TOO_DEEP`, `JSON_TOO_COMPLEX`, `OBJECT_CYCLE`, `LINE_TOO_LONG`, `NO_MESSAGES_FOUND` |
+  | Size/count limits | `COMPRESSED_FILE_TOO_LARGE`, `MESSAGE_LIMIT_EXCEEDED`, `CONVERSATION_LIMIT_EXCEEDED` (parse-time), `FILE_SIZE_LIMIT_REACHED`, `MESSAGE_LIMIT_REACHED`, `CONVERSATION_LIMIT_REACHED` (API-time, distinct codes for the distinct checkpoints) |
+  | ZIP (`lib/imports/zip.ts`) | `ZIP_PATH_TRAVERSAL`, `ZIP_EOCD_NOT_FOUND`, `ZIP_MULTIDISK_UNSUPPORTED`, `ZIP64_UNSUPPORTED`, `ZIP_TOO_MANY_ENTRIES`, `ZIP_CENTRAL_DIRECTORY_INVALID`, `ZIP_ENCRYPTED_UNSUPPORTED`, `ZIP_COMPRESSION_UNSUPPORTED`, `ZIP_ENTRY_TOO_LARGE`, `ZIP_UNCOMPRESSED_LIMIT`, `ZIP_SUSPICIOUS_RATIO`, `ZIP_ENTRY_COUNT_MISMATCH`, `ZIP_HAS_NO_SUPPORTED_EXPORT`, `ZIP_ENTRY_MISSING`, `ZIP_ENTRY_SIZE_MISMATCH` |
+  | Lifecycle/dedup/quota (`app/api/imports/route.ts`) | `DUPLICATE_IMPORT`, `STALE_PROCESSING_IMPORT`, `IMPORT_MONTHLY_QUOTA_REACHED`, `IMPORT_CONCURRENCY_LIMIT`, `IMPORT_NOT_PROCESSING`, `IMPORT_NOT_FOUND`, `MIME_EXTENSION_MISMATCH` |
+  | Extraction (`lib/ai/memory-extraction.ts` + extract route) | `AI_PROVIDER_NOT_CONFIGURED`, `MEMORY_LIMIT_REACHED`, `MEMORY_PROCESSING_CONCURRENCY_LIMIT`, `IMPORT_NOT_READY_FOR_EXTRACTION`, `EMBEDDING_MODEL_REQUIRES_DOCUMENTED_MIGRATION`, `MEMORY_EXTRACTION_FAILED` |
+  | Generic/system fallbacks | `IMPORT_CREATE_FAILED`, `IMPORT_CHUNK_FAILED`, `IMPORT_DELETE_FAILED`, `IMPORT_LIST_FAILED`, `INVALID_IMPORT_METADATA`, `INVALID_IMPORT_CHUNK`, `INVALID_IMPORT_ID` |
+  | Client-only (033's `ImportFlow.tsx`/the parser worker) | `WORKER_FAILED`, `PROCESSING_TIMEOUT`, `IMPORT_CANCELLED`, `MEMORY_EXTRACTION_BATCH_LIMIT` |
+
+  Any code not in this table (a raw Postgres or OpenAI SDK error message,
+  for instance — `lib/ai/memory-extraction.ts`'s own catch block stores
+  `error.message` verbatim for anything it didn't itself throw as one of
+  the codes above) falls through to a designed generic message with the
+  raw code/text still visible ("Something went wrong (code: …)"), per
+  this prompt's own "unknown codes get a designed generic with the code
+  visible for support" instruction — never silently swallowed.
+  `tests/unit/import-error-taxonomy.test.ts` hardcodes the same 53-code
+  list (independently, not by importing the map itself — the point is to
+  catch drift) and asserts every one resolves to real, non-generic copy
+  in both `EN`/`UA`, plus the generic-fallback and empty-string edge
+  cases (108 assertions total).
+
+  **"Interrupted" — a real edge case, not in the schema, computed
+  client-side.** The `status` column only ever holds `processing` /
+  `completed` / `failed` / `deleted` (confirmed by reading every
+  `.update(...)` call across `app/api/imports/**` — no other literal
+  status string is ever written). A `processing` row only ever flips to
+  `failed` reactively, when a *new* import with the same file hash is
+  attempted and the server's own stale-takeover check
+  (`app/api/imports/route.ts`, unmodified) fires — so an abandoned import
+  nobody ever retried stays "processing" forever in the raw data.
+  `deriveDisplayStatus()` mirrors that same server-side 30-minute window
+  client-side (`Date.now() - new Date(created_at) > 30 * 60 * 1000`,
+  literally the same threshold, commented as such) and renders it as
+  "Interrupted" instead — this prompt's own named edge case, made real
+  rather than left as a permanently-stuck "Processing" label.
+
+  **Retry — re-interpreted honestly, not implemented as asked literally.**
+  This prompt's own instruction #3 says "retry (failed)... never a dead
+  control." A history-row "Retry" that actually re-ran a lost import is
+  impossible by this app's own design: the original file is never
+  uploaded to the server (032/033's whole privacy model — only normalized
+  text is), and a fresh page load has no `File` handle left to retry
+  with. Building a "Retry" button that either silently failed or lied
+  about restarting the import would itself be the dead/misleading control
+  this prompt's own rule forbids. The honest per-row action for
+  `interrupted`/`failed` is Delete (always real — see below) plus
+  `interruptedHint`, stated plainly: delete this record, then re-upload
+  the same file above. "Resume extraction (partial)," by contrast, IS
+  fully real without a file — `POST /api/imports/:id/extract` resumes
+  from the server's own `extraction_cursor`, so `extractionPaused` rows
+  get a genuine, working "Resume memory extraction" button, reusing the
+  exact endpoint 033's own live-session retry already uses.
+
+  **Delete verified against the real route, not assumed available.**
+  `app/api/imports/[id]/route.ts`'s `DELETE` (read, not modified) has no
+  status precondition at all — it works identically for `processing` /
+  `completed` / `failed` rows — so Delete is offered unconditionally on
+  every row (this prompt's own "if the API supports DELETE... no dead
+  control" instruction, verified rather than guessed). `status ===
+  "deleted"` rows are filtered out of the list client-side (`GET
+  /api/imports` itself returns them — no status filter in that route) —
+  same precedent 033 already set for the `importsThisMonth` count
+  (`item.status !== "deleted"`), since a "History" page showing a row the
+  user just deleted would contradict what clicking Delete is supposed to
+  mean.
+
+  **Conversation/memory linking decision:** this prompt's own "files to
+  inspect first" step 3 says "if no conversation-browsing page exists,
+  link to memory filtered by source instead; verify what 036–037 will
+  provide." Checked both: no conversation-browsing page exists anywhere
+  in this workspace, and `/memory` itself doesn't exist yet either (036,
+  the memory-overview rebuild, is still `todo` in `INDEX.md` — confirmed
+  by `find`-ing `app/` for any `memory`/`conversation` route and finding
+  none). Per ADR-013, neither destination is real, so **no "view
+  conversations"/"view memories" link or button was added at all** —
+  inventing one now would just be a different flavor of dead control than
+  the "Retry" one avoided above. Revisit once 036/037 land.
+
+  **Polling, not push:** `ImportHistory` fetches `GET /api/imports`
+  independently of `ImportFlow`'s own fetch (a second, harmless duplicate
+  call — same precedent as `QuotaMeter`'s own independent fetch in
+  032/033) since `ImportFlow.tsx` isn't in this prompt's own file scope
+  and can't be wired to signal completion directly. Polls every 5s only
+  while something is genuinely in flight (a fresh non-stale `processing`
+  row, or a `completed` row with `extraction_status` `processing`/
+  `pending`) so a just-started import's completion shows up without a
+  manual reload, without polling forever once everything has settled.
+
+  **Status must survive grayscale (visual requirement):** every status
+  pill pairs a distinct `lucide-react` glyph (`Loader2` / `CheckCircle2` /
+  `PauseCircle` / `AlertTriangle`) with its own text label — shape alone
+  still distinguishes every state with zero color; the only color used at
+  all is the same restrained alert red already established throughout
+  this app (`interrupted`/`failed`), not a new hue. Platform marks reuse
+  `ProviderGuide.tsx`'s own established icon-per-platform set — read, not
+  imported (that file isn't in this prompt's own scope), so
+  `ImportHistoryRow.tsx` keeps a small local duplicate of the same
+  mapping, the same kind of intentional small duplication 031's
+  `PlanBadge`/`UserMenu` already set precedent for. `dir="auto"` on the
+  source-name element handles the "RTL text in source names" edge case
+  without any JS bidi detection.
+
+  **`DuplicatePanel` not retargeted (see "Current active prompt" above
+  for the short version):** 033's `DuplicatePanel.tsx` links its "View
+  status on dashboard" text to `/dashboard` specifically because no
+  history page existed at the time. It does now, but `DuplicatePanel.tsx`
+  is outside this prompt's own file scope (`components/app/imports/
+  ImportHistory*.tsx` only) — noted here as a small, real follow-up for
+  whichever prompt next touches that file, not silently left inconsistent
+  without a trace.
+
+  **Required tests added:** `tests/unit/import-error-taxonomy.test.ts`
+  (108 assertions — the full 53-code exhaustive check above, both
+  languages, plus generic-fallback and empty-code edge cases),
+  `tests/components/ImportHistoryRow.test.tsx` (8 tests — completed row
+  with delete gated behind expand, extraction-paused row with a real
+  resume action showing real taxonomy copy, interrupted row past the
+  staleness window with no fake retry button, a genuinely-fresh
+  processing row staying "Processing," failed row showing taxonomy copy
+  not the raw `STALE_PROCESSING_IMPORT` code, an unmapped code falling
+  through to the generic-with-code message, delete only reporting removal
+  after the real DELETE call resolves, resume only patching state after
+  the real extract call resolves), `tests/components/ImportHistory.test.tsx`
+  (5 tests — empty state, real rows rendered with deleted rows filtered
+  out, the 100-row cap note appearing only when actually at the cap, not
+  appearing for a normal-sized list, and a calm failure message when the
+  history fetch itself fails). 3 new Playwright e2e cases in
+  `tests/e2e/critical-flows.spec.ts`'s new "import history" block: empty
+  state, a completed row's real expandable detail alongside a failed
+  row's taxonomy-mapped (never raw-code) message, and a real DELETE call
+  that removes the row from the list.
+  `yarn lint`, `yarn typecheck`, `yarn test` (61 files/421 tests, up from
+  58/300 in 033 — 3 new files: the taxonomy test plus the two component
+  test files), `yarn build` (45/45 pages, unchanged — no new routes,
+  `/import-conversations` grew from 7.86 kB to 11.5 kB), and
+  `yarn test:e2e` (38/38, up from 35/35 — 3 new, 0 regressions) all
+  passed, `yarn build` run before the final `yarn test:e2e` pass per
+  033's own documented gotcha.
+
 ## Failed prompts
 
 None.
@@ -2938,12 +3113,13 @@ build/test state is unverified and not this prompt's concern. Re-confirmed
 again 2026-07-21 for 014 (30/30 pages, `/hero-lab` 404s in production), and
 again same-day for 015 (30/30 pages), and again for 016 (30/30 pages,
 `/hero-lab` 404s in production). Re-confirmed 2026-07-24 for 032 (45/45
-pages, `/import-conversations` new) and again for 033 (45/45 pages,
-unchanged route count — no new routes this prompt); 033's own entry
-above records a real `yarn test:e2e` gotcha worth reading before running
-that command again: `webServer` serves whatever `.next` build already
-exists (`next start`, not `next dev`) — always run `yarn build` first if
-`.next` might predate the latest code changes.
+pages, `/import-conversations` new) and again for 033 and 034 (45/45
+pages both times, unchanged route count — no new routes in either
+prompt, `/import-conversations` itself grew from 7.86 kB to 11.5 kB in
+034); 033's own entry above records a real `yarn test:e2e` gotcha worth
+reading before running that command again: `webServer` serves whatever
+`.next` build already exists (`next start`, not `next dev`) — always run
+`yarn build` first if `.next` might predate the latest code changes.
 
 ## Last successful test run
 
@@ -2960,7 +3136,9 @@ Re-confirmed 2026-07-24 for 032 — 289/289 tests across 56 files, clean
 exit, plus `yarn test:e2e` 31/31. Re-confirmed same day for 033 —
 300/300 tests across 58 files, clean exit, plus `yarn test:e2e` 35/35
 (see 033's own entry for the `yarn build`-before-`yarn test:e2e` gotcha
-this session found and worked around).
+this session found and worked around). Re-confirmed same day for 034 —
+421/421 tests across 61 files, clean exit, plus `yarn test:e2e` 38/38
+(same `yarn build`-first workflow applied without needing rediscovery).
 
 ## Known regressions
 
