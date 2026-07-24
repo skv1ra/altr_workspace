@@ -4,25 +4,25 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 034 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Adds the import history surface on top of
-033's live lifecycle UX: `ImportHistory`/`ImportHistoryRow` (editorial
-rows, expandable provenance detail), an exhaustively-tested error-code
-taxonomy (`describeImportErrorCode`, 53 real codes mapped in both
-languages), a client-mirrored stale-processing "Interrupted" state, and a
-cursor-based "Resume memory extraction" row action. **`DuplicatePanel`'s
-033-era "View status on dashboard" link was deliberately left pointing at
-`/dashboard`, not retargeted to the new history section** — 033's own
-ADR-013 reasoning was "no real history page exists yet," which is no
-longer true, but `DuplicatePanel.tsx` isn't in this prompt's own file
-scope (`components/app/imports/ImportHistory*.tsx` only), so retargeting
-it is explicitly left as a small, noted follow-up rather than an
-undocumented gap. Real e2e coverage was possible again, same reason
-032/033 had it — 38/38, up from 35/35. See 034's own entry below for the
-full taxonomy table and the two real data-model gaps found (no
-`source_hash`/parse-warnings persistence, so the prompt's own "provenance
-hash" and "human-readable warnings" detail fields don't exist to show).
-**Carried forward, unchanged:** the `/settings`
+None — Prompt 035 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. **Closes Phase 7 (imports).** Pure
+verification/closing prompt: re-ran the existing parser matrix (unmodified,
+passed byte-identically), produced a real diff-based proof that
+`workers/`, `lib/imports/`, and `app/api/imports/` are still byte-identical
+to LEGACY `a22927d` (modulo CRLF/LF), closed 5 real RTL coverage gaps
+(file-size pre-check rejection, the `rawFileStored: false` create-payload
+invariant this prompt's own security section named explicitly, cancel
+during the *saving* stage at the RTL layer — not just e2e, monthly-quota
+429, plus the taxonomy/duplicate coverage 034 already had), and added one
+new synthetic fixture (`telegram-export.zip`) plus a real-browser e2e test
+proving the actual Worker's own JSZip path works, not just the Node-side
+unit tests. **Also closed 034's own noted follow-up as a fix-level
+change** (`Import components (fix-level only)` is explicitly in this
+prompt's file scope): `DuplicatePanel`'s "View status on dashboard" link
+now points at the real `#import-history` section 034 built, not the
+now-stale `/dashboard` destination from before that section existed. See
+035's own entry below for the full diff-proof output and coverage
+delta. **Carried forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
 settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
@@ -3083,6 +3083,157 @@ open.
   passed, `yarn build` run before the final `yarn test:e2e` pass per
   033's own documented gotcha.
 
+- **035 — Import tests, closes Phase 7 (2026-07-24).** Pure verification/
+  closing prompt — no new UI, per its own "Visual requirements: None."
+
+  **Step 1 — existing parser matrix, run first, unmodified:**
+  `tests/unit/import-parsers.test.ts` (18 tests) and
+  `tests/unit/phase12-import-formats.test.ts` (11 tests) both run before
+  touching anything else, both passed clean (29/29) — confirms the
+  pipeline this whole phase (032-034) has been building UI on top of was
+  never itself disturbed.
+
+  **Step 2 — pipeline-untouched proof, real diff output, not asserted.**
+  Compared every file under `workers/`, `lib/imports/`, and
+  `app/api/imports/` (10 files — `git ls-tree a22927d` on those same three
+  paths in the pinned LEGACY checkout, `C:\Users\golyb\altrtest2` @
+  `a22927dfe98a22ac4a889288dea29832eba68417` — confirmed as the exact same
+  10 file paths, no additions/removals on either side) against
+  `git -C C:\Users\golyb\altrtest2 show a22927d:<path>` for each, piped
+  through `tr -d '\r'` on both sides before diffing (WORKSPACE stores
+  these files CRLF, `git show` returns the blob's stored LF form — a raw
+  `diff` without normalizing line endings falsely reports every single
+  line as changed, which is exactly what a first, un-normalized pass did
+  before this was caught and fixed). After normalizing: **all 10 files
+  byte-identical, zero real differences** —
+  `app/api/imports/route.ts`, `app/api/imports/[id]/route.ts`,
+  `app/api/imports/[id]/chunks/route.ts`,
+  `app/api/imports/[id]/extract/route.ts`, `lib/imports/limits.ts`,
+  `lib/imports/parsers.ts`, `lib/imports/sanitize.ts`,
+  `lib/imports/types.ts`, `lib/imports/zip.ts`,
+  `workers/conversation-parser.worker.ts`. `git status` on WORKSPACE
+  confirms all three directories still show as untracked-but-unmodified
+  after this session, same contract-parity proof 032-034 each already
+  established for their own runs.
+
+  **Step 3 — RTL coverage gaps closed, 5 new tests in
+  `tests/components/ImportFlow.test.tsx`** (found by reading 032/033/034's
+  own STATUS entries plus a direct `it("...")` inventory of the existing
+  file against every real state/path the component can reach):
+  - **File-size pre-check rejection had zero test coverage at all** — the
+    third client-side pre-check (`file.size > limits.maxFileBytes`,
+    alongside the already-tested empty-file and unsupported-extension
+    checks) had never been exercised by any 032-034 test. Added.
+  - **`rawFileStored: false` in the create payload — this prompt's own
+    named security-invariant instruction** ("guards invariant #7"). No
+    prior test had ever inspected the create POST body itself; every
+    032-034 test only asserted UI outcomes. Added, capturing and parsing
+    the real request body.
+  - **Cancel during the "Saving" (chunk-upload) stage, at the RTL layer.**
+    033's own STATUS entry documents finding and fixing a real bug here
+    (Cancel was visible but non-functional during upload) and added e2e
+    network-evidence coverage for the fix — but no RTL-level test existed,
+    so a regression here would only be caught by the slower e2e suite.
+    Added, using a hanging `/chunks` mock that only settles via the real
+    `AbortSignal` the fix wired in, asserting exactly one chunk call ever
+    happens and the real `DELETE` cleanup fires.
+  - **Monthly-quota 429 (`IMPORT_MONTHLY_QUOTA_REACHED`), at the RTL
+    layer.** 033 added e2e coverage for this; no RTL test existed. Added,
+    asserting both the designed message and that the already-rendered
+    `QuotaMeter` actually flips to its reached state
+    (`aria-valuenow="100"`) plus the real `/pricing` upgrade link.
+  - Deliberately **not** added: `PROCESSING_TIMEOUT` (a real 30-second
+    browser timer) and `WORKER_FAILED` (`worker.onerror`) RTL tests —
+    reliably driving these under fake timers alongside React Testing
+    Library's own timer-dependent `waitFor`/`findBy*` polling was judged
+    higher-risk-of-flakiness than the coverage was worth for this closing
+    prompt; noted here rather than silently skipped.
+
+  **Step 4 — e2e duplicate-409 and quota-429 paths: already existed.**
+  Both were added in 033 (`tests/e2e/critical-flows.spec.ts`'s "import
+  experience" block: "duplicate 409 renders the designed resolution
+  panel..." and "monthly import quota reached (429) flips the existing
+  QuotaMeter..."), confirmed still passing — this instruction's own
+  acceptance criterion was already met before this prompt started; no
+  duplicate test was added on top.
+
+  **Step 5 — one new fixture, a real gap, not the parser-matrix layer
+  (which was already fully covered).** `lib/imports/zip.ts`'s ZIP
+  handling was already unit-tested directly in Node against in-memory
+  `jszip`-generated archives (`tests/unit/import-parsers.test.ts`: a
+  happy-path zip-with-telegram.json test, path-traversal, too-many-
+  entries, and suspicious-ratio rejections) — but **no test had ever
+  driven a real `.zip` file through the actual browser `Worker` + file-
+  input + hash + chunk-upload pipeline**, a materially different runtime
+  (the worker's own `JSZip.loadAsync` inside an actual Worker context)
+  than the Node-side unit tests exercise. Added
+  `tests/fixtures/imports/telegram-export.zip` (357 bytes) — generated
+  synthetically by a throwaway script wrapping the existing, already-
+  fictional `telegram.json` fixture as `ChatExport/result.json` via
+  `jszip` (already a project dependency), verified against the real
+  `parseImport()` pipeline before being committed, no real user data —
+  plus one new Playwright e2e test driving it through the real UI to
+  "done."
+
+  **`rawFileStored: false` and pipeline-untouched together confirm
+  invariant #7 end to end:** the client never claims to have stored the
+  raw file (the new RTL assertion), and the server-side code that would
+  ever act on that flag hasn't changed since LEGACY (the diff proof) —
+  together they close the loop this prompt's own security section asks
+  for, rather than either check alone.
+
+  **Windows/CI path-separator edge case:** checked directly rather than
+  assumed — no test in `tests/unit/import-parsers.test.ts`,
+  `tests/unit/phase12-import-formats.test.ts`,
+  `tests/components/ImportFlow.test.tsx`, or
+  `tests/e2e/critical-flows.spec.ts` builds a fixture path with a literal
+  backslash; all use `path.resolve()`/forward-slash string literals
+  (Playwright's own `setInputFiles` and Node's `path.resolve` both
+  normalize per-OS internally). Every suite in this session already ran
+  natively on this Windows machine (not just WSL/CI), which is itself
+  evidence the paths resolve correctly here, not just in theory.
+
+  **Playwright file-upload timing for larger fixtures:** not a live risk
+  this session — the largest fixture in the matrix (`telegram-export.zip`,
+  357 bytes) uploads and completes in ~2s in the new e2e test, same order
+  of magnitude as every existing fixture; no fixture in this repo is large
+  enough to make upload timing itself a real concern. Noted as checked,
+  not silently ignored.
+
+  **A real, small follow-up gap closed as a fix-level change (allowed —
+  "Import components (fix-level only)" is in this prompt's own file
+  scope):** 034's own STATUS entry flagged that `DuplicatePanel.tsx`'s
+  "View status on dashboard" link was left pointing at `/dashboard`
+  because no history section existed when 033 wrote it, and that
+  retargeting it was out of 034's own file scope
+  (`components/app/imports/ImportHistory*.tsx` only). `DuplicatePanel.tsx`
+  **is** an "Import component" 035 can fix, so this session retargeted it:
+  `ImportHistory.tsx`'s wrapping `<section>` now carries `id="import-
+  history"`, and `DuplicatePanel`'s link (copy key `duplicateViewLink`,
+  now "View status in history" / "Переглянути статус в історії") points
+  at `/import-conversations#import-history` instead. Updated the three
+  existing tests that asserted the old label/href
+  (`tests/components/DuplicatePanel.test.tsx`,
+  `tests/components/ImportFlow.test.tsx`,
+  `tests/e2e/critical-flows.spec.ts`) to match — not new coverage, a
+  correction of stale assertions following the fix.
+
+  **Required tests (steps 3-4), full list:** `tests/components/
+  ImportFlow.test.tsx` — pre-check rejection: file exceeds the plan's
+  file-size limit; sends `rawFileStored: false` in the create payload;
+  cancel during the saving stage actually aborts (RTL); monthly import
+  quota reached (429) flips the QuotaMeter (RTL). Plus one new e2e case
+  in `tests/e2e/critical-flows.spec.ts`'s "import experience" block:
+  imports a real `.zip` export through the real UI.
+
+  `yarn lint`, `yarn typecheck`, `yarn test` (61 files/425 tests, up from
+  61/421 in 034 — same file count, 4 new test cases in the existing
+  `ImportFlow.test.tsx`), `yarn build` (45/45 pages, unchanged — no route
+  changes), and `yarn test:e2e` (39/39, up from 38/38 — 1 new, 0
+  regressions) all passed, `yarn build` re-run immediately before the
+  final `yarn test:e2e` pass (033's own documented gotcha, now routine
+  practice for every prompt since).
+
 ## Failed prompts
 
 None.
@@ -3116,10 +3267,12 @@ again same-day for 015 (30/30 pages), and again for 016 (30/30 pages,
 pages, `/import-conversations` new) and again for 033 and 034 (45/45
 pages both times, unchanged route count — no new routes in either
 prompt, `/import-conversations` itself grew from 7.86 kB to 11.5 kB in
-034); 033's own entry above records a real `yarn test:e2e` gotcha worth
-reading before running that command again: `webServer` serves whatever
-`.next` build already exists (`next start`, not `next dev`) — always run
-`yarn build` first if `.next` might predate the latest code changes.
+034); re-confirmed again for 035 (45/45 pages, no route changes — a pure
+test/fix-level prompt). 033's own entry above records a real
+`yarn test:e2e` gotcha worth reading before running that command again:
+`webServer` serves whatever `.next` build already exists (`next start`,
+not `next dev`) — always run `yarn build` first if `.next` might predate
+the latest code changes.
 
 ## Last successful test run
 
@@ -3139,6 +3292,11 @@ exit, plus `yarn test:e2e` 31/31. Re-confirmed same day for 033 —
 this session found and worked around). Re-confirmed same day for 034 —
 421/421 tests across 61 files, clean exit, plus `yarn test:e2e` 38/38
 (same `yarn build`-first workflow applied without needing rediscovery).
+Re-confirmed same day for 035 (closes Phase 7) — 425/425 tests across 61
+files, clean exit, plus `yarn test:e2e` 39/39; also re-ran the pre-
+existing parser-matrix files in isolation (`tests/unit/import-
+parsers.test.ts` + `tests/unit/phase12-import-formats.test.ts`, 29/29)
+before touching anything else, per this prompt's own step-1 instruction.
 
 ## Known regressions
 

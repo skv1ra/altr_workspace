@@ -15,13 +15,17 @@ export interface DuplicateExisting {
  * created_at }` for the existing row, so that's exactly what's shown here;
  * no fabricated detail (source name, message count, ...) is invented.
  *
- * "View in history" per this prompt's own wording links nowhere real: no
- * import-history screen exists yet (034, still `todo` in INDEX.md) — per
- * ADR-013 ("a route ships only when it works end to end"), a dead link
- * would be worse than an honest one. `/dashboard` is the one real surface
- * that already shows this import's status (its own "last import" row,
- * from Prompt 029), so the link points there and is labeled for what it
- * actually does.
+ * "View in history" per this prompt's own (033) wording originally linked
+ * nowhere real: no import-history screen existed yet at the time (034 was
+ * still `todo`), so this pointed at `/dashboard` instead — the one real
+ * surface that showed this import's status then (its own "last import"
+ * row, from Prompt 029). 034 built the real history section right below
+ * this panel on the same page; this Prompt 035 fix-level change retargets
+ * the link to it (`#import-history`, the id `ImportHistory.tsx` now
+ * exposes) rather than leaving it pointed at the now-stale `/dashboard`
+ * destination — noted as a follow-up in 034's own STATUS entry, closed
+ * here since `DuplicatePanel.tsx` is an "Import component" this prompt's
+ * own file scope allows fixing.
  */
 export function DuplicatePanel({ existing, lang }: { existing: DuplicateExisting; lang: Lang }) {
   const t = getSharedCopy(lang).imports;
@@ -42,7 +46,7 @@ export function DuplicatePanel({ existing, lang }: { existing: DuplicateExisting
           </dd>
         </div>
       </dl>
-      <Link href="/dashboard" className={styles.link}>
+      <Link href="/import-conversations#import-history" className={styles.link}>
         {t.duplicateViewLink}
       </Link>
       <div className={styles.hint}>

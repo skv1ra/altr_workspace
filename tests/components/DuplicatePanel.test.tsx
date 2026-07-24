@@ -9,9 +9,9 @@ describe("DuplicatePanel", () => {
     expect(screen.getByText(/Completed/)).toBeInTheDocument();
   });
 
-  it("links to a real, existing surface — /dashboard — never a not-yet-built history page (ADR-013)", () => {
+  it("links to the real history section now that one exists (034) — Prompt 035 retargeted this from the interim /dashboard link", () => {
     render(<DuplicatePanel existing={{ id: "1", status: "processing", createdAt: "2026-07-20T10:00:00.000Z" }} lang="EN" />);
-    expect(screen.getByRole("link", { name: "View status on dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "View status in history" })).toHaveAttribute("href", "/import-conversations#import-history");
     expect(screen.getByText(/Processing/)).toBeInTheDocument();
   });
 

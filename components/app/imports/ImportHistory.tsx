@@ -147,7 +147,7 @@ export function ImportHistory() {
   }, []);
 
   return (
-    <section className={styles.wrap} aria-label={t.heading}>
+    <section id="import-history" className={styles.wrap} aria-label={t.heading}>
       <p className={styles.heading}>{t.heading}</p>
 
       {entries === null && !loadError && <p className={styles.note}>{t.loading}</p>}

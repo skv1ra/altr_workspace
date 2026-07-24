@@ -286,7 +286,7 @@ export const sharedCopy = {
       statusQuotaReached: "You've reached your monthly import limit.",
       duplicateHeading: "This file was already imported",
       duplicateExistingLabel: "Existing import",
-      duplicateViewLink: "View status on dashboard",
+      duplicateViewLink: "View status in history",
       duplicateDifferentFileHeading: "Is this actually a different file?",
       duplicateDifferentFileHint: "Altr compares files by their exact content, not their name. If you intended a different export, generate a fresh one from the source platform — new content produces a new file signature and can be imported separately.",
       history: {
@@ -686,7 +686,7 @@ export const sharedCopy = {
       statusQuotaReached: "Досягнуто місячного ліміту імпортів.",
       duplicateHeading: "Цей файл уже імпортовано",
       duplicateExistingLabel: "Наявний імпорт",
-      duplicateViewLink: "Переглянути статус у кабінеті",
+      duplicateViewLink: "Переглянути статус в історії",
       duplicateDifferentFileHeading: "Це справді інший файл?",
       duplicateDifferentFileHint: "Altr порівнює файли за вмістом, а не за назвою. Якщо це мав бути інший експорт, згенеруй новий з платформи-джерела — новий вміст дає новий підпис файлу і може бути імпортований окремо.",
       history: {

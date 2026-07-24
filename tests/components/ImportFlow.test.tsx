@@ -141,6 +141,19 @@ describe("ImportFlow", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it("pre-check rejection: a file exceeding the real plan file-size limit is rejected before parsing, without ever starting the worker", async () => {
+    render(<ImportFlow />);
+    await screen.findByText(/free/);
+    await checkConsent();
+
+    const overLimit = new File([new Uint8Array(limits.maxFileBytes + 1)], "chat.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, overLimit);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("File exceeds your 5 MB plan limit.");
+    expect(fetch).toHaveBeenCalledTimes(1); // only the initial GET /api/imports — the worker never starts
+  });
+
   it("states in the UI that dropping multiple files only uses the first", async () => {
     render(<ImportFlow />);
     await screen.findByText(/free/);
@@ -231,7 +244,7 @@ describe("ImportFlow", () => {
 
     expect(await screen.findByText("This file was already imported")).toBeInTheDocument();
     expect(screen.getByText(/Completed/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View status on dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "View status in history" })).toHaveAttribute("href", "/import-conversations#import-history");
     expect(screen.getByText("Is this actually a different file?")).toBeInTheDocument();
     expect(screen.queryByText("DUPLICATE_IMPORT")).not.toBeInTheDocument();
   });
@@ -275,5 +288,110 @@ describe("ImportFlow", () => {
     expect(createCalls).toBe(1);
     expect(chunkCalls).toBe(1);
     expect(extractCalls).toBe(2);
+  });
+
+  /**
+   * Prompt 035's own explicit security-invariant instruction: "assert
+   * `rawFileStored: false` remains in the create payload... guards
+   * invariant #7." No prior 032-034 test ever inspected the create POST
+   * body itself — every previous test only asserted UI outcomes, so this
+   * closes a real, previously-unverified gap rather than a redundant one.
+   */
+  it("sends rawFileStored: false in the create payload — the raw file is never marked as uploaded (invariant #7)", async () => {
+    let createBody: Record<string, unknown> | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/imports" && !init) return { ok: true, json: async () => ({ imports: [], planId: "free", limits }) };
+        if (url === "/api/imports" && init?.method === "POST") {
+          createBody = JSON.parse(init.body as string);
+          return { ok: true, json: async () => ({ import: { id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee" }, planId: "free" }) };
+        }
+        if (url.endsWith("/chunks")) return { ok: true, json: async () => ({ ok: true }) };
+        if (url.endsWith("/extract")) return { ok: true, json: async () => ({ done: true, created: 0 }) };
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<ImportFlow />);
+    await screen.findByText(/free/);
+    await checkConsent();
+
+    const worker = await uploadAndGetWorker();
+    respondWorkerOk(worker);
+
+    await screen.findByText(/memories saved\./, {}, { timeout: 3000 });
+    expect(createBody).toMatchObject({ rawFileStored: false });
+  });
+
+  /**
+   * 033's own STATUS entry documented finding and fixing a real bug: the
+   * Cancel button was visible during the "Saving" (chunk-upload) stage
+   * but not actually wired to abort anything there — only the parse
+   * worker was ever terminated. 033 added e2e network-evidence coverage
+   * for the fix; this closes the matching RTL-level gap so the same
+   * regression would be caught at the fast, unit-test layer too.
+   */
+  it("cancel during the saving (chunk-upload) stage actually aborts the upload — no further chunk requests, and the partial import is deleted", async () => {
+    let chunkCalls = 0;
+    let deleteCalled = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/imports" && !init) return { ok: true, json: async () => ({ imports: [], planId: "free", limits }) };
+        if (url === "/api/imports" && init?.method === "POST") {
+          return { ok: true, json: async () => ({ import: { id: "ffffffff-ffff-4fff-8fff-ffffffffffff" }, planId: "free" }) };
+        }
+        if (url.endsWith("/chunks")) {
+          chunkCalls += 1;
+          return new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+          });
+        }
+        if (/\/api\/imports\/[^/]+$/.test(url) && init?.method === "DELETE") {
+          deleteCalled = true;
+          return { ok: true, json: async () => ({ ok: true }) };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<ImportFlow />);
+    await screen.findByText(/free/);
+    await checkConsent();
+
+    const worker = await uploadAndGetWorker();
+    respondWorkerOk(worker);
+
+    await screen.findByText(/Uploading normalized chunk/, {}, { timeout: 3000 });
+    await userEvent.click(screen.getByRole("button", { name: /Cancel local parsing/ }));
+
+    expect(await screen.findByText(/Import cancelled/)).toBeInTheDocument();
+    expect(chunkCalls).toBe(1); // no zombie retry after abort
+    expect(deleteCalled).toBe(true);
+  });
+
+  it("monthly import quota reached (429) flips the existing QuotaMeter into its reached state, with the real designed message — not a raw error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/imports" && !init) return { ok: true, json: async () => ({ imports: [], planId: "free", limits }) };
+        if (url === "/api/imports" && init?.method === "POST") {
+          return { ok: false, json: async () => ({ error: "IMPORT_MONTHLY_QUOTA_REACHED", limits }) };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+
+    render(<ImportFlow />);
+    await screen.findByText(/free/);
+    await checkConsent();
+
+    const worker = await uploadAndGetWorker();
+    respondWorkerOk(worker);
+
+    expect(await screen.findByText("You've reached your monthly import limit.")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Imports this month" })).toHaveAttribute("aria-valuenow", "100");
+    expect(screen.getByRole("link", { name: "Upgrade plan" })).toHaveAttribute("href", "/pricing");
   });
 });
