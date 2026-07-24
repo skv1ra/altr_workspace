@@ -1,0 +1,49 @@
+/*
+ * Side-panel dialog on desktop, full-screen sheet on mobile (this
+ * prompt's own visual requirement) — `position: fixed` here escapes
+ * `.dialog-backdrop`'s own flex-centering (`app/styles/overlays.css`,
+ * unmodified) entirely, since a fixed-position child ignores its
+ * parent's flex alignment and is placed by its own inset properties
+ * instead. `Dialog`'s own focus-trap/Escape/scroll-lock machinery is
+ * untouched — only positioning changes.
+ */
+.panel {
+  position: fixed;
+  inset-block: 0;
+  right: 0;
+  left: auto;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100%;
+  max-width: 440px;
+  margin: 0;
+  border-radius: 0;
+  animation: memory-editor-slide-in var(--motion-fast) var(--ease-altr);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    max-width: 100%;
+  }
+}
+
+@keyframes memory-editor-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
+
+.gone {
+  padding-block: var(--space-6);
+}

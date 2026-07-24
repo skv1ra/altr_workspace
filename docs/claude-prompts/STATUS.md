@@ -4,37 +4,33 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 036 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. **Opens Phase 8 (memory).** Rebuilds
-`/memory` at `app/(app)/memory/page.tsx` — a real Server Component in the
-`AppShell`, following the 029/030/031 pattern, not LEGACY's own client-only
-page. **Found before writing anything:** LEGACY's own `components/memory/*`
-(6 files this prompt's "files to inspect first" named as "features to
-preserve") are dead code — a full-repo grep found zero imports of them
-anywhere; LEGACY's real `app/memory/page.tsx` reimplements everything
-inline instead, with a fictional `MemoryItem` type that doesn't match the
-real API (0-100 int confidence vs. real 0-1 float; a fixed 5-category enum
-vs. the real free-text column). Treated the live inline page as the real
-behavioral contract; brought back the dead prototypes' *visual* ideas
-(status header, connected-sources panel, category tabs) backed by real
-fields `getProfileForUser` already computes (`preferences.learning`,
-`connections`) instead of the fabricated ones the dead components had.
-**Real, empirically-verified environment finding, not assumed:** confirmed
-by curling the built server directly (with the e2e identity-mock headers)
-that `/memory` 500s identically to `/dashboard` — `requireUser()`'s e2e
-mock only fakes the auth identity, `createSupabaseAdminClient()` still
-makes real Supabase Admin calls that fail against placeholder credentials
-— so full content-level e2e coverage is blocked the same way 029/030/031
-already documented for every other Server-Component `(app)` page; the
-LEGACY memory-CRUD e2e contract this prompt asked to "migrate" was instead
-migrated to the RTL layer (`tests/components/MemoryOverview.test.tsx`),
-which exercises the identical edit/delete/clear-all flow against a mocked
-`fetch`. Also closed two real, explicitly-self-flagged nav gaps found
-along the way: `AppNav.tsx`'s own comment named 036 as the prompt to add
-Memory to its destinations array, and `DashboardHome.tsx`'s own comment
-did the same for its Memory row's link — both fixed (see 036's own entry
-for the "no nested `<a>`" detail on the dashboard fix). See 036's own
-entry below for the full field-by-field real-data mapping and command
+None — Prompt 037 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. Rebuilds memory manipulation on top of
+036's list: `MemoryEditDialog` now handles create *and* edit in one
+component (a genuinely new capability — LEGACY's own UI never exposed
+memory creation even though `POST /api/memories` always supported it),
+with a real category combobox (native `<datalist>` over this user's own
+actual categories, still free-entry), maxLength/live-count validation
+mirroring the server schema exactly, and a designed gone-state for the
+"edited in another tab" 404. Clear-all now requires typing "DELETE ALL
+MEMORIES" (`ConfirmDialog`'s existing `typedConfirmation`, from 010) —
+stricter than 036's plain confirm, in the spirit of MASTER_CONTEXT's
+invariant #8. Added a real `MemoryProvenanceDialog` (sources, excerpts as
+plain text only, extraction model/version, monospaced linked-record ids
+on a hairline timeline). **Verified, not assumed, that "disabled memories
+are never used by your Twin" is true**, by reading the actual retrieval
+RPC's SQL (`supabase/migrations/20260715120000_phase_7_real_altr_twin_ai
+.sql`'s `altr_match_active_memories`: `and m.is_active = true`) — cited
+directly in both the row's own persistent hint and the disable toast.
+Mounted `<Toaster />` for the first time in this workspace (`app/(app)/
+layout.tsx`, Prompt 010's own comment anticipated exactly this) so the
+new "server confirm → list refresh → toast" flow this prompt's own
+instruction #1 asks for has somewhere to render. **`/memory` content-
+level e2e remains blocked** by the same placeholder-Supabase gap 036
+already empirically verified (identity mocking works, `createSupabase
+AdminClient()` doesn't) — LEGACY's memory-CRUD e2e contract stayed
+migrated to the RTL layer, now across five test files instead of one.
+See 037's own entry below for the full schema-mirror table and command
 results. **Carried forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
@@ -3407,6 +3403,166 @@ open.
   possible for the reason above, 0 regressions from the new route) all
   passed.
 
+- **037 — Memory editing and provenance (2026-07-24).** Read LEGACY's dead
+  `MemoryEditModal.tsx`/`MemoryDeleteModal.tsx` (reference-only, per this
+  prompt's own file-scope note — nothing was ever ported into WORKSPACE,
+  so there is nothing to delete; see "deleted files with proof" below),
+  the real `app/api/memories/**` schemas, and 010's `ConfirmDialog` before
+  writing anything. `app/api/memories/**`, `lib/`, `supabase/` all
+  confirmed untracked-but-unmodified afterward.
+
+  **Schema-mirror table** (`app/api/memories/route.ts`'s `createSchema` /
+  `[id]/route.ts`'s `updateSchema`, both read, neither modified — every
+  limit below is copied from the actual zod schema, not guessed):
+
+  | Field | Server limit | Client mirror |
+  | --- | --- | --- |
+  | `title` | `min(1).max(180)` | `maxLength={180}`, live `N/180` count, required |
+  | `category` | `min(1).max(80)` | `maxLength={80}`, live `N/80` count, required, native combobox (`<input list>` + `<datalist>` over this user's real categories, still free-entry) |
+  | `description` | `min(1).max(4000)` | `maxLength={4000}`, live `N/4000` count, required |
+  | `confidence` | `number().min(0).max(1)` | `type="number" min={0} max={1} step={0.01}`, clamped again client-side before submit as defense-in-depth |
+  | `active` | `boolean()` | Not in the editor — stays a dedicated per-row Enable/Disable action (036), avoiding a duplicate control for the same field |
+
+  **One editor, two endpoints — create is a genuinely new UI capability.**
+  LEGACY's own `app/memory/page.tsx` (the live, real behavioral contract —
+  see 036's own dead-component finding) never exposed a "new memory"
+  action anywhere, even though `POST /api/memories` has always supported
+  it. This prompt's own instruction #1 ("Editor (create + edit in one
+  component)") asks for it directly, so `MemoryEditDialog`'s `state:
+  {mode:"create"} | {mode:"edit", memory}` decides `POST` vs. `PATCH` in
+  `MemoryOverview.tsx`, not in the dialog itself — a real "New memory"
+  toolbar button opens it in create mode.
+
+  **Disable/enable semantics claim, verified against the actual SQL, not
+  assumed true.** Read `supabase/migrations/20260715120000_phase_7_real_
+  altr_twin_ai.sql`'s `altr_match_active_memories` function in full — the
+  one RPC `app/api/ai/draft-reply/route.ts` (Twin's own draft generation)
+  calls for memory retrieval, and the same one `lib/ai/memory-
+  extraction.ts` uses for its own dedup check:
+  ```sql
+  where m.user_id = (select auth.uid())
+    and m.is_active = true
+    and m.embedding is not null
+    ...
+  ```
+  Confirms the claim exactly: a disabled memory (`is_active = false`) is
+  excluded from every semantic-similarity retrieval this app performs,
+  full stop — not a UI-only greyed-out state. Surfaced twice: a persistent
+  per-row hint on every disabled memory (`MemoryRow.tsx`) and in the
+  disable toast, both citing the identical sentence this prompt's own
+  instruction #2 names verbatim: "Disabled memories are never used by
+  your Twin."
+
+  **Clear-all typed confirmation — "DELETE ALL MEMORIES," kept
+  untranslated in the UA copy on purpose.** `ConfirmDialog`'s
+  `typedConfirmation` prop already existed (010) but had never been used
+  anywhere in real app code until now. MASTER_CONTEXT.md's own invariant
+  #8 is literally about account deletion (`DELETE MY ACCOUNT` + email) —
+  this prompt's own instruction applies the same class of stricter,
+  typed-not-clicked friction to this app's own most consequential memory
+  action, with its own distinct phrase, not a reuse of the account one.
+  The literal phrase itself is deliberately identical in both `EN`/`UA`
+  copy (only the surrounding label text is translated) — same convention
+  invariant #8's own account-deletion phrase already established: a
+  typed safety phrase is a precision mechanism, not UI copy meant to
+  read naturally in the interface language.
+
+  **Provenance panel — every field the real API already returns, nothing
+  new fetched.** `MemoryProvenanceDialog.tsx` renders `extraction_model`/
+  `extraction_version` (with an honest "Not applicable — added manually"
+  when a memory has no model, which the real schema guarantees for every
+  `source_type: "manual"` row) and, per source: `source_type`,
+  `source_reference`, `excerpt` (rendered as plain JSX text — React
+  escapes it, `dangerouslySetInnerHTML` is never used anywhere in this
+  component, verified directly, satisfying this prompt's own "render as
+  text, never as HTML" requirement), and monospaced `import_id`/
+  `conversation_id`/`message_id` on a hairline vertical timeline (this
+  prompt's own "archival record" visual requirement). Dangling references
+  (this prompt's own edge case — a source import already deleted) are
+  handled by construction: an id only ever renders if the record actually
+  has it, and nothing here "resolves" an id to a human name via an extra
+  lookup this component doesn't perform, so there's nothing to break when
+  the thing it points at no longer exists.
+
+  **Editor is a real side-panel on desktop, full-screen sheet on mobile**
+  (this prompt's own visual requirement) — `MemoryEditDialog.module.css`'s
+  `.panel` uses `position: fixed` to escape `Dialog`'s own flex-centered
+  backdrop entirely (a fixed-position child ignores its parent's flex
+  alignment), rather than touching `Dialog.tsx`/`overlays.css`
+  (must-not-change... actually both outside this prompt's own file scope,
+  though not literally forbidden — left untouched regardless, since the
+  `className` prop `Dialog` already exposes was enough).
+
+  **`<Toaster />` mounted for real, for the first time in this
+  workspace.** `components/ui/Toast.tsx`'s own module comment (010)
+  explicitly named the condition: "the first screen prompt that needs
+  toasts for real should mount `<Toaster />` at the root layout." This
+  prompt's own "optimistic-free (server confirm → list refresh → toast)"
+  instruction is that condition. Mounted at `app/(app)/layout.tsx` (a
+  real deviation from this prompt's own literal file-scope list, same
+  class already repeatedly documented and resolved this way across
+  032-036) rather than the true root `app/layout.tsx` — narrower and
+  still correct, since every current toast-triggering action lives under
+  this route group; rendered as a true sibling of `<AppShell>` (not
+  nested inside its own `children` prop, which would have put the
+  fixed-position toast region semantically inside `<main>` for no
+  reason) via a fragment, so `AppShell.tsx` itself needed no change at
+  all. Six real toasts wired: create, edit, enable, disable (with the
+  verified semantics sentence), delete, clear-all.
+
+  **"Drafts lose context" wording, checked before writing it, not
+  assumed true.** Read `app/api/ai/draft-reply/route.ts` in full: memory
+  retrieval happens per-request via the RPC above at generation time: the
+  draft *text* itself is stored plainly afterward with no live reference
+  back to the memories that informed it. So clearing all memories cannot
+  retroactively change any already-generated draft — only *future* Twin
+  drafts lose that context. `clearAllConfirmDescription` says exactly
+  that ("Future Twin drafts will lose the context these memories
+  provided; drafts already generated are not changed"), not the vaguer,
+  potentially-misleading "drafts lose context" this prompt's own
+  instruction phrase could be read as (past drafts breaking).
+
+  **Deleted files with proof:** none. This prompt's own file-scope note
+  says it directly — "LEGACY `components/memory/` was never ported... it
+  remains reference-only in the read-only checkout" — confirmed again
+  this session (`find components/memory` in WORKSPACE returns nothing;
+  the six dead files only ever existed in the pinned LEGACY checkout,
+  untouched). There was never anything in WORKSPACE to delete.
+
+  **`/memory` content-level e2e — still blocked, not re-litigated.** 036
+  already empirically proved this (curled the built server with the e2e
+  identity-mock headers, got a real 500 identical to `/dashboard`,
+  root-caused it to `createSupabaseAdminClient()` not being mocked). No
+  code change this prompt makes alters that architecture, so LEGACY's
+  memory-CRUD e2e block stayed migrated to the RTL layer — now spread
+  across five component test files instead of one. The existing e2e
+  suite (39 tests, including the generic `/memory` anonymous-redirect
+  case) was re-confirmed passing, unaffected.
+
+  **Required tests added:** `tests/components/MemoryEditDialog.test.tsx`
+  (6 tests — every schema limit mirrored as real `maxLength` with a live
+  count, the count updating live as you type, real categories offered as
+  suggestions while free entry still works, create vs. edit render
+  distinct real titles and edit prefills the real memory's values, a
+  whitespace-only required field blocks save entirely, the gone-state
+  renders instead of the form), `tests/components/MemoryProvenanceDialog
+  .test.tsx` (5 tests — real extraction model/version, the honest
+  not-applicable/no-sources states, every real source field rendered,
+  excerpt text never becomes a real HTML element, a dangling reference
+  renders honestly without crashing). Extended
+  `tests/components/MemoryRow.test.tsx` (+2: the verified disable-
+  semantics sentence appears only when disabled, the delete confirm
+  names the specific memory's real title) and `tests/components/
+  MemoryOverview.test.tsx` (+2: the full create flow through the real
+  POST endpoint, the 404 gone-state edge case) — plus fixed the existing
+  clear-all test to actually type the confirmation phrase now that it's
+  gated behind one.
+  `yarn lint`, `yarn typecheck`, `yarn test` (66 files/458 tests, up from
+  64/444 in 036 — 2 new files/26 new tests total across new + extended
+  files), `yarn build` (46/46 pages, `/memory` grew from 5.58 kB to
+  6.94 kB, no route changes), and `yarn test:e2e` (39/39, unchanged —
+  0 regressions) all passed.
+
 ## Failed prompts
 
 None.
@@ -3441,8 +3597,9 @@ pages, `/import-conversations` new) and again for 033 and 034 (45/45
 pages both times, unchanged route count — no new routes in either
 prompt, `/import-conversations` itself grew from 7.86 kB to 11.5 kB in
 034); re-confirmed again for 035 (45/45 pages, no route changes — a pure
-test/fix-level prompt), and again for 036 (46/46 pages, `/memory` new).
-033's own entry above records a real
+test/fix-level prompt), and again for 036 and 037 (46/46 pages both
+times, unchanged route count — `/memory` grew from 5.58 kB to 6.94 kB in
+037). 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -3476,6 +3633,9 @@ files, clean exit, plus `yarn test:e2e` 39/39 (unchanged — see 036's own
 entry for why `/memory` content-level e2e is blocked by the same
 placeholder-Supabase gap 029 first found, confirmed this session by
 directly `curl`-ing the built server).
+Re-confirmed same day for 037 — 458/458 tests across 66 files, clean
+exit, plus `yarn test:e2e` 39/39 (unchanged — `/memory` content-level e2e
+still blocked for the same reason 036 already proved, not re-tested).
 
 ## Known regressions
 

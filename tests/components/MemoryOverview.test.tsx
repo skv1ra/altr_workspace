@@ -164,7 +164,14 @@ describe("MemoryOverview", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Clear all" }));
     const dialog = screen.getByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "Clear all" }));
+    // Typed confirmation gate (037's own "stricter than window.confirm,
+    // satisfying invariant #8" instruction) — the confirm button stays
+    // disabled until the exact phrase is typed.
+    const confirmButton = within(dialog).getByRole("button", { name: "Clear all" });
+    expect(confirmButton).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/DELETE ALL MEMORIES/), "DELETE ALL MEMORIES");
+    expect(confirmButton).toBeEnabled();
+    await userEvent.click(confirmButton);
 
     expect(await screen.findByText("No memories yet")).toBeInTheDocument();
   });
@@ -189,5 +196,53 @@ describe("MemoryOverview", () => {
         expect.objectContaining({ method: "PATCH", body: JSON.stringify({ active: false }) }),
       ),
     );
+  });
+
+  it("New memory opens the same editor in create mode and saves via the real POST endpoint, not PATCH", async () => {
+    let createBody: unknown = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/memories" && init?.method === "POST") {
+          createBody = JSON.parse(init.body as string);
+          return { ok: true, json: async () => ({ memory: memoryFixture() }) };
+        }
+        return { ok: true, json: async () => ({ memories: createBody ? [memoryFixture()] : [], total: createBody ? 1 : 0, totalPages: 1 }) };
+      }),
+    );
+    render(<MemoryOverview {...defaultProps} totalMemories={0} categoryCounts={[]} />);
+    await screen.findByText("No memories yet");
+
+    await userEvent.click(screen.getByRole("button", { name: /New memory/ }));
+    expect(screen.getByRole("heading", { name: "Add a memory" })).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText(/Title/), "A brand new memory");
+    await userEvent.type(screen.getByLabelText(/Category/), "people");
+    await userEvent.type(screen.getByLabelText(/Description/), "Added straight from the editor.");
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(createBody).toMatchObject({ title: "A brand new memory", category: "people" }));
+    expect(await screen.findByText("Short, direct replies")).toBeInTheDocument();
+  });
+
+  it("editing a memory deleted in another tab (the real 404) shows the designed gone-state and refreshes the list instead of throwing", async () => {
+    let deleted = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.startsWith("/api/memories/") && init?.method === "PATCH") {
+          deleted = true;
+          return { ok: false, status: 404, json: async () => ({ error: "MEMORY_NOT_FOUND" }) };
+        }
+        return { ok: true, json: async () => ({ memories: deleted ? [] : [memoryFixture()], total: deleted ? 0 : 1, totalPages: 1 }) };
+      }),
+    );
+    render(<MemoryOverview {...defaultProps} />);
+    await screen.findByText("Short, direct replies");
+
+    await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByText("This memory no longer exists.")).toBeInTheDocument();
   });
 });

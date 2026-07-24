@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe("MemoryRow", () => {
   it("renders the real fields — category, title, description, and a real (never platform-fabricated) provenance hint", () => {
-    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
     expect(screen.getByText("communication_style")).toBeInTheDocument();
     expect(screen.getByText("Short, direct replies")).toBeInTheDocument();
     expect(screen.getByText(/Keeps replies concise/)).toBeInTheDocument();
@@ -37,19 +37,23 @@ describe("MemoryRow", () => {
   });
 
   it("shows 'Manual entry' provenance for a manually-created memory, not an import claim", () => {
-    render(<MemoryRow memory={{ ...base, source_type: "manual" }} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    render(
+      <MemoryRow memory={{ ...base, source_type: "manual" }} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />,
+    );
     expect(screen.getByText(/Manual entry · Mar 2026/)).toBeInTheDocument();
   });
 
   it("renders confidence as a hairline meter, not a percent badge — the real number stays accessible via aria-valuenow", () => {
-    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
     expect(screen.queryByText("82%")).not.toBeInTheDocument();
     expect(screen.getByRole("meter", { name: "Confidence" })).toHaveAttribute("aria-valuenow", "82");
   });
 
   it("clamps long descriptions and expands in place on 'Show more'", async () => {
     const longDescription = "A".repeat(300);
-    render(<MemoryRow memory={{ ...base, description: longDescription }} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    render(
+      <MemoryRow memory={{ ...base, description: longDescription }} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />,
+    );
     expect(screen.getByText(/A{240}…/)).toBeInTheDocument();
     expect(screen.queryByText(longDescription)).not.toBeInTheDocument();
 
@@ -58,29 +62,45 @@ describe("MemoryRow", () => {
   });
 
   it("shows the Active pill for an active memory and Disabled for an inactive one — status survives without color alone (icon + text)", () => {
-    const { rerender } = render(<MemoryRow memory={base} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    const { rerender } = render(
+      <MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />,
+    );
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Disable" })).toBeInTheDocument();
+    expect(screen.queryByText(/never used by your Twin/)).not.toBeInTheDocument();
 
-    rerender(<MemoryRow memory={{ ...base, is_active: false }} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    rerender(
+      <MemoryRow memory={{ ...base, is_active: false }} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />,
+    );
     expect(screen.getByText("Disabled")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enable" })).toBeInTheDocument();
+    // This prompt's own "clear semantics copy" instruction, literal text.
+    expect(screen.getByText("Disabled memories are never used by your Twin.")).toBeInTheDocument();
   });
 
   it("Edit calls the onEdit callback directly (the parent owns the shared edit dialog)", async () => {
     const onEdit = vi.fn();
-    render(<MemoryRow memory={base} lang="EN" onEdit={onEdit} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    render(<MemoryRow memory={base} lang="EN" onEdit={onEdit} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
     await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
 
-  it("delete calls the real DELETE endpoint and reports removal only after it actually succeeds", async () => {
+  it("Provenance calls the onOpenProvenance callback directly (the parent owns the shared provenance dialog)", async () => {
+    const onOpenProvenance = vi.fn();
+    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={onOpenProvenance} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
+    await userEvent.click(screen.getByRole("button", { name: /Provenance/ }));
+    expect(onOpenProvenance).toHaveBeenCalledTimes(1);
+  });
+
+  it("delete confirm names the specific memory's title, never a generic 'this memory' — and calls the real DELETE endpoint only after confirming", async () => {
     const onDeleted = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ ok: true }) })));
-    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onToggleActive={noop} onDeleted={onDeleted} togglingActive={false} />);
+    render(<MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={onDeleted} togglingActive={false} />);
 
     await userEvent.click(screen.getByRole("button", { name: /Delete/ }));
-    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(`Delete "${base.title}"`)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     expect(fetch).toHaveBeenCalledWith(`/api/memories/${base.id}`, { method: "DELETE" });
     expect(onDeleted).toHaveBeenCalledTimes(1);

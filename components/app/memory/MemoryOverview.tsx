@@ -1,15 +1,17 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "@/components/ui/Toast";
 import type { AltrProfile } from "@/lib/auth";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
-import { MemoryEditDialog } from "./MemoryEditDialog";
+import { MemoryEditDialog, type MemoryEditorState, type MemoryEditPatch } from "./MemoryEditDialog";
+import { MemoryProvenanceDialog } from "./MemoryProvenanceDialog";
 import { MemoryRow } from "./MemoryRow";
 import { MemoryStatusHeader } from "./MemoryStatusHeader";
 import styles from "./MemoryOverview.module.css";
@@ -123,8 +125,10 @@ export function MemoryOverview({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
+  const [editorState, setEditorState] = useState<MemoryEditorState>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [goneError, setGoneError] = useState(false);
+  const [provenanceMemory, setProvenanceMemory] = useState<Memory | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [confirmingClearAll, setConfirmingClearAll] = useState(false);
   const [clearingAll, setClearingAll] = useState(false);
@@ -198,32 +202,70 @@ export function MemoryOverview({
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  async function handleSaveEdit(patch: { title: string; category: string; description: string; confidence: number }) {
-    if (!editingMemory) return;
+  /**
+   * One editor, two endpoints — `state.mode` (set by whichever trigger
+   * opened the dialog) decides `POST /api/memories` (create) vs.
+   * `PATCH /api/memories/:id` (edit); the dialog component itself doesn't
+   * know or care which (this prompt's own "create + edit in one
+   * component" instruction). "Editing a memory deleted in another tab"
+   * (this prompt's own edge case) is handled here, not assumed away: a
+   * `404 MEMORY_NOT_FOUND` from the PATCH sets `goneError` instead of a
+   * raw error, and still refreshes the list so the now-gone row actually
+   * disappears rather than lingering.
+   */
+  async function handleSaveEdit(patch: MemoryEditPatch) {
+    if (!editorState) return;
     setSavingEdit(true);
     try {
-      const response = await fetch(`/api/memories/${editingMemory.id}`, {
+      if (editorState.mode === "create") {
+        const response = await fetch("/api/memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+        if (!response.ok) throw new Error((await response.json()).error);
+        setEditorState(null);
+        toast.push(t.createSuccessToast);
+        setRemainingTotal((value) => value + 1);
+        await load();
+        return;
+      }
+
+      const response = await fetch(`/api/memories/${editorState.memory.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
+      if (response.status === 404) {
+        setGoneError(true);
+        await load();
+        return;
+      }
       if (!response.ok) throw new Error((await response.json()).error);
-      setEditingMemory(null);
+      setEditorState(null);
+      toast.push(t.editSuccessToast);
       await load();
     } finally {
       setSavingEdit(false);
     }
   }
 
+  function closeEditor() {
+    setEditorState(null);
+    setGoneError(false);
+  }
+
   async function handleToggleActive(memory: Memory) {
     setTogglingId(memory.id);
     try {
+      const nextActive = !memory.is_active;
       const response = await fetch(`/api/memories/${memory.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !memory.is_active }),
+        body: JSON.stringify({ active: nextActive }),
       });
       if (!response.ok) throw new Error((await response.json()).error);
+      toast.push(nextActive ? t.enableSuccessToast : t.disableSuccessToast);
       await load();
     } finally {
       setTogglingId(null);
@@ -238,6 +280,7 @@ export function MemoryOverview({
       setConfirmingClearAll(false);
       setRemainingTotal(0);
       setPage(1);
+      toast.push(t.clearAllSuccessToast);
       await load();
     } finally {
       setClearingAll(false);
@@ -320,6 +363,11 @@ export function MemoryOverview({
           </div>
         )}
 
+        <Button variant="ghost" onClick={() => setEditorState({ mode: "create" })}>
+          <Plus aria-hidden="true" width={14} height={14} strokeWidth={1.8} />
+          {t.newMemoryAction}
+        </Button>
+
         {hasAnyMemories && (
           <Button variant="ghost" onClick={() => setConfirmingClearAll(true)}>
             {t.clearAllAction}
@@ -367,7 +415,8 @@ export function MemoryOverview({
                 key={memory.id}
                 memory={memory}
                 lang={lang}
-                onEdit={() => setEditingMemory(memory)}
+                onEdit={() => setEditorState({ mode: "edit", memory })}
+                onOpenProvenance={() => setProvenanceMemory(memory)}
                 onToggleActive={() => void handleToggleActive(memory)}
                 onDeleted={handleRowDeleted}
                 togglingActive={togglingId === memory.id}
@@ -391,8 +440,25 @@ export function MemoryOverview({
         </>
       )}
 
-      <MemoryEditDialog memory={editingMemory} lang={lang} saving={savingEdit} onCancel={() => setEditingMemory(null)} onSave={(patch) => void handleSaveEdit(patch)} />
+      <MemoryEditDialog
+        state={editorState}
+        lang={lang}
+        saving={savingEdit}
+        categoryOptions={categoryCounts.map((entry) => entry.category)}
+        goneError={goneError}
+        onCancel={closeEditor}
+        onSave={(patch) => void handleSaveEdit(patch)}
+      />
 
+      <MemoryProvenanceDialog memory={provenanceMemory} lang={lang} onClose={() => setProvenanceMemory(null)} />
+
+      {/* Typed confirmation, not just a click-through ConfirmDialog — this
+       * prompt's own "stricter than legacy's window.confirm, satisfying
+       * invariant #8" instruction (MASTER_CONTEXT.md's own invariant #8 is
+       * about account deletion specifically; this applies the same class
+       * of friction to this app's own most consequential memory action).
+       * The phrase itself is deliberately not translated in the UA copy —
+       * same convention invariant #8 already set for "DELETE MY ACCOUNT". */}
       <ConfirmDialog
         open={confirmingClearAll}
         onClose={() => setConfirmingClearAll(false)}
@@ -402,6 +468,7 @@ export function MemoryOverview({
         confirmLabel={t.clearAllAction}
         loading={clearingAll}
         tone="dark"
+        typedConfirmation={{ phrase: "DELETE ALL MEMORIES", label: t.clearAllTypedLabel }}
       />
     </div>
   );

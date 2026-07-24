@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckCircle2, Pencil, PauseCircle, Trash2 } from "lucide-react";
+import { CheckCircle2, History, Pencil, PauseCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "@/components/ui/Toast";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import type { Lang } from "@/lib/i18n/lang-store";
 import type { Memory } from "./MemoryOverview";
@@ -22,6 +23,7 @@ export interface MemoryRowProps {
   memory: Memory;
   lang: Lang;
   onEdit: () => void;
+  onOpenProvenance: () => void;
   onToggleActive: () => void;
   onDeleted: () => void;
   togglingActive: boolean;
@@ -44,7 +46,7 @@ export interface MemoryRowProps {
  * be fabricated. See `MemoryOverview.tsx`'s own module comment / this
  * prompt's STATUS entry for the full reasoning.
  */
-export function MemoryRow({ memory, lang, onEdit, onToggleActive, onDeleted, togglingActive }: MemoryRowProps) {
+export function MemoryRow({ memory, lang, onEdit, onOpenProvenance, onToggleActive, onDeleted, togglingActive }: MemoryRowProps) {
   const t = getSharedCopy(lang).memory;
   const [expanded, setExpanded] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -60,6 +62,7 @@ export function MemoryRow({ memory, lang, onEdit, onToggleActive, onDeleted, tog
       const response = await fetch(`/api/memories/${memory.id}`, { method: "DELETE" });
       if (!response.ok) throw new Error((await response.json()).error);
       setConfirmingDelete(false);
+      toast.push(t.deleteSuccessToast);
       onDeleted();
     } catch {
       setDeleting(false);
@@ -81,6 +84,15 @@ export function MemoryRow({ memory, lang, onEdit, onToggleActive, onDeleted, tog
             {memory.is_active ? t.activeState : t.disabledState}
           </span>
         </div>
+
+        {/* This prompt's own "clear semantics copy" instruction, verified
+         * against the real retrieval RPC (`supabase/migrations/
+         * 20260715120000_phase_7_real_altr_twin_ai.sql`'s
+         * `altr_match_active_memories`, read, not modified: `where
+         * m.user_id = ... and m.is_active = true and ...`) rather than
+         * assumed — a disabled memory is provably excluded from every
+         * Twin draft's retrieval, not just visually greyed out. */}
+        {!memory.is_active && <p className={styles.disabledHint}>{t.disabledHint}</p>}
 
         <p className="mt-2 text-body text-text-muted">
           {description}{" "}
@@ -115,6 +127,10 @@ export function MemoryRow({ memory, lang, onEdit, onToggleActive, onDeleted, tog
           <Button variant="ghost" onClick={onToggleActive} loading={togglingActive}>
             {memory.is_active ? t.disableAction : t.enableAction}
           </Button>
+          <Button variant="ghost" onClick={onOpenProvenance}>
+            <History aria-hidden="true" width={14} height={14} strokeWidth={1.6} />
+            {t.provenanceAction}
+          </Button>
           <Button variant="ghost" onClick={() => setConfirmingDelete(true)}>
             <Trash2 aria-hidden="true" width={14} height={14} strokeWidth={1.6} />
             {t.deleteAction}
@@ -126,7 +142,7 @@ export function MemoryRow({ memory, lang, onEdit, onToggleActive, onDeleted, tog
         open={confirmingDelete}
         onClose={() => setConfirmingDelete(false)}
         onConfirm={() => void handleDelete()}
-        title={t.deleteConfirmTitle}
+        title={`${t.deleteConfirmTitlePrefix} "${memory.title}"`}
         description={t.deleteConfirmDescription}
         confirmLabel={t.deleteAction}
         loading={deleting}
