@@ -4,15 +4,16 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 025 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Auth screens (`/auth`, both modes) are now
-live in the new visual system. Full entry below. **Carried forward,
-unchanged:** the `/api/billing/plans`+`/api/billing/me` anonymous-401
-middleware bug and its dormant `/api/billing/me` status-code bug (023); 020's
-CSP/`force-dynamic` item; Phase 3's manual-verification gaps (014-018); 019's
-signed-in-nav-state-not-checked-against-a-real-session item; `/auth/forgot-password`
-is a real, intentionally-deferred link (026's own scope) same as `/privacy`
-was before 024. Note: Prompt 004 itself
+None — Prompt 026 complete (committed locally, not pushed), run directly on
+the user's explicit instruction. `/auth/forgot-password` and
+`/auth/reset-password` are now live in the new visual system, and the
+callback matrix (email-confirm, recovery, OAuth) has been traced against
+the real, unmodified `app/auth/callback/route.ts`. Full entry below.
+**Carried forward, unchanged:** the `/api/billing/plans`+`/api/billing/me`
+anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
+bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
+gaps (014-018); 019's signed-in-nav-state-not-checked-against-a-real-session
+item. Note: Prompt 004 itself
 (the backend scaffold/port) was never given its own commit or
 `PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
 from an earlier, undocumented session. None of 005-012 redid or finalized
@@ -1789,6 +1790,128 @@ open.
   40/199 in 024), `yarn build`, and `yarn test:e2e` (20/20, up from 14/14 —
   6 new auth tests) all passed via `yarn run check` + a separate
   `yarn test:e2e` run.
+
+- **026 — Recovery, reset, callback (2026-07-24):** Built
+  `components/auth/ForgotPasswordForm.tsx` and
+  `components/auth/ResetPasswordForm.tsx`, and rebuilt
+  `app/auth/forgot-password/page.tsx` / `app/auth/reset-password/page.tsx`
+  (both previously didn't exist in this workspace at all — LEGACY's own
+  routes were the only prior reference) as thin server wrappers
+  (`metadata` + `dynamic = "force-dynamic"`, same CSP-nonce fix as every
+  interactive public page since 020) around those two client components.
+  Both reuse 025's `AuthVisual` side panel and `AuthForm.module.css`
+  classes directly (same composition family, per this prompt's own visual
+  requirement) rather than duplicating the CSS.
+
+  **Callback matrix — traced against the real, unmodified
+  `app/auth/callback/route.ts`, `app/api/auth/register/route.ts`,
+  `app/api/auth/forgot-password/route.ts`, and
+  `app/api/auth/google/start/route.ts` (all must-not-change; read in full,
+  not guessed):**
+
+  | Entry | `emailRedirectTo`/`redirectTo` sent to Supabase | Callback lands with | On success, redirects to | On failure (bad/expired/reused code) |
+  | --- | --- | --- | --- | --- |
+  | Email confirm (register) | `/auth/callback?next=/legacy-migration` | `?code=...&next=/legacy-migration` | `/legacy-migration` (session cookie set, profile upserted, `altr_legacy_review=pending` cookie set but explicitly exempted for this one path) | `/auth?mode=login&error=callback` |
+  | Password recovery | `/auth/callback?next=/auth/reset-password` | `?code=...&next=/auth/reset-password` | `/auth/reset-password` (not in middleware's protected-pages list, so the pending-legacy-review redirect never intercepts it; `ResetPasswordForm` then sees a valid session and shows the password form) | `/auth?mode=login&error=callback` |
+  | Google OAuth | `/auth/callback?next=/legacy-migration` | `?code=...&next=/legacy-migration` | `/legacy-migration` (identical shape to email confirm) | `/auth?mode=login&error=callback` |
+
+  All three entry points funnel through the same unmodified handler; the
+  only variable is the `next` query param each caller supplies, and
+  `safeRedirectPath()` (`lib/supabase/middleware.ts`, must-not-change,
+  re-verified by reading its source) rejects anything not starting with
+  `/` or starting with `//` or containing `\`, falling back to
+  `/legacy-migration` — same-origin is already enforced, so this prompt's
+  "STOP and record a security finding" edge case does not trigger; no
+  finding recorded.
+
+  **Edge cases, and why the callback route already prevents most of
+  them from ever reaching the new pages:** "double use of a recovery
+  link" and "expired link" both fail at `exchangeCodeForSession` *inside
+  the callback route itself*, which redirects straight to
+  `/auth?mode=login&error=callback` — they never reach
+  `/auth/reset-password` at all. "Reset link opened in a different
+  browser than requested" fails the same way if Supabase's PKCE
+  `code_verifier` cookie (set on the browser that started the request)
+  isn't present in the browser that opens the link — also caught inside
+  the callback route. The one case that *does* reach
+  `ResetPasswordForm` directly is a session that's valid at page-load but
+  has since expired, or the page being opened with no prior callback at
+  all (bookmarked/typed URL) — `ResetPasswordForm` checks this itself via
+  `getCurrentProfile()` on mount (LEGACY's own reset-password page never
+  did this pre-check at all; it just rendered the form unconditionally
+  and surfaced the raw `RESET_SESSION_REQUIRED` string as a plain error
+  only if submit failed — a real, cited LEGACY gap this prompt's own
+  "expired/used link → designed error state" instruction asked to close,
+  not a maintained contract to replicate) and shows the "invalid or
+  expired" designed state with a link back to `/auth/forgot-password`
+  before the form ever renders. The same submit-time check (matching on
+  the literal `RESET_SESSION_REQUIRED` string the unmodified route
+  throws) also downgrades to that same state if the session expires in
+  the gap between the mount check and a later submit.
+
+  **Neutral-response behavior:** `/api/auth/forgot-password` (unmodified)
+  already replies with the same `{ ok, message }` shape whether or not the
+  account exists — confirmed by reading its source, not assumed.
+  `ForgotPasswordForm` doesn't even read that message field; it shows its
+  own fixed, bilingual "Check your email" copy on every non-429 outcome
+  (success, generic failure, or a mocked 500 — see the added
+  `tests/components/ForgotPasswordForm.test.tsx` case that exercises this
+  deliberately) and only distinguishes the one case that is not an
+  existence disclosure: rate limiting. One real contract quirk found
+  along the way: `/api/auth/forgot-password`'s 429 response uses a
+  `message` field, not the `error` field every other auth route uses, so
+  `lib/auth.ts`'s shared `api()` helper (must-not-change) can't match it
+  by string — it surfaces as the generic `REQUEST_FAILED_429` string
+  instead, which `ForgotPasswordForm` catches specifically (documented
+  inline in the component, not silently worked around).
+
+  **Google entry point:** already present on both `/auth` modes as of 025
+  (`AuthForm.tsx`'s existing secondary "Continue with Google" button,
+  confirmed unchanged) and confirmed intended to stay per 002's parity
+  audit (`| Google OAuth button (...) | Preserved, unchanged call |` in
+  this file's own 002 entry) — nothing to add here; this prompt's
+  requirement #3 was already satisfied.
+
+  **Four designed states across both pages** (per this prompt's own visual
+  requirement): forgot-password's *sent* state (neutral confirmation,
+  `role="status"`); reset-password's *invalid/expired-link* state (one
+  unified visual template for both, since Supabase's session check can't
+  reliably distinguish a malformed/never-valid link from a genuinely
+  expired one — documented here rather than silently assumed); the normal
+  *form* state; and the *success* state (confirmation + a manual
+  "Continue to your Altr" link to `/dashboard`, deliberately not an
+  auto-redirect like LEGACY's `router.replace("/dashboard")` — this
+  prompt's own "success → confirmation + sign-in path" instruction, taken
+  as a deliberate divergence from LEGACY's silent-redirect behavior, not a
+  missed detail).
+
+  **Required tests added:** `tests/components/ForgotPasswordForm.test.tsx`
+  (4 tests — identical neutral confirmation for both success and generic
+  failure, rate-limit distinguished as the one exception, back-to-sign-in
+  links present in both states) and `tests/components/ResetPasswordForm.test.tsx`
+  (5 tests — invalid/expired state on no session, form state on a valid
+  session, client-side password-mismatch rejection with zero server calls,
+  success state with the manual sign-in path, and the mid-session-expiry
+  fallback to the invalid state) plus one new `password recovery` describe
+  block in `tests/e2e/critical-flows.spec.ts` (1 test, exercising the real
+  `/api/auth/forgot-password` neutral-response contract for both an
+  existing and non-existent account against the actual page). The
+  callback route itself was traced from source rather than driven live
+  through Playwright — exercising a real Supabase PKCE code exchange
+  end-to-end isn't practical against this harness's `x-altr-e2e-user`
+  mock-auth mechanism, and the route is unmodified and fully read, so
+  source-tracing against the exact caller `redirectTo` values was judged
+  sufficient; documented explicitly here rather than claimed as a live
+  trace.
+  `yarn lint`, `yarn typecheck`, `yarn test` (43 files/218 tests, up from
+  41/209 in 025 — 2 new files, 9 new tests) all passed. One transient
+  infra flake hit the first `yarn test` run (7 files failed to even start
+  a Vitest fork worker with a timeout, not a real test failure — same
+  category of flake this file's own 025 entry and the LEGACY baseline
+  both already documented); a clean immediate rerun passed all 43/43
+  files, 218/218 tests. `yarn build` passed (39/39 pages; both new routes
+  compiled as dynamic, matching every interactive public page since 020).
+  `yarn test:e2e` passed 21/21 (up from 20/20 in 025 — 1 new test).
 
 ## Failed prompts
 

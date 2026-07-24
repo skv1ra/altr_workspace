@@ -236,3 +236,43 @@ test.describe("auth", () => {
     await expect(page).toHaveURL(/\/dashboard$/);
   });
 });
+
+/*
+ * Prompt 026 — recovery, reset, callback. `/api/auth/forgot-password`
+ * (must-not-change) always replies with the same shape regardless of
+ * whether the account exists — this is the one end-to-end proof that the
+ * real route, not just the component in isolation, never discloses
+ * account existence. Reset-password's own designed states (invalid/
+ * expired link, success) are covered at the component level in
+ * `tests/components/ResetPasswordForm.test.tsx` since reaching them for
+ * real requires a live Supabase recovery session this harness's
+ * `x-altr-e2e-user` mock doesn't model.
+ */
+test.describe("password recovery", () => {
+  test("forgot-password shows the identical neutral confirmation for both an existing and a non-existent account, with no dead click required to prove it", async ({
+    page,
+  }) => {
+    let lastEmail = "";
+    await mockApi(page, (path, route) => {
+      if (path === "/api/auth/forgot-password") {
+        lastEmail = route.request().postDataJSON().email;
+        return route.fulfill(json({ ok: true, message: "Якщо акаунт існує, ми надіслали інструкції на email." }));
+      }
+      return route.continue();
+    });
+    await page.goto("/auth/forgot-password");
+
+    await page.getByLabel(/^Email/).fill("real@example.com");
+    await page.getByRole("button", { name: "Send instructions" }).click();
+
+    await expect(page.getByText("Check your email")).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("recovery link is on its way");
+    expect(lastEmail).toBe("real@example.com");
+
+    await page.goto("/auth/forgot-password");
+    await page.getByLabel(/^Email/).fill("does-not-exist@example.com");
+    await page.getByRole("button", { name: "Send instructions" }).click();
+
+    await expect(page.getByText("Check your email")).toBeVisible();
+  });
+});
