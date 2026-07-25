@@ -4,245 +4,120 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 047 complete** (committed locally, not pushed), run
-directly on the user's explicit instruction. Whole-system test
-expansion — no phase of its own, closes out the feature-testing arc
-(028, 031, 035, 038, 041, 044, 046).
-**Coverage map (per instruction #1's own priority list), tested vs. was
-untested before this prompt:**
-- Ownership scoping of every user-data endpoint — memories, imports,
-  billing reads were already covered by LEGACY's own ported
-  `phase12-boundaries` assertions; **new** this prompt: `GET /api/ai/
-  drafts` (040), `POST /api/ai/drafts/:id/feedback` (040),
-  `GET /api/assistants` + `PATCH /api/assistants/:id` (039),
-  `PATCH /api/me`'s `onboardingCompleted` flag (031) — none had a
-  dedicated ownership-boundary test before.
-- Entitlement policy transitions — already fully covered
-  (`tests/unit/entitlements.test.ts`, all 9 status/date combinations,
-  044); re-confirmed still green, nothing added.
-- Consent state machine — was previously covered only at the UI layer
-  (`ConsentsSection.test.tsx`, 045, mocked `fetch`) and structurally
-  (`phase10-legal-consistency.test.ts`, 046); **new**: `tests/unit/
-  consent-state-machine.test.ts` drives the real `POST /api/consents/
-  {grant,withdraw}` route handlers directly (mocked Supabase admin
-  client) — grant preserves the untouched consent type, withdraw nulls
-  only the specified type and sets `withdrawn_at` only when both are
-  null, withdrawing `aiMemory` disables `memory_learning_enabled`,
-  withdrawing `conversationProcessing` disconnects data connections.
-- Export content completeness — was untested (`ExportSection.test.tsx`,
-  045, only mocks `fetch`, never sees which tables the real export
-  function reads); **new**: `tests/unit/export-completeness.test.ts`
-  drives the real `buildUserExport` directly, asserting every one of the
-  19 per-category tables plus the 4 separately-bucketed billing tables
-  it actually queries, cross-checked against `docs/
-  LEGAL_LAUNCH_CHECKLIST.md`'s own claim (LEGACY-only, read in full).
-- Deletion ordering — was untested; **new**: `tests/unit/
-  deletion-ordering.test.ts` pins the real order in `DELETE /api/
-  privacy/account` — storage, then database, then the Supabase Auth
-  user, then finalize — and that real FK-dependent child tables
-  (`altr_draft_feedback`, `altr_memory_sources`, `altr_messages`) are
-  deleted before the parents they reference, with billing tables
-  anonymized rather than hard-deleted.
-- Rate-limit responses — **no test file existed anywhere** for `lib/
-  auth/rate-limit.ts` before this prompt (confirmed by search); new
-  `tests/unit/rate-limit.test.ts` (10 tests) covers the real RPC
-  contract, identity hashing (never sends a raw IP/email to the
-  database), and `getRequestIdentity`'s IP-header fallback chain.
-- Webhook security — signature edge cases were only "missing" and
-  "obviously malformed"; **new**: exactly-64-hex-but-wrong-value,
-  one-character-short, one-character-long, and 64-characters-with-a-non-
-  hex-character, all added to `tests/unit/lemon-webhook.test.ts`.
-  "Replayed event id" — verified this maps directly to the existing
-  `payloadHash` (sha256 of the raw body) idempotency mechanism already
-  covered in full by `webhook-handler-idempotency.test.ts` (044); no
-  separate Lemon Squeezy "event id" field exists to test independently.
-- RLS coverage — the original `supabase/tests/phase_3_rls_verification
-  .sql` (2026-07-19) covered 9 of the 26 real `altr_` tables named in
-  MASTER_CONTEXT.md; extended to all 26, cross-checked against every
-  `create policy`/`enable row level security` statement across all
-  9 migration files (not assumed from the table list alone) — see the
-  file's own per-table comments citing which migration each expectation
-  came from. One real, verified-intentional finding along the way: the
-  `altr_deletion_requests` client-INSERT policy was dropped in
-  `20260715123000_phase_8_data_export_and_deletion.sql` and never
-  recreated — a direct authenticated-client insert should fail RLS
-  today; consistent with this app's real architecture (all writes to
-  that table go through the service role, from `/api/privacy/{account,
-  deletion-requests}`), not a bug. A new source-level test
-  (`tests/unit/rls-coverage.test.ts`) pins that the SQL file still
-  mentions all 26 tables, so a future edit can't silently drop one.
-  **Cannot run against a live database in this environment** (no
-  Supabase credentials here) — remains pending manual verification by
-  whoever holds development Supabase credentials; run instructions are
-  in the SQL file's own header comment.
-**Coverage tooling:** none existed at all (`@vitest/coverage-*` absent
-from `node_modules`/`package.json`). Added a `coverage: { provider:
-"v8", ... }` block to `vitest.config.ts` (allowed — "coverage config
-only") using Vitest's own official, zero-instrumentation-step V8
-provider, not a heavier Istanbul-style one. The devDependency itself is
-NOT installed here — `package.json`/`yarn.lock` are both outside this
-prompt's own allowed-files list. **User action needed:** run
-`yarn add -D @vitest/coverage-v8`, then `yarn vitest run --coverage`
-works immediately with no further config changes (verified: `--coverage`
-today fails with Vitest's own clear "Cannot find dependency
-'@vitest/coverage-v8'" message, not a silent misconfiguration).
-**Mutation spot-checks performed (3, acceptance criterion's own
-minimum), each: mutated, confirmed the specific new test failed and no
-others did, reverted, re-confirmed green — evidence in each case below:**
-1. `lib/auth/rate-limit.ts` — disabled the `if (!result.allowed) throw
-   "RATE_LIMITED"` condition; exactly the one test asserting that throw
-   failed (9 others stayed green).
-2. `lib/billing/webhook.ts` — made `timingSafeEqual`'s result always
-   `true`; exactly the wrong-value-signature test and the pre-existing
-   "accepts the exact raw-body HMAC" test failed (both genuinely
-   depend on this comparison actually running), 6 others stayed green.
-3. `app/api/ai/drafts/route.ts` — removed its `.eq("user_id", user.id)`
-   ownership scope; exactly the one new ownership test failed, 13
-   others in that file stayed green.
-All three files verified byte-identical to their pre-mutation state
-afterward (`diff` against a backup taken before each mutation, not
-assumed from memory).
-**Adapted from LEGACY, not ported verbatim (paths/copy changed too much
-across the rebuild to port as-is):** `tests/security-regression.test.ts`
-(9 tests — `PaymentConfirmation.tsx` moved under `components/app/
-billing/`, `lib/auth.ts`'s activation guard, checkout input allowlisting,
-AI draft-only prompt guard, memory API usage, the Vercel/package.json
-pin — plus one new 047 addition, export `no-store` headers) and
-`tests/integration/phase12-boundaries.test.ts` (14 tests — the LEGACY-
-ported checks above plus the new endpoint coverage listed in the
-coverage map). Neither existed in this workspace before this prompt.
-`yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests, up from
-89/627 in 046 — 7 new files/54 new tests, all real and non-tautological,
-enumerated above), and `yarn build` (55/55 pages, unchanged — a
-tests-only prompt) all passed (`yarn check` in full). No e2e run —
-outside this prompt's own verification-commands scope (`yarn check`
-only) and nothing UI/route-facing changed.
-**Carried forward, unchanged:** everything from 046's own list (the
-`/settings`+`/privacy-center` middleware-protection gap, the placeholder
-Supabase credentials blocker, the `/api/billing/plans`+`/api/billing/me`
-anonymous-401 middleware bug, 020's CSP item, Phase 3's manual-
-verification gaps plus 046's own zoom/reflow and live-AT/High-Contrast
-items, 019's signed-in-nav-state item, `<Toaster />` scope, the `AppNav`
-nav-wiring gaps, the `lib/auth/rate-limit.ts` first-commit disclosure
-(040 — unrelated to this prompt's own new rate-limit *tests*, which
-cover behavior, not that disclosure), the Twin `is_active` write-path
-gap (039, still no RISKS.md entry — would be R17), RISKS.md R15/R16
-(045). No new RISKS.md entry from this prompt — every real finding
-(the dropped deletion-requests insert policy, the coverage-tooling gap)
-was either confirmed intentional/correct-as-is or fully closed with a
-real test and clear user-action documentation above, not left as an
-open risk.
-**Methodology, stated honestly up front:** static/structural source
-review across every rebuilt screen (heading hierarchy, landmarks, ARIA,
-focus management, label association, contrast via the existing token
-math, reduced-motion/forced-colors CSS coverage) — not a substitute for
-a live screen-reader/keyboard/High-Contrast device pass, which remains
-manual (same precedent as Phase 3's own manual-verification items).
-Full findings log, statistics, and the legal placeholder inventory live
-in the new `docs/claude-prompts/A11Y_AUDIT.md` (16 areas audited, 6 real
-findings + 1 documentation correction, all fixed; 6 explicitly-named
-areas — navigation, hero fragments, import lifecycle, draft view,
-deletion ceremony, contrast — verified with no defect found).
-**Two Serious findings, fixed:** `/dashboard` (`DashboardHome.tsx`) and
-`/settings` (`SettingsView.tsx`) each had their *only* page heading as a
-`<p className="text-h1">` instead of a real `<h1>` — confirmed by a
-targeted grep across every component for `<p className="text-h1`, not
-assumed from the visual-styling grep alone (which conflates CSS class
-usage with real semantic tags and gave false confidence at first). Both
-now real `<h1>`s; two related Minor findings (non-heading success titles
-in 045's own `AccountDeletionSteps.tsx`/`DeletionRequestForm.tsx`) fixed
-the same pass since they were cheap and the same class of bug.
-**One Windows High Contrast (forced-colors) gap, fixed:** zero
-`forced-colors` CSS coverage existed anywhere before this prompt. The
-existing custom `Checkbox.tsx` survives by accident (its check mark is
-a conditionally-*rendered* SVG, not a color-only signal — forced-colors
-never removes DOM nodes, only recolors them); 045's cookie-preferences
-`role="switch"` toggle was weaker, relying partly on its own background
-for a visible shape. `app/styles/controls.css` now gives
-`[role="switch"] > span[aria-hidden]` an explicit `border: 1px solid
-CanvasText` under `@media (forced-colors: active)`. Reasoned from the
-forced-colors spec, not a live High-Contrast device pass — see
-A11Y_AUDIT.md's own "manual verification remaining" section.
-**One legal-consistency gap, fixed:** the privacy center (045) never
-linked `/terms`, `/privacy`, `/cookies`, `/data-deletion`, or the
-cookie-preferences dialog — LEGACY's old `PrivacySettingsPanel` had
-exactly this section and the rebuild dropped it. Added a real "Legal
-documents" section to `PrivacyCenter.tsx`.
-**One documentation-accuracy correction to 045's own STATUS.md/RISKS.md
-prose:** while re-verifying the cookie-banner finding for this audit,
-discovered LEGACY *does* have a real, live, mounted cookie banner —
-`components/CookieBanner.tsx`, imported and rendered in LEGACY's own
-`app/layout.tsx` — a different file from the genuinely-unmounted
-`components/legal/CookieConsent.tsx`/`CookiePreferencesButton.tsx` 045
-actually ported. 045's claim that "LEGACY itself never mounted this
-component anywhere" was true only for those specific files, not for
-LEGACY's cookie-consent mechanism as a whole. No code changed as a
-result — 045's `CookieConsent.tsx` is functionally equivalent to
-LEGACY's real `CookieBanner.tsx` (same `cookie-store.ts` contract, same
-event name), just a restyled two-step banner+`Dialog` shape instead of
-LEGACY's one-surface `role="dialog"` shape — both valid ARIA patterns.
-This paragraph itself is the correction; 045's own STATUS.md entry above
-is left as originally written (immutable history) rather than edited
-after the fact.
-**Legal verification (instruction #3):** enumerated all 23 unresolved
-`[NEEDS OWNER INPUT: ...]` keys in `lib/legal/legal-config.ts` by direct
-read (list in A11Y_AUDIT.md; user-facing action items below). Consent
-version display (`ConsentsSection.tsx`) shows the real server-recorded
-`profile.consents.policyVersion`, never a separately hardcoded
-duplicate — can't drift. `docs/LEGAL_LAUNCH_CHECKLIST.md` and
-`tests/phase10-legal-consistency.test.ts` both read in full from LEGACY
-@ pinned `a22927d` — the checklist itself stays LEGACY-only (not in
-`docs/claude-prompts/`, not in this prompt's allowed-files list to
-port); the consistency test was adapted (not ported verbatim — LEGACY's
-version asserted against `components/CookieBanner.tsx`/`PrivacySettings
-Panel.tsx`, both gone) into `tests/phase10-legal-consistency.test.ts`
-against the real current files, 6/6 passing.
-**Durable tests added, all real, non-tautological:** `tests/unit/
-a11y-regression.test.ts` (4 tests — no LEGACY-style raw low-contrast
-opacity classes anywhere, the forced-colors CSS guard, every real
-`role="switch"` has a real `aria-label`, every real `<img>`/`<Image>`
-has `alt=`, comment-text false positives excluded); `tests/components/
-PrivacyCenter.test.tsx` (3 tests — heading hierarchy, the new legal
-links, the danger-zone dialog trigger); `tests/phase10-legal-
-consistency.test.ts` (6 tests, described above); heading-role assertions
-folded into `DashboardHome.test.tsx`, `SettingsView.test.tsx`,
-`AccountDeletionDialog.test.tsx`, and `DeletionRequestForm.test.tsx`
-(one real fix caught along the way: a naive `<img>`-substring regex in
-my own first draft of the alt-text guard matched a backtick-quoted
-`<img>` mention inside `HeroLayers.tsx`'s own doc *comment*, not a real
-tag — fixed by stripping comments before scanning, verified against the
-real file, which does have `alt=""` correctly).
-`yarn lint`, `yarn typecheck`, `yarn test` (89 files/627 tests, up from
-86/613 in 045 — 3 new files/13 new tests, plus test-only edits folded
-into 4 existing files), `yarn build` (55/55 pages, unchanged — a
-fix-level prompt, no new routes), and `yarn test:e2e` (45/45, unchanged)
-all passed. **Carried forward, unchanged:** the `/settings`+
-`/privacy-center` middleware-protection gap (030/045); the placeholder
-Supabase credentials blocker (029) for every `(app)` page; the
-`/api/billing/plans`+`/api/billing/me` anonymous-401 middleware bug and
-its dormant status-code bug (023); 020's CSP/`force-dynamic` item; Phase
-3's manual-verification gaps (014-018), now joined by this prompt's own
-zoom-200%/reflow and live-AT/High-Contrast-device items (A11Y_AUDIT.md);
-019's signed-in-nav-state item; `<Toaster />` still only mounted in the
-`(app)` layout (037); the `DashboardHome`/`AppNav` -> `/import-
-conversations`, `AppNav` -> `/assistants`, `AppNav` -> `/billing`, and
-`AppNav` -> `/privacy-center` nav-wiring gaps; the `lib/auth/
-rate-limit.ts` first-commit disclosure (040); the Twin `is_active`
-write-path gap (039, still no RISKS.md entry — would be R17); RISKS.md
-R15/R16 (045, both still open, outside this prompt's own scope to fix).
-**Legal user-action items for the user** (from `docs/
-LEGAL_LAUNCH_CHECKLIST.md`, LEGACY-only, read in full — this is
-operational documentation, not legal advice): resolve all 23
-`[NEEDS OWNER INPUT: ...]` entries in `lib/legal/legal-config.ts` (real
-business identity, contacts, supported regions, minimum age, retention
-periods, renewal/refund terms, liability position, governing law,
-international transfer approach — full list in A11Y_AUDIT.md); confirm
-which providers are actually enabled in production and who owns
-support/privacy-request/refund/deletion handling; have qualified counsel
-review the final Terms/Privacy/Cookie Policy, consent wording, billing
-disclosures, retention, international processing, minors, and AI
-processing before any real launch. A passing build and passing tests
-are not legal approval.
+None — **Prompt 048 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Restructures the e2e suite
+into eight named journeys, closing out the whole-system testing arc
+alongside 047.
+**Journey inventory** (`tests/e2e/journeys/*.spec.ts`, one file each,
+plus `tests/e2e/support.ts` for the shared `mockApi`/`json`/
+`seedCookieConsent`/`APP_GROUP_BLOCKED_PATHS` helpers extracted from what
+was duplicated inline): **visitor** (13 tests — landing content/nav,
+`/pricing` for anonymous visitors, the anonymous protected-route
+redirect), **new-user** (6 tests — register validation, every login
+mode, forgot-password), **import** (10 tests — full fixture/`.zip`
+import, consent gating, cancel/abort, duplicate/quota/extraction-pause,
+history), **memory** (2 tests, `describe.skip`), **twin** (3 tests,
+`describe.skip`), **billing** (6 real + 1 skipped — checkout contract,
+both payment-success states, cancel page, plus a skipped `/billing`
+overview test), **privacy** (3 real + 2 skipped — `/data-deletion`,
+`/delete-data`'s two flows, plus skipped consents/export tests),
+**sign-out** (8 tests — the full seven-path protected-redirect loop plus
+the real logout contract). `smoke.spec.ts` and `critical-flows.spec.ts`
+both deleted, fully redistributed — every test they held now lives in
+exactly one journey file, verified by a straight test-count reconciliation
+(45 original tests -> 44 preserved + 1 genuinely new-but-since-corrected
++ 1 real dedup, see below) before either file was removed.
+**A structural reality check, verified before writing any journey
+content, not assumed:** `memory`, `twin`, and the authenticated halves of
+`billing`/`privacy` (the `/billing` overview, the `/privacy-center` hub)
+are all inside `app/(app)/`, which unconditionally calls
+`getProfileForUser()` against the real configured Supabase URL — a
+placeholder in both local dev and CI (`.github/workflows/ci.yml`:
+`NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co`) — during
+server-side rendering, before any client JS or Playwright `page.route`
+interception can run. Re-curled all seven `(app)` paths fresh for this
+prompt with the real mocked identity headers against a freshly
+built-and-started production server: still `500`, every one. This is not
+new — confirmed, standing since 029 — but it means two of this prompt's
+own eight named journeys ("memory: CRUD + clear-all ceremony", "twin:
+config + draft + errors + history") and half of two others cannot get
+genuine content-level e2e coverage in this environment, full stop. Rather
+than fabricate passing assertions against content that cannot render, or
+silently drop the journeys, each blocked area got a `test.describe.skip`
+block: real, fully-written test bodies (selectors and response shapes
+cross-checked against each area's own already-passing RTL suite —
+`MemoryOverview.test.tsx`, `TwinConfigView.test.tsx`,
+`TwinDraftWorkspace.test.tsx`, `BillingOverview.test.tsx`,
+`ConsentsSection.test.tsx`, `ExportSection.test.tsx`, `PrivacyCenter
+.test.tsx` — plus the real endpoint response shapes read directly from
+`app/api/memories/route.ts`, `app/api/assistants/**`, `app/api/ai/
+draft-reply/route.ts`, `app/api/ai/drafts/route.ts`), ready to enable
+the moment this environment has real Supabase credentials, not deleted
+or faked. A genuinely new, freshly-confirmed finding surfaced while
+writing the memory/new-user journeys: `/onboarding` is *also* missing
+from `lib/supabase/middleware.ts`'s hardcoded `pages` list (must-not-
+change) — the same class of gap already documented for `/settings`
+(030) and `/privacy-center` (045), now with a third member; confirmed by
+curling it anonymously (`500`, not a clean `307`). No e2e test was
+written for it, matching the established precedent for the other two.
+**Real dedup, not a coverage loss:** the original suite tested
+`/dashboard`'s own anonymous-redirect twice (once in the `auth` describe,
+once again inside the "protected routes" seven-path loop) — this
+restructuring keeps the loop version (sign-out journey, all seven paths)
+as the authoritative one and the visitor journey's own single dashboard
+check (a deliberate narrative beat — "visitor reaches the auth gate" is
+this journey's own named ending), removing only the second, genuinely
+redundant literal copy that lived in the old `auth` describe.
+**Mobile viewport coverage** (instruction #2): added a `mobile` project
+to `playwright.config.ts` (375x812, `devices["Desktop Chrome"]` spread
+first so the engine stays `chromium` — only `chromium`'s binaries are
+installed in CI, and a named device preset like `devices["iPhone 12"]`
+would silently switch to `webkit`), `testMatch`-restricted to
+`visitor.spec.ts` and `new-user.spec.ts` only, per instruction #2's own
+scope (not the full suite — doubling every journey would cost real CI
+minutes for little marginal value, since most journeys assert on
+server-driven contracts, not layout).
+**Real flakes found and fixed while stabilizing (instruction #3/edge
+case), not assumed away:** three of `visitor.spec.ts`'s own tests
+(header nav links, Product/How-it-works scroll) reference
+`nav[aria-label="Primary"]` — real, but `display:none` below the header's
+own responsive breakpoint and structurally absent at 375px (replaced by
+the mobile sheet, itself already covered by the "mobile menu opens..."
+test) — `test.skip`ped on the `mobile` project specifically, not deleted,
+with the real reason stated inline. Separately, `new-user.spec.ts`'s own
+auth-form tests intermittently failed against the real global cookie
+banner (045, `fixed`/bottom-of-viewport, appears 350ms after first
+paint) physically covering the submit button — worse under the narrower
+mobile viewport — fixed with the same `seedCookieConsent()` pre-seeding
+045/046 already established for `/delete-data`, applied via a shared
+`test.beforeEach` for the whole file. Neither was a pre-existing "flake
+from motion" in the literal sense the edge case names (no
+`prefers-reduced-motion` emulation was needed — nothing here is CSS-
+transition-driven), but both are the same underlying class of problem
+(real UI timing/layout the old single-file suite never had to face at
+375px or under this specific consolidated run's own timing).
+**Runtime** (instruction #4/acceptance criterion): full suite, both
+projects, 61 passed + 11 skipped (8 intentional content-level-blocked
+skips + 3 mobile-only desktop-nav skips), 0 failed, **~23 seconds** wall
+time — comfortably inside the "< ~10 min" budget.
+**Manual verification (instruction, reviewed):** grepped
+`docs/claude-prompts/FEATURE_PARITY_MATRIX.md` for any row citing "048"
+as its Test prompt — zero hits. The instruction's own premise ("every
+048-referencing row must be exercised") is vacuously satisfied; nothing
+in the matrix was written expecting this specific prompt number.
+**Security-semantic pins preserved and clearly named** (per this
+prompt's own requirement): every pin from the original suite — checkout-
+input-plan-id-only, payment-success-never-upgrades, every protected-
+route redirect, the anonymous-visitor checkout-CTA link — kept its exact
+assertion and is now additionally prefixed `SECURITY PIN —` in its own
+test title, so none can be casually deleted without the diff itself
+saying so.
+`yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests, unchanged
+from 047 — this prompt's own file scope is `tests/e2e/**` only, no
+unit/integration test touched), `yarn build` (55/55 pages, unchanged),
+and `yarn test:e2e` (61 passed/11 skipped across both projects, 0
+failed, replacing the prior single-project 45/45) all passed (`yarn
+check` in full).
 Note: Prompt 004 itself (the backend scaffold/port) was never given its
 own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
 the working tree from an earlier, undocumented session. None of 005-012
@@ -4577,6 +4452,41 @@ manifest) is still open.
   `yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests, up from
   89/627), and `yarn build` (55/55 pages, unchanged) all passed (`yarn
   check` in full — this prompt's own only verification command).
+- 048 — E2E flow update (2026-07-25). Restructured `tests/e2e/
+  critical-flows.spec.ts` + `smoke.spec.ts` (both deleted) into eight
+  named journey files under `tests/e2e/journeys/` plus a shared
+  `support.ts` — full inventory in the "Current active prompt" section
+  above. Verified before writing anything: `memory`, `twin`, and the
+  authenticated halves of `billing`/`privacy` are structurally blocked
+  from content-level e2e by the same placeholder-Supabase SSR gate every
+  `(app)` route has had since 029 (re-curled fresh, still `500`) — real,
+  fully-written `test.describe.skip` blocks stand in for those instead of
+  fabricated or deleted coverage, cross-checked against each area's own
+  passing RTL suite. Found a third member of the `/settings`/
+  `/privacy-center` middleware-protection gap: `/onboarding` is also
+  missing from `lib/supabase/middleware.ts`'s hardcoded `pages` list
+  (confirmed by curl, `500` not `307`) — no test written for it, matching
+  precedent. Added a `mobile` project (375x812, chromium engine) to
+  `playwright.config.ts`, scoped to the visitor and new-user journeys
+  only. Found and fixed two real flakes while stabilizing: three
+  desktop-nav tests structurally can't run at mobile width (`test.skip`
+  on that project, real reason stated), and the global cookie banner
+  (045) could physically cover the `/auth` form's submit button before a
+  fast click landed (fixed with the same `seedCookieConsent()` pattern
+  045/046 already established). Deduplicated one genuine literal repeat
+  (`/dashboard`'s anonymous-redirect was tested twice in the original
+  suite) without losing the assertion. Every security-semantic pin
+  (checkout plan-id-only, payment-success-never-upgrades, every protected
+  redirect) kept its exact assertion and now carries a `SECURITY PIN —`
+  prefix in its own title. Runtime: 61 passed/11 skipped (0 failed),
+  both projects, ~23 seconds — well inside the "< ~10 min" budget.
+  `FEATURE_PARITY_MATRIX.md` has zero rows citing "048" as their Test
+  prompt (checked, not assumed) — the manual-verification instruction's
+  own premise doesn't apply.
+  `yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests,
+  unchanged — this prompt's own scope is `tests/e2e/**` only), `yarn
+  build` (55/55 pages, unchanged), and `yarn test:e2e` (61/11/0, both
+  projects) all passed (`yarn check` in full).
 
 ## Failed prompts
 
@@ -4636,7 +4546,8 @@ routes: `/privacy-center`, `/delete-data`, `/data-deletion`, `/data-
 deletion/request`, all confirmed dynamic (`ƒ`)), and again for 046,
 closes Phase 11 (55/55 pages, unchanged from 045 — a fix-level a11y/
 legal prompt, no new routes), and again for 047 (55/55 pages, unchanged
-— a tests-only prompt, no route or component-behavior changes).
+— a tests-only prompt, no route or component-behavior changes), and
+again for 048 (55/55 pages, unchanged — an e2e-suite-only prompt).
 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
@@ -4728,6 +4639,12 @@ Re-confirmed 2026-07-25 for 047 — 681/681 tests across 96 files, clean
 exit (`yarn check` in full — lint, typecheck, test, build; this prompt's
 own verification-commands scope doesn't include `yarn test:e2e`, and
 nothing UI/route-facing changed, so it wasn't re-run).
+Re-confirmed 2026-07-25 for 048 — 681/681 unit/integration tests across
+96 files unchanged, clean exit; `yarn test:e2e` restructured into eight
+journey files across two Playwright projects (`chromium`, new `mobile`)
+— 61 passed, 11 skipped (intentional — see this prompt's own STATUS
+entry), 0 failed, ~23 seconds total, replacing the prior single-project
+45/45.
 
 ## Known regressions
 
