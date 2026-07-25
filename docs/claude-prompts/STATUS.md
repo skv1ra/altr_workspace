@@ -4,8 +4,134 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 046 complete** (committed locally, not pushed), run
-directly on the user's explicit instruction. Closes Phase 11.
+None — **Prompt 047 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Whole-system test
+expansion — no phase of its own, closes out the feature-testing arc
+(028, 031, 035, 038, 041, 044, 046).
+**Coverage map (per instruction #1's own priority list), tested vs. was
+untested before this prompt:**
+- Ownership scoping of every user-data endpoint — memories, imports,
+  billing reads were already covered by LEGACY's own ported
+  `phase12-boundaries` assertions; **new** this prompt: `GET /api/ai/
+  drafts` (040), `POST /api/ai/drafts/:id/feedback` (040),
+  `GET /api/assistants` + `PATCH /api/assistants/:id` (039),
+  `PATCH /api/me`'s `onboardingCompleted` flag (031) — none had a
+  dedicated ownership-boundary test before.
+- Entitlement policy transitions — already fully covered
+  (`tests/unit/entitlements.test.ts`, all 9 status/date combinations,
+  044); re-confirmed still green, nothing added.
+- Consent state machine — was previously covered only at the UI layer
+  (`ConsentsSection.test.tsx`, 045, mocked `fetch`) and structurally
+  (`phase10-legal-consistency.test.ts`, 046); **new**: `tests/unit/
+  consent-state-machine.test.ts` drives the real `POST /api/consents/
+  {grant,withdraw}` route handlers directly (mocked Supabase admin
+  client) — grant preserves the untouched consent type, withdraw nulls
+  only the specified type and sets `withdrawn_at` only when both are
+  null, withdrawing `aiMemory` disables `memory_learning_enabled`,
+  withdrawing `conversationProcessing` disconnects data connections.
+- Export content completeness — was untested (`ExportSection.test.tsx`,
+  045, only mocks `fetch`, never sees which tables the real export
+  function reads); **new**: `tests/unit/export-completeness.test.ts`
+  drives the real `buildUserExport` directly, asserting every one of the
+  19 per-category tables plus the 4 separately-bucketed billing tables
+  it actually queries, cross-checked against `docs/
+  LEGAL_LAUNCH_CHECKLIST.md`'s own claim (LEGACY-only, read in full).
+- Deletion ordering — was untested; **new**: `tests/unit/
+  deletion-ordering.test.ts` pins the real order in `DELETE /api/
+  privacy/account` — storage, then database, then the Supabase Auth
+  user, then finalize — and that real FK-dependent child tables
+  (`altr_draft_feedback`, `altr_memory_sources`, `altr_messages`) are
+  deleted before the parents they reference, with billing tables
+  anonymized rather than hard-deleted.
+- Rate-limit responses — **no test file existed anywhere** for `lib/
+  auth/rate-limit.ts` before this prompt (confirmed by search); new
+  `tests/unit/rate-limit.test.ts` (10 tests) covers the real RPC
+  contract, identity hashing (never sends a raw IP/email to the
+  database), and `getRequestIdentity`'s IP-header fallback chain.
+- Webhook security — signature edge cases were only "missing" and
+  "obviously malformed"; **new**: exactly-64-hex-but-wrong-value,
+  one-character-short, one-character-long, and 64-characters-with-a-non-
+  hex-character, all added to `tests/unit/lemon-webhook.test.ts`.
+  "Replayed event id" — verified this maps directly to the existing
+  `payloadHash` (sha256 of the raw body) idempotency mechanism already
+  covered in full by `webhook-handler-idempotency.test.ts` (044); no
+  separate Lemon Squeezy "event id" field exists to test independently.
+- RLS coverage — the original `supabase/tests/phase_3_rls_verification
+  .sql` (2026-07-19) covered 9 of the 26 real `altr_` tables named in
+  MASTER_CONTEXT.md; extended to all 26, cross-checked against every
+  `create policy`/`enable row level security` statement across all
+  9 migration files (not assumed from the table list alone) — see the
+  file's own per-table comments citing which migration each expectation
+  came from. One real, verified-intentional finding along the way: the
+  `altr_deletion_requests` client-INSERT policy was dropped in
+  `20260715123000_phase_8_data_export_and_deletion.sql` and never
+  recreated — a direct authenticated-client insert should fail RLS
+  today; consistent with this app's real architecture (all writes to
+  that table go through the service role, from `/api/privacy/{account,
+  deletion-requests}`), not a bug. A new source-level test
+  (`tests/unit/rls-coverage.test.ts`) pins that the SQL file still
+  mentions all 26 tables, so a future edit can't silently drop one.
+  **Cannot run against a live database in this environment** (no
+  Supabase credentials here) — remains pending manual verification by
+  whoever holds development Supabase credentials; run instructions are
+  in the SQL file's own header comment.
+**Coverage tooling:** none existed at all (`@vitest/coverage-*` absent
+from `node_modules`/`package.json`). Added a `coverage: { provider:
+"v8", ... }` block to `vitest.config.ts` (allowed — "coverage config
+only") using Vitest's own official, zero-instrumentation-step V8
+provider, not a heavier Istanbul-style one. The devDependency itself is
+NOT installed here — `package.json`/`yarn.lock` are both outside this
+prompt's own allowed-files list. **User action needed:** run
+`yarn add -D @vitest/coverage-v8`, then `yarn vitest run --coverage`
+works immediately with no further config changes (verified: `--coverage`
+today fails with Vitest's own clear "Cannot find dependency
+'@vitest/coverage-v8'" message, not a silent misconfiguration).
+**Mutation spot-checks performed (3, acceptance criterion's own
+minimum), each: mutated, confirmed the specific new test failed and no
+others did, reverted, re-confirmed green — evidence in each case below:**
+1. `lib/auth/rate-limit.ts` — disabled the `if (!result.allowed) throw
+   "RATE_LIMITED"` condition; exactly the one test asserting that throw
+   failed (9 others stayed green).
+2. `lib/billing/webhook.ts` — made `timingSafeEqual`'s result always
+   `true`; exactly the wrong-value-signature test and the pre-existing
+   "accepts the exact raw-body HMAC" test failed (both genuinely
+   depend on this comparison actually running), 6 others stayed green.
+3. `app/api/ai/drafts/route.ts` — removed its `.eq("user_id", user.id)`
+   ownership scope; exactly the one new ownership test failed, 13
+   others in that file stayed green.
+All three files verified byte-identical to their pre-mutation state
+afterward (`diff` against a backup taken before each mutation, not
+assumed from memory).
+**Adapted from LEGACY, not ported verbatim (paths/copy changed too much
+across the rebuild to port as-is):** `tests/security-regression.test.ts`
+(9 tests — `PaymentConfirmation.tsx` moved under `components/app/
+billing/`, `lib/auth.ts`'s activation guard, checkout input allowlisting,
+AI draft-only prompt guard, memory API usage, the Vercel/package.json
+pin — plus one new 047 addition, export `no-store` headers) and
+`tests/integration/phase12-boundaries.test.ts` (14 tests — the LEGACY-
+ported checks above plus the new endpoint coverage listed in the
+coverage map). Neither existed in this workspace before this prompt.
+`yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests, up from
+89/627 in 046 — 7 new files/54 new tests, all real and non-tautological,
+enumerated above), and `yarn build` (55/55 pages, unchanged — a
+tests-only prompt) all passed (`yarn check` in full). No e2e run —
+outside this prompt's own verification-commands scope (`yarn check`
+only) and nothing UI/route-facing changed.
+**Carried forward, unchanged:** everything from 046's own list (the
+`/settings`+`/privacy-center` middleware-protection gap, the placeholder
+Supabase credentials blocker, the `/api/billing/plans`+`/api/billing/me`
+anonymous-401 middleware bug, 020's CSP item, Phase 3's manual-
+verification gaps plus 046's own zoom/reflow and live-AT/High-Contrast
+items, 019's signed-in-nav-state item, `<Toaster />` scope, the `AppNav`
+nav-wiring gaps, the `lib/auth/rate-limit.ts` first-commit disclosure
+(040 — unrelated to this prompt's own new rate-limit *tests*, which
+cover behavior, not that disclosure), the Twin `is_active` write-path
+gap (039, still no RISKS.md entry — would be R17), RISKS.md R15/R16
+(045). No new RISKS.md entry from this prompt — every real finding
+(the dropped deletion-requests insert policy, the coverage-tooling gap)
+was either confirmed intentional/correct-as-is or fully closed with a
+real test and clear user-action documentation above, not left as an
+open risk.
 **Methodology, stated honestly up front:** static/structural source
 review across every rebuilt screen (heading hierarchy, landmarks, ARIA,
 focus management, label association, contrast via the existing token
@@ -4425,6 +4551,32 @@ manifest) is still open.
   `yarn lint`, `yarn typecheck`, `yarn test` (89 files/627 tests, up from
   86/613), `yarn build` (55/55 pages, unchanged), and `yarn test:e2e`
   (45/45, unchanged) all passed.
+- 047 — Unit and integration test expansion (2026-07-25). Whole-system
+  coverage pass across ownership scoping, entitlement transitions,
+  consent state machine, export completeness, deletion ordering, webhook
+  signature edge cases, and rate-limit responses — full coverage map in
+  the "Current active prompt" section above. 7 new test files (54 new
+  tests): `security-regression.test.ts` and `tests/integration/
+  phase12-boundaries.test.ts` (adapted from LEGACY, extended with 4 new
+  endpoints — 040's draft history/feedback, 039's assistants, 031's
+  onboarding flag — none had ownership-boundary tests before);
+  `tests/unit/{rate-limit,export-completeness,deletion-ordering,
+  consent-state-machine,rls-coverage}.test.ts` (all new domains, zero
+  prior coverage); 3 new signature edge cases added to `lemon-webhook
+  .test.ts`. Extended `supabase/tests/phase_3_rls_verification.sql` from
+  9 to all 26 real `altr_` tables, cross-checked against every real
+  `create policy` statement in `supabase/migrations/**` — cannot run
+  against a live database in this environment, remains pending manual
+  verification. Added a `vitest.config.ts` coverage block (`@vitest/
+  coverage-v8`, zero-instrumentation-step) — the devDependency itself
+  needs a maintainer with `package.json` in scope to install
+  (`yarn add -D @vitest/coverage-v8`). 3 mutation spot-checks performed
+  (rate-limit throw condition, webhook signature comparison, a real
+  ownership-scope removal) — each confirmed to fail only its own test,
+  then reverted and re-verified byte-identical via `diff`.
+  `yarn lint`, `yarn typecheck`, `yarn test` (96 files/681 tests, up from
+  89/627), and `yarn build` (55/55 pages, unchanged) all passed (`yarn
+  check` in full — this prompt's own only verification command).
 
 ## Failed prompts
 
@@ -4483,7 +4635,8 @@ again for 045, opens and closes Phase 11 (55/55 pages — four new
 routes: `/privacy-center`, `/delete-data`, `/data-deletion`, `/data-
 deletion/request`, all confirmed dynamic (`ƒ`)), and again for 046,
 closes Phase 11 (55/55 pages, unchanged from 045 — a fix-level a11y/
-legal prompt, no new routes).
+legal prompt, no new routes), and again for 047 (55/55 pages, unchanged
+— a tests-only prompt, no route or component-behavior changes).
 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
@@ -4571,6 +4724,10 @@ so real content-level coverage was possible there).
 Re-confirmed 2026-07-25 for 046, closes Phase 11 — 627/627 tests across
 89 files, clean exit, plus `yarn test:e2e` 45/45 (unchanged — a
 fix-level a11y/legal prompt, no new or removed UI surface).
+Re-confirmed 2026-07-25 for 047 — 681/681 tests across 96 files, clean
+exit (`yarn check` in full — lint, typecheck, test, build; this prompt's
+own verification-commands scope doesn't include `yarn test:e2e`, and
+nothing UI/route-facing changed, so it wasn't re-run).
 
 ## Known regressions
 
