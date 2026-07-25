@@ -4,117 +4,119 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 042 complete** (committed locally, not pushed), run
-directly on the user's explicit instruction. Opens Phase 10.
-**Real payload/schema enumerated first, not assumed from LEGACY:**
-LEGACY's own `app/billing/page.tsx` @ pinned `a22927d` has an inline
-`BillingState` type missing a real field this workspace's `GET
-/api/billing/me` (must-not-change, read in full) actually returns —
-`subscription.cancelled` (boolean) — and a top-level `entitlementReason`
-LEGACY's type never had at all. Read `lib/billing/entitlements.ts`'s
-`getUserEntitlement` and the `altr_user_entitlement` SQL RPC
-(`supabase/migrations/20260714211000_phase_3_billing_entitlements.sql`)
-in full rather than trusting either LEGACY's type or assuming: confirmed
-`effectivePlan` (`entitlement.planId`) is a *label*, not an access gate —
-the RPC returns `coalesce(latest.plan_id, latest.plan, 'free')`
-unconditionally, so a user whose access has fully lapsed can still read a
-paid plan name there. `hasPremium` + `entitlementReason` are the real
-access signals; `BillingOverview` never uses `effectivePlan` alone to
-decide what state to render, only to label the plan. Also confirmed the
-exhaustive real `subscription.status` vocabulary (`on_trial`/`active`/
-`paused`/`past_due`/`unpaid`/`cancelled`/`expired`, cross-checked against
-both the db check constraint and `lib/billing/webhook.ts`'s own
-`normalizeSubscriptionStatus`) and the exhaustive real
-`invoices[].status` vocabulary (`paid`/`failed`/`refunded` — verified
-against `lib/billing/webhook-handler.ts`'s own writes, since the column
-itself carries no db-level check constraint).
-**Real gap found and worked around, not silently assumed away:** this
-prompt's own "files to inspect first" note assumes `app/payment/receipt/
-[orderId]/page.tsx` already exists in this workspace ("keep working;
-restyle in 043") — it does not; `Glob` confirmed `app/payment/**` has zero
-files in WORKSPACE today (LEGACY has one, but it's 043's own unbuilt
-scope, and payment return pages are explicitly this prompt's own
-must-not-touch list). Receipt links in the new invoice table point
-directly at each invoice's own real, already-working, Lemon-Squeezy-
-hosted `receiptUrl` field instead of a route that would 404 today — the
-honest choice over inventing 043's own deliverable early.
-**Built:** `app/(app)/billing/page.tsx` (new — direct, trusted
-server-side queries for the three "usage this period" numbers instruction
-#1 asks for, since no endpoint exposes them as their own number, same
-class of gap 038/040 already found and worked around for active memories
-and draft history; the real plan/subscription/invoice state itself is
-client-fetched from the already-real, already-working `GET /api/billing/
-me`, mirroring LEGACY's own page and 039/040's precedent of not
-duplicating a working endpoint server-side); `components/app/billing/
-BillingOverview.tsx` (plan panel, quota summary via the real `QuotaMeter`
-+ `getPlanLimits` constants — no copied numbers — and portal action with
-a real pending state, `window.location.assign` only ever called with a
-fresh per-click URL from the response, never rendered as a static href,
-per this prompt's own security requirement) and `InvoiceHistoryTable.tsx`
-(a real `<table>`, tabular-numeral amounts, hairline rules, status as
-plain typographic weight — no colored chips, per this prompt's own
-visual requirement).
-**Every real state the schema can actually produce is covered:** never
-subscribed (`subscription: null`) -> Free framing + Choose a plan;
-active/on-trial -> real renewal/trial-end date; cancelled-but-still-
-paid (`entitlementReason: "cancelled_until_end"`) -> honest "access
-continues until {endsAt}" + Resubscribe via `/pricing` + still-real
-Manage subscription; past-due within its 72-hour grace
-(`entitlementReason: "past_due_grace"`) -> calm alert + a real Fix
-payment method portal action, distinct copy from past-due *after* grace
-lapses (same `status`, different `hasPremium`/`entitlementReason`, read
-from the response, not computed); lapsed (paused/unpaid/expired, or
-cancelled past its own end date) -> access-ended alert + Manage
-subscription (to review/reactivate) + Choose a plan. The free-user-
-reaches-portal-anyway edge case is handled two ways: the button itself
-never renders when `subscription` is `null`, and a real 404
-`SUBSCRIPTION_NOT_FOUND` (reachable via a race — `canManage` true at
-load, cleared before the click) gets a designed explanation, not a raw
-error.
-**Invoice description deliberately generic, not "{plan} plan":**
-`GET /api/billing/me`'s own invoice rows carry no `plan_id` (verified by
-reading its `select(...)` list) — attributing a specific plan tier to a
-historical invoice would be a guess, wrong for this prompt's own
-"multiple historical subscriptions" edge case. Uses a plain "Altr
-subscription" label instead of fabricating per-row plan attribution.
-**A real bug caught and fixed while writing RTL coverage:** the first
-draft of the "never subscribed" test failed because the component never
-actually rendered `neverSubscribedHeading` ("You're on the Free plan.")
-at all — only the body sentence. Caught by the test, not shipped.
-**`/billing` content-level e2e verified structurally blocked, same
-reason as every `(app)` page since 029:** curled a freshly
-built-and-started production server with the real mocked identity
-headers — `500`, `TypeError: fetch failed`, identical cause. Real
-coverage is 24 new RTL tests instead (16 `BillingOverview.test.tsx`: all
-seven real subscription states, portal pending/404/generic-error, real
-quota rows against real `PLAN_LIMITS`, all three invoice-history empty
-states, load failure; 8 `InvoiceHistoryTable.test.tsx`: real formatting,
-receipt-link vs. unavailable, all three real invoice statuses plus an
-unrecognized one rendered honestly, empty renders nothing, row order).
-375px table behavior verified via CSS reasoning rather than a live
-browser (blocked for the same reason): `.wrap { overflow-x: auto; }`
-wraps a `min-width: 32rem` table, the standard scroll-inside-its-own-
-container pattern for wide tabular content at narrow viewports, rather
-than letting the page itself scroll horizontally.
-`yarn lint`, `yarn typecheck`, `yarn test` (76 files/561 tests, up from
-74/537 in 041 — 2 new files/24 new tests), `yarn build` (48/48 pages, up
-by exactly 1 from 041's own 47 — the +1 is the new `/billing` route,
-4.17 kB), and `yarn test:e2e` (39/39, unchanged — no new e2e test, for
-the structural reason above) all passed. **Carried forward, unchanged:**
-the `/settings` middleware-protection gap (030); the placeholder Supabase
-credentials blocker (029), now also confirmed current for `/billing`; the
-`/api/billing/plans`+`/api/billing/me` anonymous-401 middleware bug and
-its dormant `/api/billing/me` status-code bug (023); 020's CSP/
-`force-dynamic` item; Phase 3's manual-verification gaps (014-018); 019's
-signed-in-nav-state item; `<Toaster />` still only mounted in the `(app)`
-layout (037); the `DashboardHome`/`AppNav` -> `/import-conversations`,
-`AppNav` -> `/assistants` (039), and now `AppNav` -> `/billing` nav-wiring
-gaps, all left alone for the same reason — `AppNav.tsx` remains outside
-every prompt's allowed-files list so far; the `lib/auth/rate-limit.ts`
-first-commit disclosure (040); the Twin `is_active` write-path gap (039,
-RISKS R14 still unwritten); the unbuilt `app/payment/**` surface this
-prompt found today (043's own scope, confirmed empty, not filled in
-early).
+None — **Prompt 043 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Closes Phase 10.
+**Major finding, verified concretely before designing anything:** unlike
+every `(app)/` page since 029, LEGACY's real (and this prompt's own)
+payment-return surfaces are all TOP-LEVEL routes (`app/payment/success`,
+`app/payment/cancel`, `app/billing/return`, `app/payment/receipt/
+[orderId]`) — never nested under the `(app)` route group. Confirmed by
+reading `app/payment/success/page.tsx` @ pinned `a22927d`: it calls
+`requireUser()` directly, not `app/(app)/layout.tsx`'s own
+`getProfileForUser()` (the actual cause of the placeholder-Supabase
+block every `(app)` page has had). `requireUser()` only needs a session,
+which `lib/testing/e2e-auth.ts`'s mock path satisfies without touching
+real Supabase at all. Built all four new pages the same way (outside
+`(app)/`, matching both LEGACY's own placement and 032's `/import-
+conversations` precedent) and confirmed the payoff empirically: curled
+all four with the real mocked e2e identity — every one returned `200`
+with real content, none hit the placeholder-Supabase `500`. This is the
+first phase since Phase 7 where genuine content-level e2e coverage was
+possible again, not just RTL.
+**`/billing/return` finding:** curling it *without* identity headers
+returned a `307` redirect — not a bug, but `lib/supabase/middleware.ts`
+(must-not-change) protecting the whole `/billing` path *prefix*,
+`/billing/return` included, even though this prompt never asked for that
+page to require auth and LEGACY's own version didn't check for a
+session at all. Accepted as existing, unavoidable, arguably-reasonable
+behavior rather than something to route around.
+**`/billing/return`'s real current role, investigated as instructed:**
+read `lib/billing/lemonsqueezy.ts` (must-not-change) in full —
+`createHostedCheckout`'s only configured redirect target is
+`/payment/success`; the customer-portal URL is Lemon Squeezy's own
+hosted `urls.customer_portal` value. `/billing/return` is referenced
+*nowhere* in the real, current backend — dormant, likely a leftover from
+an earlier LEGACY integration iteration, not broken. Preserved and
+restyled per this prompt's own instruction #3 regardless, since a user
+could still land there via a bookmark or an old link.
+**Receipt page:** no `/api/billing/receipt/[orderId]` route exists in
+this workspace (LEGACY's own version calls exactly that, but it's dead
+MVP-era code reading a local-profile fallback) — `app/api/**` is outside
+this prompt's scope regardless. Reuses the real, already-working `GET
+/api/billing/me` (042) and finds the matching invoice client-side by
+`orderId`; inherently ownership-safe by construction, since that route
+already scopes `invoices` to the caller's own rows, so an `orderId` a
+user doesn't own simply never appears in their own array.
+**Polling logic reused verbatim** from LEGACY's own `PaymentConfirmation`
+(10 attempts, 3-second interval, same cleanup flag), restyled with a
+neutral white "fog bloom" glow that only brightens on genuine
+confirmation (pending vs. confirmed stay visibly distinct, per this
+prompt's own visual requirement) — plus a real, data-grounded 3-way
+timeout split LEGACY never had: `GET /api/billing/me` has no "checkout in
+progress" flag of its own, so there's no reliable way to distinguish "a
+real webhook just hasn't arrived" from "this page was visited directly"
+within the first few seconds (a genuine in-flight purchase *also* shows
+`subscription: null` until its own webhook lands) — but after the full
+30-second window, a still-null `subscription` becomes a meaningful
+signal (a real purchase almost always produces a row well within that
+window), so the timeout state's wording splits honestly between
+"nothing pending" and "still resolving, not a failure" based on that.
+No "contact support" action anywhere — `lib/legal/legal-config.ts`'s
+`SUPPORT_EMAIL` is still an unresolved placeholder (checked before
+writing any copy), so every unresolved path points at the real,
+already-working `/billing` page instead of a fake mailto link.
+**Built:** `components/app/billing/PaymentConfirmation.tsx` (the state
+machine above), `PaymentNotice.tsx` (shared shell for the two plain
+informational surfaces), `PaymentCancelContent.tsx`, `BillingReturnContent
+.tsx`, `ReceiptDetail.tsx` — plus the four thin page wrappers, each a
+plain server component carrying only `metadata`/`force-dynamic` (the
+same CSP-nonce-vs-static-generation fix `/import-conversations` already
+established for client-state-only pages), with all real logic in the
+client components above.
+**Two real mistakes caught while building, neither shipped:** (1) first
+wrote `/payment/cancel`'s own `page.tsx` with `"use client"` directly on
+it and a hardcoded `"EN"` language — would have silently ignored every
+UA user's real stored preference; refactored to the established
+server-wrapper-plus-client-content pattern before it went anywhere near
+a commit. (2) the e2e "never upgrades the plan" and "confirmed" tests
+initially hung indefinitely under `vi.useFakeTimers()` because RTL's own
+`findByText`/`waitFor` polling relies on real timers internally — fixed
+by switching to synchronous `getByText` once fake-timer advancement had
+already settled the DOM, and documented the gotcha in the test file.
+**All required tests, real, non-tautological:** RTL state-machine
+coverage for pending/confirmed/both timeout sub-states/refresh/load-
+failure (`PaymentConfirmation.test.tsx`, using fake timers to exercise
+the full 30-second window without a slow test), the two notice pages
+(`PaymentReturnNotices.test.tsx`), and the receipt page including the
+not-found and load-failure states (`ReceiptDetail.test.tsx`). e2e: the
+existing "checkout creation" pin now also asserts real content on
+`/payment/success`; a new, genuinely content-level "never upgrades the
+plan" test (mocks a consistently non-premium server response across two
+real poll cycles and asserts the page never claims otherwise) and a
+"confirmed" counterpart; a new cancel-page-render test.
+`yarn lint`, `yarn typecheck`, `yarn test` (79 files/576 tests, up from
+76/561 in 042 — 3 new files/15 new tests), `yarn build` (51/51 pages, up
+from 042's own 48 — four new routes added, `/payment/success`/`/payment/
+cancel`/`/billing/return`/`/payment/receipt/[orderId]`, all confirmed
+dynamic — `ƒ`, never `○` — so none risk serving a stale CSP nonce), and
+`yarn test:e2e` (42/42, up from 39/39 — 3 new tests, the first *new*
+content-level e2e tests since Phase 7) all passed. **Carried forward,
+unchanged:** the `/settings` middleware-protection gap (030); the
+placeholder Supabase credentials blocker (029) — still current for
+every `(app)` page, though proven this session to *not* apply to
+top-level pages outside that route group; the `/api/billing/plans`+
+`/api/billing/me` anonymous-401 middleware bug and its dormant `/api/
+billing/me` status-code bug (023); 020's CSP/`force-dynamic` item
+(itself now further reinforced, not contradicted, by this prompt's own
+force-dynamic additions); Phase 3's manual-verification gaps (014-018);
+019's signed-in-nav-state item; `<Toaster />` still only mounted in the
+`(app)` layout (037); the `DashboardHome`/`AppNav` -> `/import-
+conversations`, `AppNav` -> `/assistants`, and `AppNav` -> `/billing`
+nav-wiring gaps, all still left alone — `AppNav.tsx` remains outside
+every prompt's allowed-files list so far (these new payment-return pages
+were never meant to be nav destinations, so no new gap here); the
+`lib/auth/rate-limit.ts` first-commit disclosure (040); the Twin
+`is_active` write-path gap (039, RISKS R14 still unwritten).
 Note: Prompt 004 itself (the backend scaffold/port) was never given its
 own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
 the working tree from an earlier, undocumented session. None of 005-012
@@ -4187,6 +4189,112 @@ manifest) is still open.
   4.17 kB), and `yarn test:e2e` (39/39, unchanged — no new e2e test, for
   the structural reason above) all passed.
 
+- 043 — Checkout and payment returns, closes Phase 10 (2026-07-25). Major
+  finding, verified before designing anything: unlike every `(app)/` page
+  since 029, LEGACY's real payment-return surfaces are all top-level
+  routes (`app/payment/success`, `app/payment/cancel`, `app/billing/
+  return`, `app/payment/receipt/[orderId]`) — never nested under `(app)`.
+  Read `app/payment/success/page.tsx` @ pinned `a22927d` in full: it
+  calls `requireUser()` directly, never `app/(app)/layout.tsx`'s own
+  `getProfileForUser()` (the real cause of the placeholder-Supabase block
+  every `(app)` page has had since 029), and `requireUser()` only needs a
+  session, which `lib/testing/e2e-auth.ts`'s mock path satisfies without
+  touching real Supabase. Built all four new pages the same way (outside
+  `(app)/`, matching LEGACY's own placement and 032's `/import-
+  conversations` precedent) and confirmed the payoff empirically: curled
+  all four with the real mocked e2e identity — every one returned `200`
+  with real content, none hit the placeholder-Supabase `500`. First phase
+  since Phase 7 where genuine content-level e2e coverage was possible
+  again, not just RTL.
+  **`/billing/return` finding (two parts):** curling it *without*
+  identity headers returned `307` — not a bug, `lib/supabase/
+  middleware.ts` (must-not-change) protects the whole `/billing` path
+  *prefix*, `/billing/return` included, even though this page never asks
+  for auth and LEGACY's own version had none either; accepted as
+  existing, unavoidable behavior. Separately, read `lib/billing/
+  lemonsqueezy.ts` (must-not-change) in full for this prompt's own
+  "inspect its exact current role" instruction: `createHostedCheckout`'s
+  only configured redirect target is `/payment/success`; the customer-
+  portal URL is Lemon Squeezy's own hosted `urls.customer_portal` value.
+  `/billing/return` is referenced *nowhere* in the real, current backend
+  — dormant, likely a leftover from an earlier LEGACY integration
+  iteration, not broken. Preserved and restyled per instruction #3
+  regardless, since a bookmark or old link could still reach it.
+  **Receipt page:** no `/api/billing/receipt/[orderId]` route exists in
+  this workspace (LEGACY's own calls exactly that, but it's dead MVP-era
+  code reading a local-profile fallback; `app/api/**` is outside this
+  prompt's scope regardless). Reuses the real, already-working `GET
+  /api/billing/me` (042) and finds the matching invoice client-side by
+  `orderId` — inherently ownership-safe by construction, since that
+  route already scopes `invoices` to the caller's own rows, so an
+  `orderId` a user doesn't own simply never appears in their own array.
+  **Polling logic reused verbatim** from LEGACY's own `PaymentConfirmation`
+  (10 attempts, 3-second interval, same cleanup flag), restyled with a
+  neutral white "fog bloom" glow that only brightens on genuine
+  confirmation (pending vs. confirmed stay visibly distinct, per this
+  prompt's own visual requirement), plus a real, data-grounded 3-way
+  timeout split LEGACY never had: `GET /api/billing/me` has no "checkout
+  in progress" flag of its own, so there's no reliable way to distinguish
+  "a real webhook just hasn't arrived" from "this page was visited
+  directly" within the first few seconds (a genuine in-flight purchase
+  *also* shows `subscription: null` until its own webhook lands) — but
+  after the full 30-second window, a still-null `subscription` becomes a
+  meaningful signal (a real purchase almost always produces a row well
+  within that window), so the timeout state's wording splits honestly
+  between "nothing pending" and "still resolving, not a failure" based on
+  that real distinction, not two independently-invented states.
+  No "contact support" action anywhere — `lib/legal/legal-config.ts`'s
+  `SUPPORT_EMAIL` is still an unresolved placeholder (checked before
+  writing any copy), so every unresolved path points at the real,
+  already-working `/billing` page instead of a fake mailto link.
+  **Built:** `components/app/billing/PaymentConfirmation.tsx` (the state
+  machine above), `PaymentNotice.tsx` (shared shell for the two plain
+  informational surfaces — genuinely reused, not duplicated, since both
+  callers need the identical dark-ground-plus-floating-panel structure),
+  `PaymentCancelContent.tsx`, `BillingReturnContent.tsx`,
+  `ReceiptDetail.tsx` — plus four thin page wrappers, each a plain server
+  component carrying only `metadata`/`force-dynamic` (the same CSP-
+  nonce-vs-static-generation fix `/import-conversations` established for
+  client-state-only pages), all real logic living in the client
+  components above. Exported `formatAmount`/`formatDate` from 042's own
+  `InvoiceHistoryTable.tsx` for `ReceiptDetail.tsx` to reuse rather than
+  duplicating identical formatting logic.
+  **Two real mistakes caught while building, neither shipped:** (1)
+  first wrote `/payment/cancel`'s own `page.tsx` with `"use client"`
+  directly on it and a hardcoded `"EN"` language — would have silently
+  ignored every UA user's real stored preference; refactored to the
+  established server-wrapper-plus-client-content pattern (page.tsx stays
+  a server component for `metadata`/`dynamic`; a separate client
+  component does the actual `useLang`-driven rendering) before it went
+  anywhere near a commit. (2) the "never upgrades"/"confirmed" RTL tests
+  initially hung indefinitely under `vi.useFakeTimers()` because RTL's
+  own `findByText`/`waitFor` polling relies on real timers internally —
+  fixed by switching to synchronous `getByText` once fake-timer
+  advancement had already settled the DOM, documented in the test file's
+  own comment so the gotcha isn't rediscovered the hard way again.
+  **Coverage added** (15 new tests across 3 new files):
+  `tests/components/PaymentConfirmation.test.tsx` (7 — pending, confirmed
+  with the real plan name, never-fabricates-confirmation across repeated
+  real polls, both timeout sub-states via the full unchanged 30-second
+  window, Refresh triggering an immediate re-check, a failed check not
+  crashing); `tests/components/PaymentReturnNotices.test.tsx` (3 — cancel
+  page's no-blame copy and real links, cancel page asserts no "active"/
+  "confirmed" language anywhere, the dormant return page's preserved
+  content); `tests/components/ReceiptDetail.test.tsx` (5 — real invoice
+  lookup by orderId, the real external receipt link, honest not-found
+  for an unmatched orderId, load failure, no dead link when `receiptUrl`
+  is null). e2e: extended the existing pinned "checkout creation" test
+  to also assert real content on `/payment/success`; a new "never
+  upgrades the plan" test driving two real poll cycles against a
+  consistently non-premium mocked response; a new "confirmed" test; a
+  new cancel-page-render test.
+  `yarn lint`, `yarn typecheck`, `yarn test` (79 files/576 tests, up from
+  76/561 in 042 — 3 new files/15 new tests), `yarn build` (51/51 pages,
+  up from 042's own 48 — four new routes, all confirmed dynamic (`ƒ`,
+  never `○`), so none risk serving a stale CSP nonce), and
+  `yarn test:e2e` (42/42, up from 39/39 — 3 new tests, the first *new*
+  content-level e2e tests since Phase 7) all passed.
+
 ## Failed prompts
 
 None.
@@ -4235,7 +4343,10 @@ workspace integrated), and again for 041, closes Phase 9 (47/47 pages,
 unchanged from 040 — a fix-level/tests-only prompt with no route or
 component-behavior changes), and again for 042, opens Phase 10 (48/48
 pages — exactly 041's own 47 plus the one real new route, `/billing`,
-4.17 kB). 033's own entry above records a real
+4.17 kB), and again for 043, closes Phase 10 (51/51 pages — four new
+top-level routes: `/payment/success`, `/payment/cancel`, `/billing/
+return`, `/payment/receipt/[orderId]`, all confirmed dynamic (`ƒ`)).
+033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -4300,6 +4411,13 @@ files, clean exit, plus `yarn test:e2e` 39/39 (unchanged — `/billing`
 content-level e2e verified blocked by the same structural reason as
 every `(app)` page: curled a freshly built-and-started production server
 with the real mocked identity headers, `500`, `TypeError: fetch failed`).
+Re-confirmed same day for 043, closes Phase 10 — 576/576 tests across 79
+files, clean exit, plus `yarn test:e2e` 42/42 (up from 39/39 — the first
+new *content-level* e2e tests since Phase 7, made possible because these
+four new payment-return pages sit outside `(app)/` and are genuinely
+reachable; all four confirmed with real `200` responses via curl against
+a freshly built-and-started production server with the real mocked
+identity headers, no `(app)`-style 500).
 
 ## Known regressions
 

@@ -75,11 +75,11 @@ test.describe("pricing", () => {
     await expect(registerLink).toHaveAttribute("href", "/auth?mode=register");
   });
 
-  test("checkout creation sends only { planId } and navigates to the returned checkoutUrl (LEGACY's own contract, unchanged)", async ({
+  test("checkout creation sends only { planId } and navigates to the returned checkoutUrl (LEGACY's own contract, unchanged), landing on the real pending confirmation page (043)", async ({
     page,
   }) => {
     await mockApi(page, async (path, route) => {
-      if (path === "/api/billing/me") return route.fulfill(json({ effectivePlan: "free" }));
+      if (path === "/api/billing/me") return route.fulfill(json({ effectivePlan: "free", hasPremium: false, subscription: null }));
       if (path === "/api/billing/plans") return route.fulfill(json({ plans: [] }));
       if (path === "/api/billing/checkout") {
         expect(route.request().postDataJSON()).toEqual({ planId: "personal" });
@@ -91,6 +91,10 @@ test.describe("pricing", () => {
 
     await page.getByRole("button", { name: "Continue to checkout" }).first().click();
     await expect(page).toHaveURL(/\/payment\/success\?mock=1/);
+    // 043's own real page — unlike every `(app)` page, this one isn't
+    // wrapped in `AppShell`/the `(app)` layout, so it's genuinely
+    // reachable here instead of 500ing on the placeholder-Supabase gap.
+    await expect(page.getByText("Payment received. Confirming your plan…")).toBeVisible({ timeout: 10_000 });
   });
 
   test("a signed-in user on Personal sees a quiet 'Your plan' label there, and a real checkout button on Work (plan-switch goes through checkout, not a dead state)", async ({
@@ -126,6 +130,71 @@ test.describe("pricing", () => {
     for (const button of await page.getByRole("button", { name: "Continue to checkout" }).all()) {
       await expect(button).toBeDisabled();
     }
+  });
+});
+
+/*
+ * Prompt 043 — checkout and payment returns. Unlike every `(app)` page
+ * since 029, these surfaces are NOT wrapped in `AppShell`/the `(app)`
+ * route group (same precedent `/import-conversations`, 032, already
+ * set) — confirmed concretely, not assumed, by curling all four new
+ * routes with the real mocked e2e identity during this prompt's own
+ * manual verification: all returned 200 with real content, none hit the
+ * placeholder-Supabase 500 every `(app)` page has had since 029. That
+ * makes real, content-level e2e coverage possible here for the first
+ * time since the memory/twin/billing phases began.
+ */
+test.describe("payment returns", () => {
+  test("payment success page never upgrades the plan — it only ever reflects what the server's own hasPremium says, re-checked, never assumed", async ({
+    page,
+  }) => {
+    let calls = 0;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/billing/me") {
+        calls += 1;
+        // Always the same honest non-premium state, no matter how many
+        // times the page asks — this is the core assertion: the page
+        // itself has no way to grant access, only to report it.
+        return route.fulfill(json({ effectivePlan: "free", hasPremium: false, subscription: null }));
+      }
+      return route.continue();
+    });
+
+    await page.goto("/payment/success");
+
+    await expect(page.getByText("Payment received. Confirming your plan…")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/is active\.$/)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Go to dashboard" })).toHaveCount(0);
+
+    // Wait through a second real poll cycle (the component's own
+    // unchanged 3-second interval) and re-assert the same honest state
+    // — proving this isn't just a first-paint fluke.
+    await page.waitForTimeout(3_500);
+    expect(calls).toBeGreaterThanOrEqual(2);
+    await expect(page.getByText("Payment received. Confirming your plan…")).toBeVisible();
+    await expect(page.getByText(/is active\.$/)).toHaveCount(0);
+  });
+
+  test("payment success page shows the confirmed state only once the server's own hasPremium genuinely flips true", async ({ page }) => {
+    await mockApi(page, (path, route) => {
+      if (path === "/api/billing/me") return route.fulfill(json({ effectivePlan: "personal", hasPremium: true, subscription: { status: "active" } }));
+      return route.continue();
+    });
+
+    await page.goto("/payment/success");
+
+    await expect(page.getByText(/Personal.*is active\./)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("link", { name: "Go to dashboard" })).toHaveAttribute("href", "/dashboard");
+    await expect(page.getByText("Payment received. Confirming your plan…")).toHaveCount(0);
+  });
+
+  test("cancel page renders real no-blame content with working paths back to pricing and dashboard", async ({ page }) => {
+    await page.goto("/payment/cancel");
+
+    await expect(page.getByRole("heading", { name: "This checkout wasn't completed." })).toBeVisible();
+    await expect(page.getByText("Nothing was charged.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to pricing" })).toHaveAttribute("href", "/pricing");
+    await expect(page.getByRole("link", { name: "Back to dashboard" })).toHaveAttribute("href", "/dashboard");
   });
 });
 

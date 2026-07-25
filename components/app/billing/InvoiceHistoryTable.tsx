@@ -22,7 +22,9 @@ export interface InvoiceHistoryTableProps {
   lang: Lang;
 }
 
-function formatAmount(cents: number, currency: string, lang: Lang) {
+// Exported for reuse by `ReceiptDetail.tsx` (043) — identical formatting
+// logic for the same real `amount`/currency fields, not duplicated.
+export function formatAmount(cents: number, currency: string, lang: Lang) {
   try {
     return new Intl.NumberFormat(lang === "UA" ? "uk-UA" : "en-US", { style: "currency", currency }).format(cents / 100);
   } catch {
@@ -30,7 +32,7 @@ function formatAmount(cents: number, currency: string, lang: Lang) {
   }
 }
 
-function formatDate(value: string, lang: Lang) {
+export function formatDate(value: string, lang: Lang) {
   return new Date(value).toLocaleDateString(lang === "UA" ? "uk-UA" : "en-US", { dateStyle: "medium" });
 }
 

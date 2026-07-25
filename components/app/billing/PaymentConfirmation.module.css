@@ -1,0 +1,72 @@
+.panel {
+  position: relative;
+  overflow: hidden;
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: var(--space-12) var(--space-8);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+/*
+ * "Slow fog bloom" (this prompt's own visual requirement) — a neutral
+ * white radial glow, not an accent hue, that only brightens once the
+ * state machine actually reaches `confirmed`. The transition itself is
+ * the ceremony; nothing blooms while still pending, so pending vs.
+ * confirmed stay visibly, honestly distinct rather than both looking
+ * equally celebratory.
+ */
+.glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(60% 50% at 50% 15%, rgb(var(--altr-white-rgb) / 0%), transparent 70%);
+  transition: background 1.6s var(--ease-altr);
+}
+
+.panelConfirmed .glow {
+  background: radial-gradient(60% 50% at 50% 15%, rgb(var(--altr-white-rgb) / 16%), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    transition: none;
+  }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  margin-inline: auto;
+  color: var(--text-muted);
+}
+
+.iconConfirmed {
+  color: var(--text-primary);
+}
+
+.eyebrow {
+  margin-top: var(--space-6);
+}
+
+.heading {
+  margin-top: var(--space-4);
+}
+
+.body {
+  margin-top: var(--space-4);
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+.actions {
+  margin-top: var(--space-8);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
