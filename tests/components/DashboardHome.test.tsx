@@ -22,6 +22,10 @@ describe("DashboardHome", () => {
     expect(screen.getByText("Your Altr is just getting started.")).toBeInTheDocument();
     expect(screen.queryByText("Imports")).not.toBeInTheDocument();
     expect(screen.queryByText("Twin")).not.toBeInTheDocument();
+    // 046 a11y audit: the greeting is this page's only heading (`AppShell`'s
+    // own doc comment) — it was a plain styled <p>, invisible to
+    // screen-reader heading navigation, until this prompt made it a real h1.
+    expect(screen.getByRole("heading", { level: 1, name: "Hi, Max." })).toBeInTheDocument();
   });
 
   it("shows three editorial status rows with real numerals for a populated account", () => {

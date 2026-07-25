@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { CookiePreferencesButton } from "@/components/legal/CookiePreferencesButton";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
 import type { AltrProfile } from "@/lib/auth";
@@ -37,6 +39,29 @@ export function PrivacyCenter({ profile: initialProfile }: { profile: AltrProfil
 
       <ConsentsSection profile={profile} onProfileChange={setProfile} lang={lang} />
       <ExportSection lang={lang} />
+
+      <section aria-labelledby="privacy-legal-heading">
+        <h2 id="privacy-legal-heading" className="text-h3 font-normal text-text-primary">
+          {t.legalHeading}
+        </h2>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/terms" className="btn btn-secondary control-focus">
+            {t.legalTerms}
+          </Link>
+          <Link href="/privacy" className="btn btn-secondary control-focus">
+            {t.legalPrivacy}
+          </Link>
+          <Link href="/cookies" className="btn btn-secondary control-focus">
+            {t.legalCookies}
+          </Link>
+          <Link href="/data-deletion" className="btn btn-secondary control-focus">
+            {t.legalDeletion}
+          </Link>
+          <CookiePreferencesButton className="btn btn-secondary control-focus">
+            {t.legalCookiePreferences}
+          </CookiePreferencesButton>
+        </div>
+      </section>
 
       <section aria-labelledby="privacy-danger-heading" className="rounded-2xl border border-[var(--edge-hairline)] p-6 sm:p-8">
         <h2 id="privacy-danger-heading" className="text-h3 font-normal text-text-primary">

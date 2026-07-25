@@ -4,150 +4,119 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 045 complete** (committed locally, not pushed), run
-directly on the user's explicit instruction. Opens and closes Phase 11
-(the only prompt in it).
-**Route-collision finding, verified before writing any code — the prompt's
-own literal file path was wrong:** `app/(app)/privacy/page.tsx` (as
-written in PROMPT_045) would collide at build time with the real,
-already-live `app/(public)/privacy/page.tsx` — Next.js route groups don't
-add URL segments, so both resolve to the exact same `/privacy`. Confirmed
-`/privacy` is a hardcoded, must-remain marketing route: `app/sitemap.ts`
-lists it and `components/site/Footer.tsx` links to it. Also confirmed
-`components/app/settings/SettingsView.tsx` already had a forward-looking
-`<Link href="/privacy">` with copy literally saying "coming soon" —
-030's own anticipation of this exact prompt. Built the real center at
-`/privacy-center` instead (URL only — `components/app/privacy/` matches
-the prompt's own directory instruction exactly) and updated that
-Settings link + its copy to point at the real thing. `yarn build`
-confirms no collision (55/55 pages, up from 51/51).
-**Cookie consent, a real "first time this ever ran" finding:** ported
-LEGACY's `CookieConsent.tsx`/`CookiePreferencesButton.tsx` consent logic
-verbatim (`lib/legal/cookie-store.ts`, untouched) with presentation
-rebuilt on `Dialog` (010) instead of LEGACY's own hand-rolled focus trap.
-Grepped LEGACY's own `app/`+`components/` trees for `CookieConsent` before
-porting it: zero hits outside the component's own file — LEGACY itself
-never mounted this component anywhere, ever. `components/site/Footer.tsx`
-has dispatched the real `altr-open-cookie-preferences` event since 024
-with nothing listening until now. Mounted at the true root
-`app/layout.tsx` (a necessary-but-unlisted-file touch — no route group
-layout is both mutable and truly global; `(app)/layout.tsx` is
-must-not-change, `(public)` has no layout of its own) — the banner's
-first real appearance in either codebase, documented as such rather than
-described as a "restyle." One real gotcha found and fixed: `saveCookie
-Preferences` (must-not-change) only dispatches `altr-cookie-preferences-
-change`, never `altr-language-change`, so other mounted `useLang()`
-instances (Header, Footer, ...) wouldn't otherwise learn a rejected
-choice just cleared their stored language — `CookieConsent.tsx` itself
-now dispatches the real event with the correctly-recomputed value,
-without touching `cookie-store.ts`. One real, self-caught e2e bug: the
-banner is `fixed`/bottom-of-viewport and can physically cover interactive
-content on shorter pages — a new `/delete-data` test's own checkbox was
-covered by it until the test was fixed to pre-seed a stored preference
-(what a returning visitor's browser would already have), same as any
-fixed bottom banner across the web.
-**Account deletion, built against the real audited contract, not
-LEGACY's:** read `app/delete-data/page.tsx` @ pinned `a22927d` in full —
-it's a client-only MVP prototype (`lib/legal/privacy-data.ts`'s local-
-storage-only `createDeletionRequest`/`deleteAllLocalAltrData`, confirmed
-zero server calls), requiring only the word "DELETE", never the real
-"DELETE MY ACCOUNT" phrase `DELETE /api/privacy/account` (must-not-
-change) actually enforces. LEGACY's *other* real page,
-`app/data-deletion/request/page.tsx`, already used the correct real
-contract for both flows. Built one shared implementation
-(`components/app/privacy/{useAccountDeletion.ts,AccountDeletionSteps.tsx,
-AccountDeletionDialog.tsx,AccountDeletionPanel.tsx,DeletionRequestForm.tsx,
-DeletionCenter.tsx}`) against the real, audited routes only — never
-`lib/auth.ts`'s `deleteCurrentAccount()`/`DELETE /api/me`, confirmed by
-grep to be a completely unwired, structurally weaker duplicate (no
-anonymization, no storage cleanup, no audit trail) — written up as
-RISKS.md R16 so a future prompt doesn't wire it up by mistake.
-`DeletionCenter` backs both `/delete-data` and `/data-deletion/request`
-(LEGACY's own real page + prototype page were redundant with each other;
-`lib/legal/deletion-content.ts`, must-not-change, itself describes
-`/delete-data` hosting both flows "on the same page" — honored literally
-via the shared component rather than duplicating the form twice).
-**Structural limit found and verified, not assumed:** `lib/testing/
-e2e-auth.ts`'s mock `User` has no `last_sign_in_at` at all, so
-`/api/privacy/account`'s own 15-minute recency check can never pass under
-real e2e mock-header auth — only its 403 "stale session" rejection is
-reachable that way, never the real success path. RTL tests (mocked
-`fetch`, not live auth) cover the real success path instead; e2e tests
-for `/delete-data`/`/data-deletion/request` use `mockApi` route
-interception for the same reason, bypassing this limitation entirely by
-never hitting live Supabase/e2e-header auth for these two pages at all.
-**`/privacy-center` inherits the identical, already-accepted `/settings`
-middleware-protection gap (030)** — confirmed directly, not assumed:
-curled both anonymously against a real `yarn build && yarn start`
-server; both return `500` (uncaught `AUTH_REQUIRED` from `(app)/
-layout.tsx`, must-not-change) while every route actually listed in
-`lib/supabase/middleware.ts`'s hardcoded `pages` array (e.g. `/billing`)
-correctly `307`s to `/auth`. `/privacy-center` was never added to that
-list, same as `/settings` never was — no new gap, the existing one now
-has a second member. No e2e test added for this path's own anonymous
-access, matching the precedent already set for `/settings` (never given
-one either, for the identical reason) — and `/privacy-center` itself gets
-no content-level e2e coverage at all yet, blocked by the same
-placeholder-Supabase 500 as `/billing`/`/memory`/`/assistants`/
-`/settings`; real coverage lives entirely in RTL (`PrivacyCenter`,
-`ConsentsSection`, `ExportSection`, `AccountDeletionDialog` all have
-their own test files, mocked `fetch`, not blocked by this).
-**Two new documentation-accuracy findings, not fixed here (`lib/legal/**`
-content is must-not-change), written up as RISKS.md R15 and R16:**
-`lib/legal/deletion-content.ts` still describes deletion as an unproven
-"browser-only prototype" pre-dating Prompt 004's real backend port; and
-the dead `DELETE /api/me`/`deleteCurrentAccount()` duplicate described
-above. (R14, from 044, was already claimed for an unrelated billing
-finding — the Twin `is_active` write-path gap from 039 still has no
-RISKS.md entry of its own and would now become R17, not R15, whenever a
-prompt with RISKS.md in scope adds it.)
-**Consents and export, built against the real, must-not-change routes
-directly** (`components/app/privacy/{ConsentsSection.tsx,
-ExportSection.tsx}`): consent grant/withdraw round-trips through `POST
-/api/consents/{grant,withdraw}` then a real `GET /api/me` refresh (LEGACY's
-own `PrivacySettingsPanel.refresh()` pattern, neither mutation endpoint
-returns the updated profile itself); export uses a fetched
-blob-download (not a bare `<a href>`) specifically so the "single
-in-flight" and honest pending/429/failure states this prompt's own edge
-cases name are real client state, not assumed. `lib/legal/consent-
-store.ts` was read and deliberately **not** used anywhere — confirmed by
-grep to have zero importers in this entire workspace (fully dead,
-client-only-record code from an earlier iteration); the real consent
-state everywhere in this prompt comes only from server-backed
-`/api/consents/*`+`GET /api/me`.
-**Required tests, real, non-tautological, all passing on first or
-second run (documented where a real fix was needed, not silently
-retried):** `tests/components/{CookieConsent,AccountDeletionDialog,
-ConsentsSection,ExportSection,DeletionRequestForm}.test.tsx` (25 new
-RTL tests — banner decline-by-default and equal-weight accept/reject
-buttons, the typed-phrase-AND-email deletion gate, every real
-`/api/privacy/account` error path, consent grant/withdraw contracts,
-export's real pending/429/failure states). e2e: three new tests under
-`privacy center` in `tests/e2e/critical-flows.spec.ts` — `/data-deletion`
-content, the real deletion-request contract end to end, and the
-signed-in export-links/immediate-deletion entry point.
-`yarn lint`, `yarn typecheck`, `yarn test` (86 files/613 tests, up from
-81/588 in 044 — 5 new files/25 new tests), `yarn build` (55/55 pages, up
-from 044's own 51 — four new routes: `/privacy-center`, `/delete-data`,
-`/data-deletion`, `/data-deletion/request`, all confirmed dynamic — `ƒ`),
-and `yarn test:e2e` (45/45, up from 42/42 — 3 new tests) all passed.
-**Carried forward, unchanged:** the `/settings` middleware-protection gap
-(030, now also `/privacy-center` — see above); the placeholder Supabase
-credentials blocker (029) for every `(app)` page; the `/api/billing/
-plans`+`/api/billing/me` anonymous-401 middleware bug and its dormant
-status-code bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-
-verification gaps (014-018); 019's signed-in-nav-state item; `<Toaster />`
-still only mounted in the `(app)` layout (037) — this prompt's own
-components deliberately use inline error/success state instead of
-`toast.push()`, since three of the five new pages/components render
-outside `(app)/` where no `<Toaster />` is mounted, and consistency
-across all of them mattered more than using toasts where they'd
-technically work; the `DashboardHome`/`AppNav` -> `/import-conversations`,
-`AppNav` -> `/assistants`, `AppNav` -> `/billing`, and now `AppNav` ->
-`/privacy-center` nav-wiring gaps — `AppNav.tsx` remains outside every
-prompt's allowed-files list so far; the `lib/auth/rate-limit.ts`
-first-commit disclosure (040); the Twin `is_active` write-path gap (039,
-still no RISKS.md entry — would be R17, see above).
+None — **Prompt 046 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Closes Phase 11.
+**Methodology, stated honestly up front:** static/structural source
+review across every rebuilt screen (heading hierarchy, landmarks, ARIA,
+focus management, label association, contrast via the existing token
+math, reduced-motion/forced-colors CSS coverage) — not a substitute for
+a live screen-reader/keyboard/High-Contrast device pass, which remains
+manual (same precedent as Phase 3's own manual-verification items).
+Full findings log, statistics, and the legal placeholder inventory live
+in the new `docs/claude-prompts/A11Y_AUDIT.md` (16 areas audited, 6 real
+findings + 1 documentation correction, all fixed; 6 explicitly-named
+areas — navigation, hero fragments, import lifecycle, draft view,
+deletion ceremony, contrast — verified with no defect found).
+**Two Serious findings, fixed:** `/dashboard` (`DashboardHome.tsx`) and
+`/settings` (`SettingsView.tsx`) each had their *only* page heading as a
+`<p className="text-h1">` instead of a real `<h1>` — confirmed by a
+targeted grep across every component for `<p className="text-h1`, not
+assumed from the visual-styling grep alone (which conflates CSS class
+usage with real semantic tags and gave false confidence at first). Both
+now real `<h1>`s; two related Minor findings (non-heading success titles
+in 045's own `AccountDeletionSteps.tsx`/`DeletionRequestForm.tsx`) fixed
+the same pass since they were cheap and the same class of bug.
+**One Windows High Contrast (forced-colors) gap, fixed:** zero
+`forced-colors` CSS coverage existed anywhere before this prompt. The
+existing custom `Checkbox.tsx` survives by accident (its check mark is
+a conditionally-*rendered* SVG, not a color-only signal — forced-colors
+never removes DOM nodes, only recolors them); 045's cookie-preferences
+`role="switch"` toggle was weaker, relying partly on its own background
+for a visible shape. `app/styles/controls.css` now gives
+`[role="switch"] > span[aria-hidden]` an explicit `border: 1px solid
+CanvasText` under `@media (forced-colors: active)`. Reasoned from the
+forced-colors spec, not a live High-Contrast device pass — see
+A11Y_AUDIT.md's own "manual verification remaining" section.
+**One legal-consistency gap, fixed:** the privacy center (045) never
+linked `/terms`, `/privacy`, `/cookies`, `/data-deletion`, or the
+cookie-preferences dialog — LEGACY's old `PrivacySettingsPanel` had
+exactly this section and the rebuild dropped it. Added a real "Legal
+documents" section to `PrivacyCenter.tsx`.
+**One documentation-accuracy correction to 045's own STATUS.md/RISKS.md
+prose:** while re-verifying the cookie-banner finding for this audit,
+discovered LEGACY *does* have a real, live, mounted cookie banner —
+`components/CookieBanner.tsx`, imported and rendered in LEGACY's own
+`app/layout.tsx` — a different file from the genuinely-unmounted
+`components/legal/CookieConsent.tsx`/`CookiePreferencesButton.tsx` 045
+actually ported. 045's claim that "LEGACY itself never mounted this
+component anywhere" was true only for those specific files, not for
+LEGACY's cookie-consent mechanism as a whole. No code changed as a
+result — 045's `CookieConsent.tsx` is functionally equivalent to
+LEGACY's real `CookieBanner.tsx` (same `cookie-store.ts` contract, same
+event name), just a restyled two-step banner+`Dialog` shape instead of
+LEGACY's one-surface `role="dialog"` shape — both valid ARIA patterns.
+This paragraph itself is the correction; 045's own STATUS.md entry above
+is left as originally written (immutable history) rather than edited
+after the fact.
+**Legal verification (instruction #3):** enumerated all 23 unresolved
+`[NEEDS OWNER INPUT: ...]` keys in `lib/legal/legal-config.ts` by direct
+read (list in A11Y_AUDIT.md; user-facing action items below). Consent
+version display (`ConsentsSection.tsx`) shows the real server-recorded
+`profile.consents.policyVersion`, never a separately hardcoded
+duplicate — can't drift. `docs/LEGAL_LAUNCH_CHECKLIST.md` and
+`tests/phase10-legal-consistency.test.ts` both read in full from LEGACY
+@ pinned `a22927d` — the checklist itself stays LEGACY-only (not in
+`docs/claude-prompts/`, not in this prompt's allowed-files list to
+port); the consistency test was adapted (not ported verbatim — LEGACY's
+version asserted against `components/CookieBanner.tsx`/`PrivacySettings
+Panel.tsx`, both gone) into `tests/phase10-legal-consistency.test.ts`
+against the real current files, 6/6 passing.
+**Durable tests added, all real, non-tautological:** `tests/unit/
+a11y-regression.test.ts` (4 tests — no LEGACY-style raw low-contrast
+opacity classes anywhere, the forced-colors CSS guard, every real
+`role="switch"` has a real `aria-label`, every real `<img>`/`<Image>`
+has `alt=`, comment-text false positives excluded); `tests/components/
+PrivacyCenter.test.tsx` (3 tests — heading hierarchy, the new legal
+links, the danger-zone dialog trigger); `tests/phase10-legal-
+consistency.test.ts` (6 tests, described above); heading-role assertions
+folded into `DashboardHome.test.tsx`, `SettingsView.test.tsx`,
+`AccountDeletionDialog.test.tsx`, and `DeletionRequestForm.test.tsx`
+(one real fix caught along the way: a naive `<img>`-substring regex in
+my own first draft of the alt-text guard matched a backtick-quoted
+`<img>` mention inside `HeroLayers.tsx`'s own doc *comment*, not a real
+tag — fixed by stripping comments before scanning, verified against the
+real file, which does have `alt=""` correctly).
+`yarn lint`, `yarn typecheck`, `yarn test` (89 files/627 tests, up from
+86/613 in 045 — 3 new files/13 new tests, plus test-only edits folded
+into 4 existing files), `yarn build` (55/55 pages, unchanged — a
+fix-level prompt, no new routes), and `yarn test:e2e` (45/45, unchanged)
+all passed. **Carried forward, unchanged:** the `/settings`+
+`/privacy-center` middleware-protection gap (030/045); the placeholder
+Supabase credentials blocker (029) for every `(app)` page; the
+`/api/billing/plans`+`/api/billing/me` anonymous-401 middleware bug and
+its dormant status-code bug (023); 020's CSP/`force-dynamic` item; Phase
+3's manual-verification gaps (014-018), now joined by this prompt's own
+zoom-200%/reflow and live-AT/High-Contrast-device items (A11Y_AUDIT.md);
+019's signed-in-nav-state item; `<Toaster />` still only mounted in the
+`(app)` layout (037); the `DashboardHome`/`AppNav` -> `/import-
+conversations`, `AppNav` -> `/assistants`, `AppNav` -> `/billing`, and
+`AppNav` -> `/privacy-center` nav-wiring gaps; the `lib/auth/
+rate-limit.ts` first-commit disclosure (040); the Twin `is_active`
+write-path gap (039, still no RISKS.md entry — would be R17); RISKS.md
+R15/R16 (045, both still open, outside this prompt's own scope to fix).
+**Legal user-action items for the user** (from `docs/
+LEGAL_LAUNCH_CHECKLIST.md`, LEGACY-only, read in full — this is
+operational documentation, not legal advice): resolve all 23
+`[NEEDS OWNER INPUT: ...]` entries in `lib/legal/legal-config.ts` (real
+business identity, contacts, supported regions, minimum age, retention
+periods, renewal/refund terms, liability position, governing law,
+international transfer approach — full list in A11Y_AUDIT.md); confirm
+which providers are actually enabled in production and who owns
+support/privacy-request/refund/deletion handling; have qualified counsel
+review the final Terms/Privacy/Cookie Policy, consent wording, billing
+disclosures, retention, international processing, minors, and AI
+processing before any real launch. A passing build and passing tests
+are not legal approval.
 Note: Prompt 004 itself (the backend scaffold/port) was never given its
 own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
 the working tree from an earlier, undocumented session. None of 005-012
@@ -4421,6 +4390,41 @@ manifest) is still open.
   51 — four new routes: `/privacy-center`, `/delete-data`, `/data-
   deletion`, `/data-deletion/request`, all confirmed dynamic), and
   `yarn test:e2e` (45/45, up from 42/42 — 3 new tests) all passed.
+- 046 — Accessibility and legal audit, closes Phase 11 (2026-07-25).
+  Structured static/structural audit across every rebuilt screen, logged
+  in the new `docs/claude-prompts/A11Y_AUDIT.md` (16 areas, 6 real
+  findings + 1 documentation correction, all fixed). Found and fixed two
+  Serious gaps: `/dashboard` and `/settings` each had their only page
+  heading as a `<p className="text-h1">` instead of a real `<h1>` — a
+  targeted grep across every component (not the looser visual-class grep
+  that gave false confidence at first) confirmed both. Fixed two related
+  Minor findings the same pass (non-heading success titles in 045's own
+  `AccountDeletionSteps.tsx`/`DeletionRequestForm.tsx`). Found and fixed
+  a real Windows High Contrast (forced-colors) gap: zero `forced-colors`
+  CSS existed anywhere; 045's cookie-preferences toggle relied partly on
+  background color for its visible shape, unlike the existing
+  `Checkbox.tsx` (survives by accident — its check mark is a
+  conditionally-rendered SVG, not color-only). Added a `forced-colors:
+  active` rule in `app/styles/controls.css`. Found and fixed a legal-
+  consistency gap: the privacy center (045) never linked to `/terms`,
+  `/privacy`, `/cookies`, `/data-deletion`, or cookie preferences —
+  added a real "Legal documents" section. Corrected a documentation
+  inaccuracy in 045's own prose (without editing that immutable entry):
+  LEGACY does have a real, mounted cookie banner
+  (`components/CookieBanner.tsx`), a different file from the genuinely-
+  unmounted one 045 actually ported — no code change needed, since 045's
+  port is functionally equivalent to LEGACY's real mechanism. Enumerated
+  all 23 unresolved `legal-config.ts` owner-input placeholders; adapted
+  LEGACY's own `phase10-legal-consistency.test.ts` against the real
+  current files (LEGACY's version asserted against files this rebuild
+  replaced). Six areas explicitly named by the prompt (navigation, hero
+  fragments, import lifecycle, draft view, deletion ceremony, contrast)
+  verified with no defect found — already correctly built by their own
+  originating prompts. 4 new/adapted test files, 13 new tests, plus
+  heading-role assertions folded into 4 existing test files.
+  `yarn lint`, `yarn typecheck`, `yarn test` (89 files/627 tests, up from
+  86/613), `yarn build` (55/55 pages, unchanged), and `yarn test:e2e`
+  (45/45, unchanged) all passed.
 
 ## Failed prompts
 
@@ -4477,7 +4481,9 @@ again for 044, closes Phase 10 (51/51 pages, unchanged from 043 — a
 tests-only prompt with no route or component-behavior changes), and
 again for 045, opens and closes Phase 11 (55/55 pages — four new
 routes: `/privacy-center`, `/delete-data`, `/data-deletion`, `/data-
-deletion/request`, all confirmed dynamic (`ƒ`)).
+deletion/request`, all confirmed dynamic (`ƒ`)), and again for 046,
+closes Phase 11 (55/55 pages, unchanged from 045 — a fix-level a11y/
+legal prompt, no new routes).
 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
@@ -4562,6 +4568,9 @@ built-and-started production server with the real mocked identity
 headers, `500`, same `digest` as `/billing`'s own — but `/delete-data`
 and `/data-deletion` sit outside `(app)/`, matching 043's own precedent,
 so real content-level coverage was possible there).
+Re-confirmed 2026-07-25 for 046, closes Phase 11 — 627/627 tests across
+89 files, clean exit, plus `yarn test:e2e` 45/45 (unchanged — a
+fix-level a11y/legal prompt, no new or removed UI surface).
 
 ## Known regressions
 
@@ -4672,4 +4681,4 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Import experience | rebuilt | 032 |
 | Twin / assistants | rebuilt | 039, 040 |
 | Billing overview | rebuilt | 042 |
-| Privacy center | legacy | 045 (todo) |
+| Privacy center | rebuilt | 045 |

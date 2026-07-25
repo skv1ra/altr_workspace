@@ -40,7 +40,7 @@ export function AccountDeletionSteps({
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--edge-hairline)] text-text-primary">
           <Check aria-hidden="true" className="h-5 w-5" />
         </span>
-        <p className="mt-4 text-h4 font-normal text-text-primary">{t.deletionSuccessTitle}</p>
+        <h3 className="mt-4 text-h4 font-normal text-text-primary">{t.deletionSuccessTitle}</h3>
         {state.reference && (
           <p className="mt-2 text-body text-text-muted">
             {t.deletionSuccessReference}: <strong className="text-text-primary">{state.reference}</strong>

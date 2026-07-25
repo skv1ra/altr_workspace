@@ -36,7 +36,9 @@ describe("DeletionRequestForm", () => {
         body: JSON.stringify({ email: "user@example.com", scope: "memory", reason: undefined, confirmed: true }),
       }),
     );
-    expect(await screen.findByText("Request recorded.")).toBeInTheDocument();
+    // 046 a11y audit: was a plain styled <p>, invisible to screen-reader
+    // heading navigation, until this prompt made it a real heading.
+    expect(await screen.findByRole("heading", { name: "Request recorded." })).toBeInTheDocument();
     expect(screen.getByText("DEL-XYZ789")).toBeInTheDocument();
   });
 

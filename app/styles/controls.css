@@ -207,3 +207,24 @@
   background: var(--button-primary-bg);
   border-color: var(--button-primary-bg);
 }
+
+/*
+ * Prompt 046 — Windows High Contrast (forced-colors). The custom checkbox
+ * box already survives this mode by accident (its check/indeterminate
+ * mark is a conditionally-rendered SVG, not a color-only signal, and
+ * forced-colors never affects whether an element exists in the DOM) —
+ * verified by reasoning through the spec, not a live device test (see
+ * A11Y_AUDIT.md for why a live Narrator/High Contrast pass remains a
+ * manual follow-up). The one real gap: any custom `role="switch"` control
+ * (the cookie-preferences functional toggle, 045) relies on its knob's
+ * own background for a visible shape once forced-colors neutralizes
+ * arbitrary background colors on the track — this rule gives the knob an
+ * explicit system-color border so it stays a distinct, visible shape
+ * regardless of background, on top of the position change (left vs.
+ * right) that already conveys on/off state independent of color.
+ */
+@media (forced-colors: active) {
+  [role="switch"] > span[aria-hidden="true"] {
+    border: 1px solid CanvasText;
+  }
+}

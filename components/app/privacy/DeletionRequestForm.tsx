@@ -65,7 +65,7 @@ export function DeletionRequestForm({ lang, defaultEmail = "" }: { lang: Lang; d
   if (reference) {
     return (
       <div>
-        <p className="text-h4 font-normal text-text-primary">{t.requestSuccessTitle}</p>
+        <h2 className="text-h4 font-normal text-text-primary">{t.requestSuccessTitle}</h2>
         <Body muted className="mt-2">
           {t.requestSuccessReference}: <strong className="text-text-primary">{reference}</strong>
         </Body>

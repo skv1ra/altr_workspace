@@ -63,15 +63,15 @@ export function DashboardHome({
   return (
     <div className={styles.wrap}>
       <div className={styles.greetingRow}>
-        <p className="text-h1 font-normal text-text-primary">
+        <h1 className="text-h1 font-normal text-text-primary">
           {t.greetingPrefix} {firstName(name)}.
-        </p>
+        </h1>
         <PlanBadge plan={plan} lang={lang} />
       </div>
 
       {isNewAccount ? (
         <div className={styles.empty}>
-          <p className="text-h3 font-normal text-text-primary">{t.emptyAccountTitle}</p>
+          <h2 className="text-h3 font-normal text-text-primary">{t.emptyAccountTitle}</h2>
           <p className="mt-3 max-w-[52ch] text-body text-text-muted">{t.emptyAccountBody}</p>
         </div>
       ) : (

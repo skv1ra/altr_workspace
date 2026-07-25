@@ -160,7 +160,7 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
 
   return (
     <div className={styles.wrap}>
-      <p className="text-h1 font-normal text-text-primary">{t.heading}</p>
+      <h1 className="text-h1 font-normal text-text-primary">{t.heading}</h1>
 
       <section className={styles.section} aria-labelledby="settings-identity">
         <h2 id="settings-identity" className={styles.sectionHeading}>

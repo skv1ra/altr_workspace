@@ -53,7 +53,9 @@ describe("AccountDeletionDialog", () => {
     await userEvent.type(screen.getByLabelText('Type "DELETE MY ACCOUNT" to confirm'), "DELETE MY ACCOUNT");
     await userEvent.click(screen.getByRole("button", { name: "Permanently delete my account" }));
 
-    expect(await screen.findByText("Account deleted.")).toBeInTheDocument();
+    // 046 a11y audit: was a plain styled <p>, now a real heading nested
+    // under the Dialog's own h2 title.
+    expect(await screen.findByRole("heading", { level: 3, name: "Account deleted." })).toBeInTheDocument();
     expect(screen.getByText("DEL-ABC123")).toBeInTheDocument();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       "/api/privacy/account",
