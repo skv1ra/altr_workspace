@@ -59,5 +59,5 @@ altr_workspace only.
 | 047 | Unit/integration test expansion | 12 | Close coverage gaps incl. RLS/isolation | tracks done | L | done | done | no | `test: expand unit and integration coverage` |
 | 048 | E2E flow update | 12 | Full mocked e2e across rebuilt screens | 047 | M | done | done | no | `test(e2e): rebuilt critical flows` |
 | 049 | Visual QA pass | 12 | Reference comparison across all surfaces | 048 | L | done | done | yes | `fix(design): visual QA corrections` |
-| 050 | Performance and Web Vitals | 12 | LCP/CLS/INP, bundle and asset budgets | 049 | M | todo | todo | yes | `perf: meet performance budgets` |
+| 050 | Performance and Web Vitals | 12 | LCP/CLS/INP, bundle and asset budgets | 049 | M | done | done | yes | `perf: meet performance budgets` |
 | 051 | Production deployment and smoke | 12 | Env verify, deploy, smoke test, rollback drill | 050 | M | todo | todo | yes | `chore(release): production deployment verification` |

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { LazyMotion, m, domAnimation } from "framer-motion";
 import { createContext, useContext, useId, type ReactNode } from "react";
 import { fadeRise, transitions, useReducedMotionSafe, STAGGER_STEP_SECONDS } from "@/lib/motion";
 
@@ -38,17 +38,19 @@ export function Reveal({ children, className, delay = 0 }: RevealProps) {
       <noscript>
         <style>{`${selector} { opacity: 1 !important; transform: none !important; }`}</style>
       </noscript>
-      <motion.div
-        data-reveal-id={id}
-        data-reveal-delay-seconds={totalDelay.toFixed(3)}
-        className={className}
-        initial={reducedMotion ? false : fadeRise.hidden}
-        whileInView={reducedMotion ? undefined : fadeRise.visible}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ ...transitions.enter, delay: totalDelay }}
-      >
-        {children}
-      </motion.div>
+      <LazyMotion features={domAnimation} strict>
+        <m.div
+          data-reveal-id={id}
+          data-reveal-delay-seconds={totalDelay.toFixed(3)}
+          className={className}
+          initial={reducedMotion ? false : fadeRise.hidden}
+          whileInView={reducedMotion ? undefined : fadeRise.visible}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ ...transitions.enter, delay: totalDelay }}
+        >
+          {children}
+        </m.div>
+      </LazyMotion>
     </RevealDepthContext.Provider>
   );
 }

@@ -206,14 +206,14 @@ export function PricingTable({ injectedPlans, injectedMe }: PricingTableProps) {
                 {isCurrentPlan ? (
                   <span className={styles.yourPlan}>{t.yourPlan}</span>
                 ) : !isPaid ? (
-                  me === null ? (
+                  me == null ? (
                     <Link href="/auth?mode=register" className="btn control-focus btn-primary">
                       {t.ctaRegister}
                     </Link>
                   ) : (
                     <span className="text-body text-text-muted">{t.freeIncluded}</span>
                   )
-                ) : me === null ? (
+                ) : me == null ? (
                   <Link href="/auth?next=/pricing" className="btn control-focus btn-primary">
                     {t.ctaCheckout}
                   </Link>

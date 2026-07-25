@@ -4,13 +4,15 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-**Prompt 049 complete, gated on manual visual approval** (committed
-locally, not pushed), run directly on the user's explicit instruction.
-Full grading table, fixes, and cross-browser findings in
-`docs/claude-prompts/VISUAL_QA.md`; summary in the "Completed prompts"
-entry below. **Visual approval is pending user review** — required before
-Prompt 050 can begin, per this prompt's own manual-verification gate; not
-self-granted.
+None — **Prompt 050 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction after the user explicitly
+granted 049's visual approval. Full metric table, fixes, and the two
+recorded-not-fixed overruns in `docs/claude-prompts/PERF_REPORT.md`;
+summary in the "Completed prompts" entry below.
+
+Prior: **Prompt 049 complete** (committed locally, not pushed), visual
+approval was pending user review at the end of that prompt's own session —
+**the user has since explicitly granted it**, confirmed before 050 began.
 
 Prior: **Prompt 048 complete** (committed locally, not pushed), run
 directly on the user's explicit instruction. Restructures the e2e suite
@@ -4531,8 +4533,52 @@ manifest) is still open.
   typecheck, 681/681 unit tests, build 55/55 pages) and `yarn test:e2e`
   (61/11/0, matches 048's baseline exactly — confirms the not-found.tsx fix
   caused no regression) both passed after the fix. **Visual approval:
-  pending user review** — the prompt's own manual-verification gate,
-  required before 050, not self-granted.
+  granted by the user** at the start of the 050 session (was pending user
+  review at this prompt's own close; the gate was not self-granted).
+- 050 — Performance and Web Vitals (2026-07-25). Full metric table in
+  `docs/claude-prompts/PERF_REPORT.md`. Measured production-build bundle
+  sizes for every route, real per-route font/image network requests, and
+  Core Web Vitals (LCP/CLS/long-tasks) via direct Playwright +
+  `PerformanceObserver` — Lighthouse corroborated landing's numbers but
+  hit a Windows-only `chrome-launcher` cleanup-time `EPERM` on the
+  pricing/auth batch (JSON reports still wrote correctly before the crash;
+  not fought further since the Playwright-native numbers already gate
+  every checklist item, matching 018's own "Lighthouse as corroborating
+  evidence" framing). Two real fixes: (1) `components/ui/Reveal.tsx` (used
+  by all 5 of landing's below-hero sections) swapped framer-motion's full
+  `motion` API for the `LazyMotion`+`m`+`domAnimation` lazy-feature
+  pattern — identical rendered behavior, saved 8.6 KB gzip (landing
+  180 KB -> 172 KB First Load JS); confirmed `HeroScene` itself never used
+  framer-motion at all (vanilla drift/parallax, per 018's own tight
+  budget), so this was the only framer-motion usage shipped to any
+  production route. (2) `components/site/PricingTable.tsx`'s CTA
+  conditionals checked `me === null` (strict) to branch anonymous-vs-
+  signed-in UI, so the ~150ms-unresolved loading state (`me === undefined`)
+  incorrectly rendered as if already signed in, then reflowed once the
+  real state arrived — changed to `me == null` (loose) so the loading
+  state matches the (statistically dominant) anonymous case from first
+  paint; no test asserts the transient state, both steady states render
+  byte-identical to before (checked directly). Verified zero visual
+  regression: fresh screenshots of landing's full scroll and pricing
+  (under the same mocked `/api/billing/plans` success response 049 itself
+  used) are pixel-identical to 049's approved gallery. Two real,
+  root-caused overruns recorded rather than silently fixed: landing's
+  remaining 12 KB First Load JS gap is `Reveal`'s residual `domAnimation`
+  cost, required for 049's own approved motion design — closing it further
+  would mean either degrading approved motion (forbidden) or a materially
+  larger rewrite of shared animation infrastructure (real regression risk,
+  not attempted); pricing's 0.029 CLS (budget 0.02) traced precisely to
+  `lib/supabase/middleware.ts`'s `protectedPath()` treating every `/api/*`
+  route as protected-by-default unless allowlisted in `publicApi` — and
+  `/api/billing/plans` (genuinely public, no auth check in its own route
+  handler, confirmed by reading it directly) isn't allowlisted, so its
+  designed-and-tested "plans unavailable" fallback notice fires for real
+  anonymous visitors in production, not just this placeholder-Supabase
+  environment, pushing the pricing grid down. The one-line `publicApi`
+  fix sits in `lib/**`, explicitly out of this prompt's own allowed-files
+  list — flagged clearly for a dedicated follow-up rather than expanding
+  scope here. `yarn run check` and `yarn test:e2e` (61/11/0, unchanged)
+  both passed after the fixes.
 
 ## Failed prompts
 
