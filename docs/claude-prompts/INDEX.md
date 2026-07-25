@@ -48,7 +48,7 @@ altr_workspace only.
 | 036 | Memory overview redesign | 8 | List, search, filters, pagination | 029 | M | done | done | yes | `feat(memory): redesigned memory overview` |
 | 037 | Memory editing and provenance | 8 | Create/edit/disable/delete + provenance | 036 | M | done | done | yes | `feat(memory): editing and provenance UX` |
 | 038 | Memory quotas and tests | 8 | Quota surfaces + memory test coverage | 037 | S | done | done | no | `test(memory): quotas and coverage` |
-| 039 | Twin configuration redesign | 9 | Twin identity/style configuration | 029 | M | todo | todo | yes | `feat(twin): redesigned twin configuration` |
+| 039 | Twin configuration redesign | 9 | Twin identity/style configuration | 029 | M | done | done | yes | `feat(twin): redesigned twin configuration` |
 | 040 | Draft reply interface | 9 | Generate/review/copy/regenerate/history | 039 | L | todo | todo | yes | `feat(twin): draft reply interface` |
 | 041 | Twin security and tests | 9 | Injection defense, quotas, error coverage | 040 | M | todo | todo | no | `test(twin): security and draft coverage` |
 | 042 | Billing overview redesign | 10 | Status, invoices, portal in new system | 029,023 | M | todo | todo | yes | `feat(billing): redesigned billing overview` |

@@ -4,76 +4,111 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 038 complete, closes Phase 8** (committed locally, not
-pushed), run directly on the user's explicit instruction. Read-only
-inspection first, per the prompt's own instructions: `lib/ai/memory-
-extraction.ts`'s extraction path already enforces `maxActiveMemories`
-(`activeMemories.count >= limits.maxActiveMemories`, checked once before
-the batch and again per-candidate inside the insert loop), but manual
-creation (`POST /api/memories`) and the enable/disable toggle (`PATCH
-/api/memories/:id` with `{active: true}`) do not — confirmed by reading
-both route handlers line-by-line, no quota check exists in either.
-Recorded honestly as **RISKS.md R13**, per this prompt's own explicit "do
-not silently add server enforcement" instruction — `app/api/**` is outside
-this prompt's file scope regardless. **Quota surfaces:** the header meter
-(036's `MemoryStatusHeader` + `QuotaMeter`) already existed and needed no
-changes; new work is the create-entry-point gate — `MemoryEditDialog`
-(create mode only) now shows a calm reached notice with the real used/limit
-numbers and a `/pricing` upgrade link, and disables Save, once
-`activeMemoryCount >= memoryLimit`. Deliberately **new** UI, not a recolor
-of the pre-existing `QuotaMeter` (out of this prompt's file scope, already
-uses this app's established error-red for its own reached state per
-Prompt 031's own documented decision) — this prompt's own "no red bars"
-visual wording is honored by the new notice alone (`--text-muted` ->
-`--text-primary`, never a color change), while `QuotaMeter` itself is left
-exactly as shipped. `MemoryOverview`'s active-memory count is now live
-local state (mirrors the existing `remainingTotal` pattern) so both the
-header meter and a freshly-reopened create dialog reflect create/enable/
-disable/delete within the same session, not just the server's snapshot at
-load. Extraction-quota outcomes (033's `ImportFlow` pause state) already
-reused the shared `quota.upgradeLink` copy/`/pricing` href — verified,
-not assumed, that this held for the `MEMORY_LIMIT_REACHED` reason
-specifically (only the sibling `IMPORT_MONTHLY_QUOTA_REACHED` e2e test had
-ever asserted the link before); extended the existing e2e extraction-pause
-test to assert it there too. **`/memory` content-level e2e remains
-blocked**, re-verified concretely this session (not assumed from 036/037's
-prior finding): built + started the production server with
-`ALTR_E2E_MOCKS=1` and curled `/memory` with the real mocked identity
-header — 500, `TypeError: fetch failed` against the placeholder Supabase
-URL, identical cause to 036/037's own finding, no regression from this
-prompt's changes. Coverage added: 11 new tests (`tests/unit/memory-quota
-.test.ts` — 6, new, importing real `PLAN_LIMITS` constants, covering
-79/85/100/110% of both the free (250) and work (25,000) limits per this
-prompt's own manual-verification instruction, run through the real
-`QuotaMeter` component rather than duplicating its logic; `MemoryEditDialog
-.test.tsx` — 3 new, reached/under-quota/edit-mode-unaffected; `MemoryOverview
-.test.tsx` — 2 new, integration-level gate-plus-never-blocks-viewing and
-live-count-after-a-real-create). `yarn lint`, `yarn typecheck`, `yarn test`
-(67 files/469 tests, up from 66/458 in 037), `yarn build` (45/45 pages,
-`/memory` grew from 6.94 kB to 7.18 kB, no route changes), and
-`yarn test:e2e` (39/39, unchanged count, one test's own coverage widened)
-all passed. **Carried forward, unchanged:** the `/settings`
+None — **Prompt 039 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Opens Phase 9. Inspected
+LEGACY first, not assumed: `app/assistants/page.tsx` @ pinned `a22927d`
+is a plain client-fetch page (name/tone/instructions form + a draft
+generator + two "coming later" cards) that never imports
+`components/assistants/*` at all (confirmed via a full `app/` grep,
+`git log`, and `git status` at the pinned SHA — clean, no drift) —
+`AssistantCard`/`AssistantConfigPanel`/`AssistantMatrix`/`AssistantPreview`/
+`AssistantToggle`/`ControlLayer`/`copy.ts`/`types.ts` are dead prototype
+code built around a fictional multi-assistant/autonomy-level data model
+that doesn't match the real `altr_assistant_configs` schema anywhere —
+same "dead prototype, real page's own inline implementation is the actual
+contract" finding 036 already made for `components/memory/*`. Treated
+LEGACY's own real page as the behavioral contract; the dead components as
+inspiration only (they weren't used for anything concrete here).
+**Real-contract finding, honestly built around, not silently worked
+past:** `PATCH /api/assistants/:id` (must-not-change; read in full) has
+no `active`/`is_active` field at all — only `name`/`tone`/
+`systemInstructions`/`config`. `is_active` is real and consequential
+(`app/api/ai/draft-reply/route.ts` gates generation on it, 409
+`ACTIVE_TWIN_REQUIRED` when false) but genuinely unwritable from this
+workspace's current API surface. Built "Status" as an honest, data-driven,
+**non-interactive** readout (real pill + real consequences copy sourced
+from what drafting actually does when active/inactive) rather than the
+literal "active toggle" instruction #1 asks for — a toggle with no working
+write path would be exactly the dead-button RISKS R9 already forbids
+elsewhere; `app/api/**` is outside this prompt's file scope regardless, so
+no server-side write path was added. RISKS.md isn't in this prompt's own
+allowed-files list (unlike 038's), so this finding is recorded here
+instead. **Built:** `app/(app)/assistants/page.tsx` (new — direct,
+trusted server-side query for the real active-memory count only, same
+precedent 038 set for the identical gap in `GET /api/memories`; the Twin
+row/previews themselves are deliberately client-fetched, mirroring both
+LEGACY's own page and this workspace's `/import-conversations`, so the
+config-round-trip logic itself doesn't depend on a server-side Supabase
+read); `components/app/twin/TwinConfigView.tsx` (Identity/Voice/Status
+sections, dirty-tracked diff-based PATCH save mirroring 030's own
+`SettingsView` conventions exactly — baseline vs. current, disabled Save
+until dirty, server-confirm-then-toast, no optimistic updates) and
+`TwinRoadmapPreview.tsx` (renders the real `previews` array `GET
+/api/assistants` already returns, not a hardcoded duplicate; zero
+buttons/links/tabbable elements anywhere in a preview card). The "meeting
+the Twin" presence panel reuses the real `shard-main` hero asset
+(013/014's own supplied master, `--motion-drift`'s existing CSS
+kill-switch handles reduced-motion for free, no new JS hook needed) inside
+a real `Surface variant="inverse"` — confirmed by reading `materials.css`
+that `.surface-inverse` re-scopes `--text-primary`/`--text-muted` locally,
+so the `Display`/`Label`/`Body` primitives need no manual dark-mode color
+overrides. **Deliberately not built:** `config.responseLength`/
+`emojiLevel` (the PATCH schema accepts them; instruction #1 only names
+name/tone/instructions/status, so no UI was added for fields the prompt's
+own instructions never asked for); the draft-generation half of LEGACY's
+page (explicitly 040's own scope, per instruction #5's "draft flow stays
+until 040"). **AppNav gap, left alone, not assumed:** `components/app/
+AppNav.tsx`'s own comment literally names "039" as the prompt that should
+add a Twin nav destination, but `AppNav.tsx` isn't in this prompt's
+allowed-files list and nav wiring isn't in its acceptance criteria — same
+resolution 037 already used for the identical `/import-conversations`
+nav-wiring gap: left alone rather than assumed, flagged here instead.
+`/assistants` is reachable by typed URL and already protected by
+middleware; it just has no rail/menu entry point yet.
+**`/assistants` content-level e2e blocked, verified concretely, not
+assumed:** every `(app)/` page shares `app/(app)/layout.tsx`, which
+unconditionally calls `getProfileForUser` (no try/catch) — this is a
+structural property of the shared layout, not something this prompt's own
+added query could route around even by fetching everything client-side;
+confirmed by curling a freshly built-and-started production server with
+the real mocked e2e identity headers: `500`, `TypeError: fetch failed`
+against the placeholder Supabase URL, identical cause to 029/036/037/038's
+own findings. Real coverage lives at the RTL layer instead (11 new tests
+across `TwinConfigView.test.tsx` and `TwinRoadmapPreview.test.tsx`:
+load-and-prefill, diff-based PATCH-body contract, dirty-gating, empty-name
+validation, load-failure state, active/inactive Status both ways, no
+toggle control exists, memory-link singular/plural + real href, real
+previews rendering, previews are fully non-interactive, an unrecognized
+preview id still renders honestly, empty previews renders nothing,
+instructions-at-max-length, emoji-in-name round-trip). The one e2e
+assertion that *does* exercise the real new route — the anonymous-redirect
+test for `/assistants` (027's own loop, unmodified) — re-confirmed passing
+now that a real page exists behind that redirect, not just a 404.
+`yarn lint`, `yarn typecheck`, `yarn test` (69 files/484 tests, up from
+67/469 in 038 — 2 new files/15 new tests), `yarn build` (46/46 pages, up
+by exactly 1 from 038's own clean-rebuild count of 45 — the +1 is
+`/assistants`, a real new route — self-consistent evidence, though not a
+full re-investigation, that 038's own logged-45-vs-46 discrepancy note
+isn't compounding further), and `yarn test:e2e` (39/39, unchanged — no new
+e2e test added, for the structural reason above) all passed. **Carried
+forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
-blocker (029) — still applies to every *other* `(app)` page (dashboard,
-memory, settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
-anonymous-401 middleware bug and its dormant `/api/billing/me` status-code
-bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-verification
-gaps (014-018); 019's signed-in-nav-state item; `<Toaster />` is **still**
-not mounted anywhere in `app/layout.tsx`. **New, minor, low-priority
-follow-up noted (not fixed, out of this prompt's own scope):** neither
-`components/app/DashboardHome.tsx`'s Imports row nor `AppNav.tsx`'s
-destinations list link to `/import-conversations` now that it's real —
-this prompt's own instructions didn't explicitly call for that wiring
-(unlike 030's explicit Settings-nav instruction or 031's explicit
-QuotaMeter-wiring instruction), so it was left alone rather than assumed.
-Note: Prompt 004 itself
-(the backend scaffold/port) was never given its own commit or
-`PORT_MANIFEST.md` — its file changes exist uncommitted in the working tree
-from an earlier, undocumented session. None of 005-012 redid or finalized
-004 (explicitly out of scope each time) but each has run `yarn check`
-against that ported backend as part of verifying their own changes — see
-the 005-012 entries below. That gap (004 uncommitted, no manifest) is still
-open.
+blocker (029) — now also confirmed to apply to `/assistants` for the same
+structural reason as every other `(app)` page; the `/api/billing/plans`+
+`/api/billing/me` anonymous-401 middleware bug and its dormant
+`/api/billing/me` status-code bug (023); 020's CSP/`force-dynamic` item;
+Phase 3's manual-verification gaps (014-018); 019's signed-in-nav-state
+item; `<Toaster />` is **still** not mounted anywhere in `app/layout.tsx`
+(only in the `(app)` layout, 037); the `DashboardHome`/`AppNav` ->
+`/import-conversations` nav-wiring gap (037) and the new `AppNav` ->
+`/assistants` one from this session, both left alone for the same reason.
+Note: Prompt 004 itself (the backend scaffold/port) was never given its
+own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
+the working tree from an earlier, undocumented session. None of 005-012
+redid or finalized 004 (explicitly out of scope each time) but each has
+run `yarn check` against that ported backend as part of verifying their
+own changes — see the 005-012 entries below. That gap (004 uncommitted, no
+manifest) is still open.
 
 ## Completed prompts
 
@@ -3701,6 +3736,94 @@ open.
   `yarn test:e2e` (39/39, unchanged count — one existing test's own
   coverage widened, no new/removed test) all passed.
 
+- 039 — Twin configuration redesign, opens Phase 9 (2026-07-25). Inspected
+  LEGACY first: `app/assistants/page.tsx` @ pinned `a22927d` is a plain
+  client-fetch page (name/tone/instructions form, a draft generator, two
+  "coming later" cards) that never imports `components/assistants/*` —
+  confirmed via a full `app/` grep plus `git log`/`git status` at the
+  pinned SHA (clean, no drift). `AssistantCard`/`AssistantConfigPanel`/
+  `AssistantMatrix`/`AssistantPreview`/`AssistantToggle`/`ControlLayer`/
+  `copy.ts`/`types.ts` are dead prototype code around a fictional
+  multi-assistant/autonomy-level model that doesn't match the real
+  `altr_assistant_configs` schema anywhere — same class of finding 036
+  already made for `components/memory/*`. Treated LEGACY's own real page
+  as the behavioral contract; the dead components were inspiration only
+  and contributed nothing concrete.
+  **Real-contract finding, built around honestly, not silently bypassed:**
+  `PATCH /api/assistants/:id` (must-not-change, read in full) has no
+  `active`/`is_active` field — only `name`/`tone`/`systemInstructions`/
+  `config`. `is_active` is real and consequential (`app/api/ai/draft-
+  reply/route.ts` gates generation on it: `.eq("is_active", true)`, 409
+  `ACTIVE_TWIN_REQUIRED` when false) but genuinely unwritable from this
+  workspace's current API. Built "Status" as an honest, data-driven,
+  non-interactive readout — a real pill plus real consequences copy —
+  instead of instruction #1's literal "active toggle": a toggle with no
+  working write path would be exactly the dead-button RISKS R9 already
+  forbids; `app/api/**` is outside this prompt's scope, so no write path
+  was added. RISKS.md isn't in this prompt's own allowed-files list
+  (unlike 038's), so this finding lives here instead — a proper RISKS.md
+  entry should be added the next time a prompt can touch that file.
+  **Built:** `app/(app)/assistants/page.tsx` (new — one direct, trusted
+  server-side query for the real active-memory count, same precedent 038
+  set for the identical `GET /api/memories` gap; the Twin row/previews
+  are deliberately client-fetched instead, mirroring both LEGACY's own
+  page and this workspace's `/import-conversations`, so the config-
+  round-trip logic doesn't itself depend on a server-side Supabase read);
+  `components/app/twin/TwinConfigView.tsx` (Identity/Voice/Status
+  sections; dirty-tracked diff-based PATCH save mirroring 030's own
+  `SettingsView` conventions exactly: baseline vs. current, Save disabled
+  until dirty, server-confirm-then-toast, no optimistic updates) and
+  `TwinRoadmapPreview.tsx` (renders the real `previews` array `GET
+  /api/assistants` already returns rather than a hardcoded duplicate;
+  zero buttons/links/tabbable elements in a preview card). The presence
+  panel reuses the real `shard-main` hero asset (013/014's own supplied
+  master) inside a real `Surface variant="inverse"`, with `--motion-
+  drift`'s existing CSS kill-switch handling reduced-motion for free (no
+  new JS hook needed) — confirmed by reading `materials.css` that
+  `.surface-inverse` re-scopes `--text-primary`/`--text-muted` locally,
+  so `Display`/`Label`/`Body` need no manual dark-mode color overrides.
+  **Deliberately not built:** `config.responseLength`/`emojiLevel` (the
+  PATCH schema accepts them; instruction #1 names only name/tone/
+  instructions/status, so no UI was added for fields the prompt's own
+  instructions never asked for); the draft-generation half of LEGACY's
+  page (explicitly 040's scope, per instruction #5's "draft flow stays
+  until 040").
+  **`AppNav` gap, left alone, not assumed:** `components/app/AppNav.tsx`'s
+  own comment literally names "039" as the prompt that should add a Twin
+  nav destination, but `AppNav.tsx` isn't in this prompt's allowed-files
+  list and nav wiring isn't in its acceptance criteria — same resolution
+  037 already used for the identical `/import-conversations` nav gap.
+  `/assistants` is reachable by typed URL and already middleware-
+  protected; it has no rail/menu entry point yet.
+  **`/assistants` content-level e2e blocked, verified concretely:** every
+  `(app)/` page shares `app/(app)/layout.tsx`, which unconditionally calls
+  `getProfileForUser` with no try/catch — a structural property of the
+  shared layout this prompt's own file choices (client-fetching the Twin
+  row instead of a server read) could not route around. Confirmed by
+  curling a freshly built-and-started production server with the real
+  mocked e2e identity headers: `500`, `TypeError: fetch failed` against
+  the placeholder Supabase URL, identical cause to 029/036/037/038's own
+  findings. Real coverage lives at the RTL layer instead: 11 new tests
+  across `tests/components/TwinConfigView.test.tsx` (load-and-prefill,
+  diff-based PATCH-body contract, dirty-gating, empty-name validation,
+  load-failure state, active/inactive Status both ways with real copy —
+  proving it isn't hardcoded to always show "Active" — no toggle control
+  exists, memory-link singular/plural wording with a real `/memory` href,
+  real previews rendering, instructions-at-max-length, emoji-in-name
+  round-trip through load/edit/save) and `tests/components/
+  TwinRoadmapPreview.test.tsx` (both real previews render with the
+  badge, zero interactive elements in a card, an unrecognized preview id
+  still renders honestly via a generic fallback, an empty previews array
+  renders nothing). The one e2e assertion that does exercise the real new
+  route — `/assistants`'s anonymous-redirect test (027's own loop,
+  unmodified) — re-confirmed passing now that a real page exists behind
+  that redirect, not just a 404.
+  `yarn lint`, `yarn typecheck`, `yarn test` (69 files/484 tests, up from
+  67/469 in 038 — 2 new files/15 new tests), `yarn build` (46/46 pages, up
+  by exactly 1 from 038's own clean-rebuild count of 45 — the +1 is
+  `/assistants`, a real new route), and `yarn test:e2e` (39/39, unchanged —
+  no new e2e test added, for the structural reason above) all passed.
+
 ## Failed prompts
 
 None.
@@ -3740,8 +3863,10 @@ times, unchanged route count — `/memory` grew from 5.58 kB to 6.94 kB in
 037), and again for 038, closes Phase 8 (45/45 pages — see 038's own
 STATUS entry above for a found-but-unresolved discrepancy against 037's
 logged 46/46 for what should be the identical route set; no route was
-actually added/removed/renamed — `/memory` grew from 6.94 kB to 7.18 kB).
-033's own entry above records a real
+actually added/removed/renamed — `/memory` grew from 6.94 kB to 7.18 kB),
+and again for 039, opens Phase 9 (46/46 pages — exactly 038's own 45 plus
+the one real new route, `/assistants`, 4.47 kB). 033's own entry above
+records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -3786,6 +3911,12 @@ session by directly curling a freshly built-and-started production server
 with the real mocked e2e identity headers (`500`, `TypeError: fetch
 failed` against the placeholder Supabase URL) — same cause 036 first
 found and 037 already re-confirmed, not just assumed still true.
+Re-confirmed same day for 039, opens Phase 9 — 484/484 tests across 69
+files, clean exit, plus `yarn test:e2e` 39/39 (unchanged — the new
+`/assistants` route has no content-level e2e coverage; see 039's own
+entry for why, verified concretely by curling the same real mocked-
+identity request against the new route: `500`, `TypeError: fetch failed`,
+same placeholder-Supabase cause as every other `(app)` page).
 
 ## Known regressions
 
@@ -3815,6 +3946,22 @@ None recorded.
   "user approves the writing"; 016: DevTools performance recording review)
   — each ran directly on user instruction. Whoever picks up Prompt 017
   should get all three approvals, or treat that as a prerequisite.
+- Prompt 039 found `PATCH /api/assistants/:id` has no `active`/`is_active`
+  field — the Twin can never actually be deactivated from this workspace's
+  UI, even though `is_active` is real and gates draft generation
+  (`ACTIVE_TWIN_REQUIRED`). Not fixed (`app/api/**` out of scope for 039);
+  RISKS.md also wasn't in 039's own allowed-files list, so no formal R14
+  entry exists yet — the next prompt that can touch either file should add
+  real server-side write support (mirroring how the read side already
+  works) and a proper RISKS.md entry. Prompt 040 (draft interface) should
+  read 039's own STATUS entry before assuming a user can ever reach a
+  false-`is_active` state to test the 409 `ACTIVE_TWIN_REQUIRED` path
+  against — today, nothing in this workspace can ever produce one.
+- `AppNav.tsx` still has no destination for `/assistants` (or, from 037,
+  `/import-conversations`) — both real pages, both reachable only by typed
+  URL. `AppNav.tsx` wasn't in either prompt's own allowed-files list.
+  Whichever prompt is next allowed to touch it should wire both in one
+  pass rather than leaving a third gap for 042/045 to also skip.
 
 ## Environment notes
 
@@ -3874,6 +4021,6 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Onboarding | new (no LEGACY equivalent existed) | 031 |
 | Memory overview | rebuilt | 036 |
 | Import experience | rebuilt | 032 |
-| Twin / assistants | legacy | 039 (todo) |
+| Twin / assistants | rebuilt | 039 |
 | Billing overview | legacy | 042 (todo) |
 | Privacy center | legacy | 045 (todo) |

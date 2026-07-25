@@ -1,0 +1,42 @@
+.grid {
+  margin-top: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/*
+ * Deliberately receded, never a card-teaser (this prompt's own visual
+ * requirement) — lower opacity than any real content on the page, a
+ * hairline border instead of a filled surface, and no hover/focus
+ * treatment at all: nothing here responds to interaction because nothing
+ * here is interactive (RISKS R9 — no dead buttons, no fake affordances).
+ */
+.card {
+  padding: var(--space-6);
+  border: 1px solid var(--edge-hairline);
+  opacity: 0.6;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--edge-hairline);
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.name {
+  margin-top: var(--space-3);
+}
+
+.body {
+  margin-top: var(--space-2);
+}

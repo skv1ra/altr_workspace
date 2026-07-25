@@ -1,0 +1,138 @@
+.wrap {
+  max-width: 760px;
+}
+
+/*
+ * "Meeting the Twin" — cinematic negative space, generous padding, the
+ * shard drifting slowly behind the name. `overflow: hidden` clips the
+ * shard to the panel's own rounded edge rather than letting it bleed into
+ * the page below.
+ */
+.presence {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-8);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.shardWrap {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  width: min(420px, 55%);
+  transform: translateY(-50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.shardImg {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0.5;
+}
+
+.presenceContent {
+  position: relative;
+  z-index: 1;
+}
+
+.presenceName {
+  margin-top: var(--space-3);
+  word-break: break-word;
+}
+
+.loadingLine {
+  position: relative;
+  z-index: 1;
+  color: var(--text-muted);
+}
+
+.section {
+  margin-top: var(--space-10);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.sectionHeading {
+  font-size: var(--text-h4);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionBody {
+  margin-top: var(--space-2);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+.fields {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 32rem;
+}
+
+.statusRow {
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-3);
+  border: 1px solid var(--edge-hairline);
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-primary);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.statusDotActive {
+  background: var(--text-primary);
+}
+
+.statusBody {
+  margin-top: var(--space-3);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+.memoryLink {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+}
+
+.memoryLink a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  margin-top: var(--space-10);
+  padding-block: var(--space-6);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.loadError {
+  margin-top: var(--space-6);
+}
