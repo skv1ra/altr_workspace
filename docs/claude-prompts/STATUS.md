@@ -4,7 +4,15 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 048 complete** (committed locally, not pushed), run
+**Prompt 049 complete, gated on manual visual approval** (committed
+locally, not pushed), run directly on the user's explicit instruction.
+Full grading table, fixes, and cross-browser findings in
+`docs/claude-prompts/VISUAL_QA.md`; summary in the "Completed prompts"
+entry below. **Visual approval is pending user review** — required before
+Prompt 050 can begin, per this prompt's own manual-verification gate; not
+self-granted.
+
+Prior: **Prompt 048 complete** (committed locally, not pushed), run
 directly on the user's explicit instruction. Restructures the e2e suite
 into eight named journeys, closing out the whole-system testing arc
 alongside 047.
@@ -4487,6 +4495,44 @@ manifest) is still open.
   unchanged — this prompt's own scope is `tests/e2e/**` only), `yarn
   build` (55/55 pages, unchanged), and `yarn test:e2e` (61/11/0, both
   projects) all passed (`yarn check` in full).
+- 049 — Visual QA pass (2026-07-25). Graded all 22 named public/auth/legal/
+  payment surfaces at 1440/768/375 against `references/altr-hero-reference.png`
+  and `DESIGN_DIRECTION.md`'s rubric — full table in
+  `docs/claude-prompts/VISUAL_QA.md`. Capture methodology bug found and fixed
+  first: `fullPage: true` screenshots never scroll for real, so `Reveal.tsx`'s
+  genuine IntersectionObserver-backed reveals never fire, leaving blank
+  sections; fixed by using the real Playwright test runner with genuine
+  incremental scrolled captures instead of a standalone script. One real
+  fix applied: `app/not-found.tsx` was missing the site `Header`/`Footer`
+  every other public page renders directly (it's the *root* not-found,
+  outside `(public)`, which has no shared layout — every public page wires
+  chrome in itself) — added both, re-verified via build + screenshot.
+  Firefox/WebKit installed locally for a cross-browser spot-check (CI
+  untouched, still Chromium-only). Two WebKit-only findings, both root-
+  caused to the local capture environment, not the app: (1) landing/
+  pricing/privacy loaded completely unstyled under WebKit — traced to the
+  production CSP's `upgrade-insecure-requests` directive, which WebKit
+  (unlike Chromium/Firefox) doesn't exempt `127.0.0.1` from, so it upgrades
+  asset requests to `https://` against a plain-HTTP local server and every
+  asset fails with an SSL error; a no-op in real HTTPS deployment, not
+  fixed here; (2) 4 surfaces (`03/14/15/17`) fail a mocked-API-reflected-in-
+  UI assertion under WebKit only — a Playwright/WebKit route-interception
+  quirk, not a real rendering bug. `/styleguide` and `/hero-lab` (both
+  dev-only, 404 in production by design) get stuck on the
+  `(public)/loading.tsx` skeleton instead of resolving to not-found content
+  when captured against a production build — traced via the raw RSC
+  payload to Next's own inline flight-data scripts lacking a `nonce` and
+  being CSP-blocked, because neither route calls `headers()` to opt into
+  the nonce-aware dynamic-rendering path the rest of the app uses; real
+  users never see this (dev-only, always 404 outside development) —
+  flagged for a dedicated follow-up rather than touching `middleware.ts`
+  here. The 7 structurally-blocked `(app)` surfaces reconfirmed still `500`
+  (same placeholder-Supabase gate since 029). `yarn run check` (lint,
+  typecheck, 681/681 unit tests, build 55/55 pages) and `yarn test:e2e`
+  (61/11/0, matches 048's baseline exactly — confirms the not-found.tsx fix
+  caused no regression) both passed after the fix. **Visual approval:
+  pending user review** — the prompt's own manual-verification gate,
+  required before 050, not self-granted.
 
 ## Failed prompts
 
