@@ -53,7 +53,7 @@ altr_workspace only.
 | 041 | Twin security and tests | 9 | Injection defense, quotas, error coverage | 040 | M | done | done | no | `test(twin): security and draft coverage` |
 | 042 | Billing overview redesign | 10 | Status, invoices, portal in new system | 029,023 | M | done | done | yes | `feat(billing): redesigned billing overview` |
 | 043 | Checkout and payment returns | 10 | Checkout entry + success/cancel/receipt | 042 | M | done | done | yes | `feat(billing): checkout and return pages` |
-| 044 | Billing regression tests | 10 | Webhook/entitlement/e2e verification | 043 | M | todo | todo | no | `test(billing): regression coverage` |
+| 044 | Billing regression tests | 10 | Webhook/entitlement/e2e verification | 043 | M | done | done | no | `test(billing): regression coverage` |
 | 045 | Privacy center redesign | 11 | Consents, export, deletion in one surface | 029 | M | todo | todo | yes | `feat(privacy): unified privacy center` |
 | 046 | Accessibility and legal audit | 11 | WCAG pass + legal placeholder verification | 045,024 | M | todo | todo | yes | `fix(a11y): accessibility and legal audit fixes` |
 | 047 | Unit/integration test expansion | 12 | Close coverage gaps incl. RLS/isolation | tracks done | L | todo | todo | no | `test: expand unit and integration coverage` |

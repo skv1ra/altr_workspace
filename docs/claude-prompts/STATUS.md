@@ -4,119 +4,104 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 043 complete** (committed locally, not pushed), run
+None — **Prompt 044 complete** (committed locally, not pushed), run
 directly on the user's explicit instruction. Closes Phase 10.
-**Major finding, verified concretely before designing anything:** unlike
-every `(app)/` page since 029, LEGACY's real (and this prompt's own)
-payment-return surfaces are all TOP-LEVEL routes (`app/payment/success`,
-`app/payment/cancel`, `app/billing/return`, `app/payment/receipt/
-[orderId]`) — never nested under the `(app)` route group. Confirmed by
-reading `app/payment/success/page.tsx` @ pinned `a22927d`: it calls
-`requireUser()` directly, not `app/(app)/layout.tsx`'s own
-`getProfileForUser()` (the actual cause of the placeholder-Supabase
-block every `(app)` page has had). `requireUser()` only needs a session,
-which `lib/testing/e2e-auth.ts`'s mock path satisfies without touching
-real Supabase at all. Built all four new pages the same way (outside
-`(app)/`, matching both LEGACY's own placement and 032's `/import-
-conversations` precedent) and confirmed the payoff empirically: curled
-all four with the real mocked e2e identity — every one returned `200`
-with real content, none hit the placeholder-Supabase `500`. This is the
-first phase since Phase 7 where genuine content-level e2e coverage was
-possible again, not just RTL.
-**`/billing/return` finding:** curling it *without* identity headers
-returned a `307` redirect — not a bug, but `lib/supabase/middleware.ts`
-(must-not-change) protecting the whole `/billing` path *prefix*,
-`/billing/return` included, even though this prompt never asked for that
-page to require auth and LEGACY's own version didn't check for a
-session at all. Accepted as existing, unavoidable, arguably-reasonable
-behavior rather than something to route around.
-**`/billing/return`'s real current role, investigated as instructed:**
-read `lib/billing/lemonsqueezy.ts` (must-not-change) in full —
-`createHostedCheckout`'s only configured redirect target is
-`/payment/success`; the customer-portal URL is Lemon Squeezy's own
-hosted `urls.customer_portal` value. `/billing/return` is referenced
-*nowhere* in the real, current backend — dormant, likely a leftover from
-an earlier LEGACY integration iteration, not broken. Preserved and
-restyled per this prompt's own instruction #3 regardless, since a user
-could still land there via a bookmark or an old link.
-**Receipt page:** no `/api/billing/receipt/[orderId]` route exists in
-this workspace (LEGACY's own version calls exactly that, but it's dead
-MVP-era code reading a local-profile fallback) — `app/api/**` is outside
-this prompt's scope regardless. Reuses the real, already-working `GET
-/api/billing/me` (042) and finds the matching invoice client-side by
-`orderId`; inherently ownership-safe by construction, since that route
-already scopes `invoices` to the caller's own rows, so an `orderId` a
-user doesn't own simply never appears in their own array.
-**Polling logic reused verbatim** from LEGACY's own `PaymentConfirmation`
-(10 attempts, 3-second interval, same cleanup flag), restyled with a
-neutral white "fog bloom" glow that only brightens on genuine
-confirmation (pending vs. confirmed stay visibly distinct, per this
-prompt's own visual requirement) — plus a real, data-grounded 3-way
-timeout split LEGACY never had: `GET /api/billing/me` has no "checkout in
-progress" flag of its own, so there's no reliable way to distinguish "a
-real webhook just hasn't arrived" from "this page was visited directly"
-within the first few seconds (a genuine in-flight purchase *also* shows
-`subscription: null` until its own webhook lands) — but after the full
-30-second window, a still-null `subscription` becomes a meaningful
-signal (a real purchase almost always produces a row well within that
-window), so the timeout state's wording splits honestly between
-"nothing pending" and "still resolving, not a failure" based on that.
-No "contact support" action anywhere — `lib/legal/legal-config.ts`'s
-`SUPPORT_EMAIL` is still an unresolved placeholder (checked before
-writing any copy), so every unresolved path points at the real,
-already-working `/billing` page instead of a fake mailto link.
-**Built:** `components/app/billing/PaymentConfirmation.tsx` (the state
-machine above), `PaymentNotice.tsx` (shared shell for the two plain
-informational surfaces), `PaymentCancelContent.tsx`, `BillingReturnContent
-.tsx`, `ReceiptDetail.tsx` — plus the four thin page wrappers, each a
-plain server component carrying only `metadata`/`force-dynamic` (the
-same CSP-nonce-vs-static-generation fix `/import-conversations` already
-established for client-state-only pages), with all real logic in the
-client components above.
-**Two real mistakes caught while building, neither shipped:** (1) first
-wrote `/payment/cancel`'s own `page.tsx` with `"use client"` directly on
-it and a hardcoded `"EN"` language — would have silently ignored every
-UA user's real stored preference; refactored to the established
-server-wrapper-plus-client-content pattern before it went anywhere near
-a commit. (2) the e2e "never upgrades the plan" and "confirmed" tests
-initially hung indefinitely under `vi.useFakeTimers()` because RTL's own
-`findByText`/`waitFor` polling relies on real timers internally — fixed
-by switching to synchronous `getByText` once fake-timer advancement had
-already settled the DOM, and documented the gotcha in the test file.
-**All required tests, real, non-tautological:** RTL state-machine
-coverage for pending/confirmed/both timeout sub-states/refresh/load-
-failure (`PaymentConfirmation.test.tsx`, using fake timers to exercise
-the full 30-second window without a slow test), the two notice pages
-(`PaymentReturnNotices.test.tsx`), and the receipt page including the
-not-found and load-failure states (`ReceiptDetail.test.tsx`). e2e: the
-existing "checkout creation" pin now also asserts real content on
-`/payment/success`; a new, genuinely content-level "never upgrades the
-plan" test (mocks a consistently non-premium server response across two
-real poll cycles and asserts the page never claims otherwise) and a
-"confirmed" counterpart; a new cancel-page-render test.
-`yarn lint`, `yarn typecheck`, `yarn test` (79 files/576 tests, up from
-76/561 in 042 — 3 new files/15 new tests), `yarn build` (51/51 pages, up
-from 042's own 48 — four new routes added, `/payment/success`/`/payment/
-cancel`/`/billing/return`/`/payment/receipt/[orderId]`, all confirmed
-dynamic — `ƒ`, never `○` — so none risk serving a stale CSP nonce), and
-`yarn test:e2e` (42/42, up from 39/39 — 3 new tests, the first *new*
-content-level e2e tests since Phase 7) all passed. **Carried forward,
-unchanged:** the `/settings` middleware-protection gap (030); the
-placeholder Supabase credentials blocker (029) — still current for
-every `(app)` page, though proven this session to *not* apply to
-top-level pages outside that route group; the `/api/billing/plans`+
-`/api/billing/me` anonymous-401 middleware bug and its dormant `/api/
-billing/me` status-code bug (023); 020's CSP/`force-dynamic` item
-(itself now further reinforced, not contradicted, by this prompt's own
-force-dynamic additions); Phase 3's manual-verification gaps (014-018);
-019's signed-in-nav-state item; `<Toaster />` still only mounted in the
-`(app)` layout (037); the `DashboardHome`/`AppNav` -> `/import-
-conversations`, `AppNav` -> `/assistants`, and `AppNav` -> `/billing`
-nav-wiring gaps, all still left alone — `AppNav.tsx` remains outside
-every prompt's allowed-files list so far (these new payment-return pages
-were never meant to be nav destinations, so no new gap here); the
-`lib/auth/rate-limit.ts` first-commit disclosure (040); the Twin
-`is_active` write-path gap (039, RISKS R14 still unwritten).
+**Backend diff proof (step 1), exceeding the "semantic no-change" bar:**
+diffed all 14 real billing/webhook backend files (`lib/billing/
+checkout-validation.ts`, `entitlement-policy.ts`, `entitlements.ts`,
+`lemonsqueezy.ts`, `limits.ts`, `plans.ts`, `types.ts`, `webhook.ts`,
+`webhook-handler.ts`; `app/api/billing/checkout/route.ts`, `me/route.ts`,
+`plans/route.ts`, `portal/route.ts`; `app/api/webhooks/lemonsqueezy/
+route.ts`) against LEGACY @ pinned `a22927d`. `diff -u` showed 0 lines
+for all 14; re-verified with `cmp -s` (byte-for-byte, not just line-
+diff) — all 14 are genuinely **identical**, not just semantically
+equivalent. (Caught and fixed my own tooling bug mid-verification: an
+earlier `sha256sum`-based check falsely reported every file as a
+mismatch because `$LEGACY`'s Cyrillic path characters shifted
+`sha256sum`'s output field boundaries under a naive `cut`-based parse;
+re-ran with direct `cmp -s` instead, which has no such ambiguity.)
+**Existing suites, run unmodified:** `tests/unit/lemon-webhook.test.ts`,
+`entitlements.test.ts`, `phase12-billing.test.ts`, `tests/integration/
+lemonSqueezy.test.ts` — 33/33 passed, confirming signature verification,
+variant-allowlist plan mapping (never trusting client `plan_id`),
+`hasPlanAccess` hierarchy, and `resolveSubscriptionEntitlement` across
+all 9 status/date combinations were never weakened.
+**Real, previously-undocumented coverage gap found and closed:** grepped
+the whole `tests/` tree for `handleLemonWebhook`/`terminalStates`/
+`payload_hash` before writing anything — zero hits. No test anywhere
+drove the actual request handler's own idempotency mechanism (the
+`altr_billing_webhook_events` `payload_hash` lookup + `terminalStates`
+short-circuit) — only the pure signature/parsing functions in `lib/
+billing/webhook.ts` were covered. Directly relevant to this prompt's own
+security requirement ("webhook signature and idempotency tests must
+remain exactly as strict"): if this path silently regressed, nothing
+would have caught it. Added `tests/unit/webhook-handler-idempotency.
+test.ts` (9 new tests, a hand-rolled chainable/thenable mock of
+`createSupabaseAdminClient` plus a real HMAC-signed `NextRequest`):
+invalid/missing signature → 401, zero DB calls; unknown store → 403,
+zero DB calls; an event already in every real terminal state
+(`processed`/`ignored`/`orphaned`/`quarantined`) → `{200, duplicate:
+true}` with zero writes to `altr_subscriptions`/`altr_billing_orders`/
+`altr_billing_invoices`/`altr_audit_events` (the actual security property
+— no double-processing of entitlement-affecting tables); a `processing`
+(non-terminal, crashed-mid-flight) event is retried, not treated as a
+duplicate; a genuinely new event processes correctly and writes trusted,
+allowlist-derived values (never the raw payload's own claims), ending in
+`processed`.
+**Pricing CTA contract (023):** checked `tests/components/
+PricingTable.test.tsx` first, per this prompt's own "if not already
+covered" clause — already thorough (real limits/prices, register/
+checkout links signed-out, quiet "Your plan" vs. real checkout button,
+`{planId}`-only POST body, per-plan `<dl>` scoping). Nothing added here;
+recorded as checked, not skipped.
+**New source-level "no client-side entitlement trust" test** (`tests/
+unit/no-client-entitlement-trust.test.ts`, 3 tests): an explicit list of
+14 real billing/payment files (all of `components/app/billing/`,
+`PricingTable.tsx`, `PlanBadge.tsx`, every payment/billing page) asserted
+to contain none of `useSearchParams`/`searchParams.get(`/
+`URLSearchParams`/`localStorage`; a broader recursive sweep of
+`components/` + `app/(app)/` asserts the *exact* set of files using any
+of those mechanisms at all equals `["components/app/memory/
+MemoryOverview.tsx", "components/auth/AuthForm.tsx", "components/site/
+ProductSection.tsx"]` — a regression guard (any new file using these
+fails until manually reviewed) — and that none of those three combine
+the usage with a plan/premium/entitlement identifier. All three
+confirmed unrelated by direct read: `MemoryOverview.tsx`'s `URLSearchParams`
+is search/category/page state; `AuthForm.tsx`'s `searchParams` is `next`/
+`mode`; `ProductSection.tsx`'s "localStorage" hit is a comment describing
+`useLang()`'s mechanism, not a real call.
+**New finding, not fixed here (RISKS.md R14):** `components/site/
+PricingTable.tsx`'s local `BillingMeResponse` interface declares only
+`effectivePlan`, never `hasPremium`/`entitlementReason` — even though
+`GET /api/billing/me` (`app/api/billing/me/route.ts`) returns all three.
+`isCurrentPlan = me != null && me.effectivePlan === planId` uses the
+stale label alone (042 already established `effectivePlan` can remain
+non-gating after real access lapses), so a churned/grace-expired
+subscriber would see a quiet, non-actionable "Your plan" label instead
+of a working resubscribe checkout button on `/pricing`. Not a security
+gap — confirmed via the new client-trust test above that nothing
+actually *grants* access from this — but a real CTA-correctness gap.
+`components/site/PricingTable.tsx` is outside this prompt's allowed-
+files list (`components/app/billing/` only), so left for a future
+prompt; written up in full in `RISKS.md` as R14 (the Twin `is_active`
+write-path gap from 039 remains unassigned — see the "Unresolved
+decisions" entry below — and would become R15 whenever a prompt with
+RISKS.md in scope adds it).
+`yarn lint`, `yarn typecheck`, `yarn test` (81 files/588 tests, up from
+79/576 in 043 — 2 new files/12 new tests: the idempotency suite and the
+client-trust sweep), `yarn build` (51/51 pages, unchanged from 043 — a
+tests-only prompt, no new routes), and `yarn test:e2e` (42/42, unchanged
+— no new UI surface to reach) all passed. **Carried forward, unchanged:**
+the `/settings` middleware-protection gap (030); the placeholder Supabase
+credentials blocker (029) for every `(app)` page; the `/api/billing/
+plans`+`/api/billing/me` anonymous-401 middleware bug and its dormant
+status-code bug (023); 020's CSP/`force-dynamic` item; Phase 3's manual-
+verification gaps (014-018); 019's signed-in-nav-state item; `<Toaster />`
+still only mounted in the `(app)` layout (037); the `DashboardHome`/
+`AppNav` -> `/import-conversations`, `AppNav` -> `/assistants`, and
+`AppNav` -> `/billing` nav-wiring gaps; the `lib/auth/rate-limit.ts`
+first-commit disclosure (040); the Twin `is_active` write-path gap (039,
+still no RISKS.md entry — see above).
 Note: Prompt 004 itself (the backend scaffold/port) was never given its
 own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
 the working tree from an earlier, undocumented session. None of 005-012
@@ -4294,6 +4279,43 @@ manifest) is still open.
   never `○`), so none risk serving a stale CSP nonce), and
   `yarn test:e2e` (42/42, up from 39/39 — 3 new tests, the first *new*
   content-level e2e tests since Phase 7) all passed.
+- 044 — Billing regression tests, closes Phase 10 (2026-07-25). Diffed all
+  14 real billing/webhook backend files against LEGACY @ pinned `a22927d`
+  — `diff -u` showed 0 lines for all 14, then re-verified with `cmp -s`
+  (byte-for-byte, not just line-diff): genuinely identical, exceeding the
+  "semantic no-change" bar. Ran the four existing billing suites
+  unmodified — 33/33 passed, confirming signature verification, variant-
+  allowlist plan mapping, `hasPlanAccess`, and `resolveSubscriptionEntitlement`
+  were never weakened. Found a real, previously-undocumented gap: no test
+  anywhere drove `handleLemonWebhook`'s own idempotency mechanism (the
+  `altr_billing_webhook_events` `payload_hash` lookup + `terminalStates`
+  short-circuit) — only the pure signature/parsing functions were covered.
+  Added `tests/unit/webhook-handler-idempotency.test.ts` (9 tests, a
+  hand-rolled chainable/thenable Supabase admin-client mock plus a real
+  HMAC-signed `NextRequest`): invalid/missing signature and unknown store
+  both fail before any DB call; every real terminal state
+  (`processed`/`ignored`/`orphaned`/`quarantined`) short-circuits with
+  zero writes to any entitlement-affecting table; a non-terminal
+  `processing` event is retried, not deduplicated; a genuinely new event
+  writes trusted, allowlist-derived values and ends `processed`. Checked
+  the pricing CTA contract (023) against `PricingTable.test.tsx` — already
+  thoroughly covered, nothing added. Added `tests/unit/
+  no-client-entitlement-trust.test.ts` (3 tests): an explicit list of 14
+  real billing/payment files asserted to never reference
+  `useSearchParams`/`searchParams.get(`/`URLSearchParams`/`localStorage`,
+  plus a broader recursive sweep of `components/`+`app/(app)/` pinning the
+  *exact* set of files using any of those mechanisms (a regression guard)
+  and confirming none combine it with a plan/premium/entitlement
+  identifier. Found and wrote up a new, real, non-security CTA gap
+  (RISKS.md R14): `PricingTable.tsx`'s local `BillingMeResponse` type
+  declares only `effectivePlan`, never `hasPremium`/`entitlementReason`
+  (though `GET /api/billing/me` returns all three), so a churned/grace-
+  expired subscriber sees a stale, non-actionable "Your plan" label
+  instead of a working resubscribe button — not fixed here, since
+  `PricingTable.tsx` is outside this prompt's allowed-files scope.
+  `yarn lint`, `yarn typecheck`, `yarn test` (81 files/588 tests, up from
+  79/576 — 2 new files/12 new tests), `yarn build` (51/51 pages, unchanged
+  — no new routes), and `yarn test:e2e` (42/42, unchanged) all passed.
 
 ## Failed prompts
 
@@ -4345,7 +4367,9 @@ component-behavior changes), and again for 042, opens Phase 10 (48/48
 pages — exactly 041's own 47 plus the one real new route, `/billing`,
 4.17 kB), and again for 043, closes Phase 10 (51/51 pages — four new
 top-level routes: `/payment/success`, `/payment/cancel`, `/billing/
-return`, `/payment/receipt/[orderId]`, all confirmed dynamic (`ƒ`)).
+return`, `/payment/receipt/[orderId]`, all confirmed dynamic (`ƒ`)), and
+again for 044, closes Phase 10 (51/51 pages, unchanged from 043 — a
+tests-only prompt with no route or component-behavior changes).
 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
@@ -4418,6 +4442,9 @@ four new payment-return pages sit outside `(app)/` and are genuinely
 reachable; all four confirmed with real `200` responses via curl against
 a freshly built-and-started production server with the real mocked
 identity headers, no `(app)`-style 500).
+Re-confirmed same day for 044, closes Phase 10 — 588/588 tests across 81
+files, clean exit, plus `yarn test:e2e` 42/42 (unchanged — a tests-only
+prompt adding two new unit-test files, no new UI surface to reach).
 
 ## Known regressions
 
@@ -4451,13 +4478,16 @@ None recorded.
   field — the Twin can never actually be deactivated from this workspace's
   UI, even though `is_active` is real and gates draft generation
   (`ACTIVE_TWIN_REQUIRED`). Not fixed (`app/api/**` out of scope for 039);
-  RISKS.md also wasn't in 039's own allowed-files list, so no formal R14
-  entry exists yet — the next prompt that can touch either file should add
-  real server-side write support (mirroring how the read side already
-  works) and a proper RISKS.md entry. Prompt 040 (draft interface) should
-  read 039's own STATUS entry before assuming a user can ever reach a
-  false-`is_active` state to test the 409 `ACTIVE_TWIN_REQUIRED` path
-  against — today, nothing in this workspace can ever produce one.
+  RISKS.md also wasn't in 039's own allowed-files list, so no formal RISKS
+  entry exists yet for it — note that R14 was claimed by Prompt 044 for an
+  unrelated, newly-found billing finding (`PricingTable.tsx`), so this Twin
+  gap would become R15 whenever a prompt with RISKS.md in scope adds it —
+  the next prompt that can touch either file should add real server-side
+  write support (mirroring how the read side already works) and that
+  proper RISKS.md entry. Prompt 040 (draft interface) should read 039's
+  own STATUS entry before assuming a user can ever reach a false-
+  `is_active` state to test the 409 `ACTIVE_TWIN_REQUIRED` path against —
+  today, nothing in this workspace can ever produce one.
 - `AppNav.tsx` still has no destination for `/assistants` (or, from 037,
   `/import-conversations`) — both real pages, both reachable only by typed
   URL. `AppNav.tsx` wasn't in either prompt's own allowed-files list.

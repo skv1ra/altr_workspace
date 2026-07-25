@@ -141,3 +141,31 @@ explicitly say not to add it silently.
 **Residual:** low (no auth/data-exposure impact — a user can only ever
 over-fill their *own* memory store; the promised plan ceiling is
 UX-enforced, not hard-enforced, for these two paths only).
+
+## R14 — `PricingTable.tsx` derives "current plan" from `effectivePlan` alone, never `hasPremium`/`entitlementReason` (found 2026-07-25, Prompt 044)
+
+Read, not assumed: `GET /api/billing/me` (`app/api/billing/me/route.ts`)
+returns all three fields — `effectivePlan`, `hasPremium`, and
+`entitlementReason` — but `components/site/PricingTable.tsx`'s own local
+`BillingMeResponse` interface declares only `effectivePlan`, and its
+`isCurrentPlan = me != null && me.effectivePlan === planId` (line ~182)
+never reads the other two. Prompt 042 already established that
+`effectivePlan` is a display label that can remain stale/non-gating after
+real access lapses (grace period expiry, `past_due` past grace, etc.) —
+`hasPremium`/`entitlementReason` are the fields that reflect actual,
+current access. Consequence: a user whose subscription has genuinely
+lapsed would still see the quiet, non-actionable "Your plan" label for
+their old paid tier on `/pricing` instead of a working resubscribe
+checkout button — a real UX/revenue gap (a churned or grace-expired user
+can't easily resubscribe from the pricing page), though not a security
+gap (no client trusts this for actual gating; it only decides which
+button `PricingTable` shows).
+**Mitigation:** not fixed here — `components/site/PricingTable.tsx` is
+outside Prompt 044's allowed-files list (`components/app/billing/` only).
+A future prompt touching this file should change `isCurrentPlan` to key
+off `hasPremium`/`entitlementReason` (e.g. only suppress the checkout CTA
+when `hasPremium` is true for that plan) instead of the raw label.
+**Residual:** low (no security/entitlement-trust impact — confirmed via
+`tests/unit/no-client-entitlement-trust.test.ts`, added in this same
+prompt, that no component ever *grants* access from client state; this is
+a CTA-correctness gap only).
