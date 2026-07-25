@@ -107,4 +107,52 @@ describe("GET /api/ai/drafts", () => {
     expect(response.status).toBe(429);
     expect(from).not.toHaveBeenCalled();
   });
+
+  /**
+   * Prompt 041's own required test: "user A cannot list user B's runs."
+   * Stronger than the structural `.eq("user_id", ...)` assertion above —
+   * this one simulates a real two-tenant table (rows for both users
+   * present) and drives the actual filtering the mocked `.eq()` performs,
+   * so the assertion fails if the route's `user.id` were ever plumbed
+   * into the query incorrectly (e.g. swapped for a body/query param, or
+   * dropped entirely), not just if the call happened to be made.
+   */
+  it("user A cannot list user B's runs — the query, driven against a real two-user dataset, returns only the authenticated user's own rows", async () => {
+    const allRows = [
+      { id: "run-a-1", user_id: "user-a", input_text: "A's message" },
+      { id: "run-a-2", user_id: "user-a", input_text: "A's other message" },
+      { id: "run-b-1", user_id: "user-b", input_text: "B's private message" },
+    ];
+
+    function tenantAwareBuilder() {
+      let scopedUserId: string | null = null;
+      const builder = {
+        select: vi.fn(() => builder),
+        eq: vi.fn((column: string, value: string) => {
+          if (column === "user_id") scopedUserId = value;
+          return builder;
+        }),
+        order: vi.fn(() => builder),
+        range: vi.fn(() =>
+          Promise.resolve({
+            data: allRows.filter((row) => row.user_id === scopedUserId),
+            error: null,
+            count: allRows.filter((row) => row.user_id === scopedUserId).length,
+          }),
+        ),
+      };
+      return builder;
+    }
+
+    requireUser.mockResolvedValue({ id: "user-a" });
+    from.mockReturnValue(tenantAwareBuilder());
+
+    const response = await GET(requestFor("/api/ai/drafts"));
+    const body = await response.json();
+
+    expect(body.runs).toHaveLength(2);
+    expect(body.runs.every((run: { user_id: string }) => run.user_id === "user-a")).toBe(true);
+    expect(body.runs.some((run: { id: string }) => run.id === "run-b-1")).toBe(false);
+    expect(JSON.stringify(body.runs)).not.toContain("B's private message");
+  });
 });

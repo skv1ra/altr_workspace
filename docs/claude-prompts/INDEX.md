@@ -50,7 +50,7 @@ altr_workspace only.
 | 038 | Memory quotas and tests | 8 | Quota surfaces + memory test coverage | 037 | S | done | done | no | `test(memory): quotas and coverage` |
 | 039 | Twin configuration redesign | 9 | Twin identity/style configuration | 029 | M | done | done | yes | `feat(twin): redesigned twin configuration` |
 | 040 | Draft reply interface | 9 | Generate/review/copy/regenerate/history | 039 | L | done | done | yes | `feat(twin): draft reply interface` |
-| 041 | Twin security and tests | 9 | Injection defense, quotas, error coverage | 040 | M | todo | todo | no | `test(twin): security and draft coverage` |
+| 041 | Twin security and tests | 9 | Injection defense, quotas, error coverage | 040 | M | done | done | no | `test(twin): security and draft coverage` |
 | 042 | Billing overview redesign | 10 | Status, invoices, portal in new system | 029,023 | M | todo | todo | yes | `feat(billing): redesigned billing overview` |
 | 043 | Checkout and payment returns | 10 | Checkout entry + success/cancel/receipt | 042 | M | todo | todo | yes | `feat(billing): checkout and return pages` |
 | 044 | Billing regression tests | 10 | Webhook/entitlement/e2e verification | 043 | M | todo | todo | no | `test(billing): regression coverage` |
