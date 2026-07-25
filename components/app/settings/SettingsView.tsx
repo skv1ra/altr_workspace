@@ -255,7 +255,7 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
           {t.dangerHeading}
         </h2>
         <p className={styles.sectionBody}>{t.dangerBody}</p>
-        <Link href="/privacy" className="btn btn-secondary control-focus mt-2 inline-flex w-fit">
+        <Link href="/privacy-center" className="btn btn-secondary control-focus mt-2 inline-flex w-fit">
           {t.dangerCta}
         </Link>
       </section>

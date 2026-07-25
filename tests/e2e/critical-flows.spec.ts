@@ -886,3 +886,101 @@ test.describe("import history", () => {
     expect(deleteCalled).toBe(true);
   });
 });
+
+/*
+ * Prompt 045 — privacy center. `/privacy-center` itself (the new
+ * authenticated hub) is inside `(app)/`, so — like `/billing`, `/memory`,
+ * `/assistants`, and `/settings` before it — it hits the same
+ * placeholder-Supabase `getProfileForUser()` 500 this workspace has had
+ * since 029, confirmed directly against a freshly built-and-started
+ * production server with the real mocked identity headers before writing
+ * this comment (curl, not assumed). No content-level e2e test is added
+ * for it here, matching the same precedent already set for `/settings`
+ * (never given one either, for the identical reason). `/delete-data` and
+ * `/data-deletion` are real top-level routes outside `(app)/`, so —
+ * matching 043's own precedent for `/payment/success` etc. — they *are*
+ * genuinely reachable and get real content-level coverage below.
+ */
+test.describe("privacy center", () => {
+  test("/data-deletion renders the real, must-not-change policy content", async ({ page }) => {
+    await page.goto("/data-deletion");
+    await expect(page.getByRole("heading", { name: "Data Deletion" })).toBeVisible();
+    await expect(page.getByText("This page explains how to ask Altr to delete")).toBeVisible();
+  });
+
+  test("/delete-data: the public deletion-request form submits the real contract and shows a reference", async ({ page }) => {
+    // A fresh profile shows the real global cookie banner (045) after
+    // 350ms, fixed to the bottom of the viewport — on this specific
+    // page, real content (this exact checkbox) sits low enough to be
+    // physically covered by it until dismissed, confirmed directly
+    // against a real run before adding this. Pre-seeding a stored
+    // preference (functional accepted, same shape `CookieConsent`
+    // itself writes) is what a returning visitor's browser would
+    // already have, and keeps this test focused on the deletion-request
+    // contract rather than banner dismissal.
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "altr_cookie_preferences_v1",
+        JSON.stringify({ necessary: true, functional: true, analytics: false, marketing: false, version: "e2e", timestamp: new Date().toISOString(), source: "banner" }),
+      );
+    });
+    await mockApi(page, (path, route) => {
+      if (path === "/api/me") return route.fulfill(json({ profile: null }, 401));
+      if (path === "/api/privacy/deletion-requests") {
+        expect(route.request().postDataJSON()).toEqual({ email: "visitor@example.com", scope: "all", confirmed: true });
+        return route.fulfill(json({ ok: true, reference: "DEL-E2E123" }, 202));
+      }
+      return route.continue();
+    });
+    await page.goto("/delete-data");
+
+    await page.getByLabel(/^Email/).fill("visitor@example.com");
+    await page.getByText("I confirm this request concerns my own data.").click();
+    await page.getByRole("button", { name: "Submit request" }).click();
+
+    await expect(page.getByText("Request recorded.")).toBeVisible();
+    await expect(page.getByText("DEL-E2E123")).toBeVisible();
+  });
+
+  test("/delete-data: a signed-in visitor also sees the immediate-deletion entry point and real export download links", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "altr_cookie_preferences_v1",
+        JSON.stringify({ necessary: true, functional: true, analytics: false, marketing: false, version: "e2e", timestamp: new Date().toISOString(), source: "banner" }),
+      );
+    });
+    await mockApi(page, (path, route) => {
+      if (path === "/api/me") {
+        return route.fulfill(
+          json({
+            profile: {
+              id: "11111111-1111-4111-8111-111111111111",
+              name: "Playwright User",
+              email: "playwright@example.com",
+              role: "Founder",
+              altrName: "My Altr",
+              bio: "",
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+              plan: "free",
+              trainingProgress: 10,
+              tone: "balanced",
+              onboardingCompleted: true,
+              stats: { conversations: 0, memories: 0, drafts: 0 },
+              connections: { email: false, calendar: false, messages: false, workspace: false },
+              preferences: { learning: true, autoDrafts: false, weeklyDigest: false, privacyMode: true },
+              consents: { policyVersion: "draft-2026-07-15", termsAcceptedAt: "", conversationProcessingAcceptedAt: "", aiMemoryAcceptedAt: "" },
+            },
+          }),
+        );
+      }
+      return route.continue();
+    });
+    await page.goto("/delete-data");
+
+    await expect(page.getByText("Signed in as")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Export JSON" })).toHaveAttribute("href", "/api/privacy/export");
+    await expect(page.getByRole("link", { name: "Export CSV ZIP" })).toHaveAttribute("href", "/api/privacy/export?format=csv");
+    await expect(page.getByRole("button", { name: "Delete account" })).toBeVisible();
+  });
+});

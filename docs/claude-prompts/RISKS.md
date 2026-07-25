@@ -169,3 +169,67 @@ when `hasPremium` is true for that plan) instead of the raw label.
 `tests/unit/no-client-entitlement-trust.test.ts`, added in this same
 prompt, that no component ever *grants* access from client state; this is
 a CTA-correctness gap only).
+
+## R15 — `lib/legal/deletion-content.ts` still describes deletion as an unproven browser-only prototype (found 2026-07-25, Prompt 045)
+
+Read, not assumed, while building `/data-deletion`: the must-not-change
+content in `lib/legal/deletion-content.ts` states "The supplied website
+is a browser-only prototype. Its deletion tool can remove Altr data from
+the current browser, but it cannot prove deletion from a future
+production database, AI provider, payment system, backups, email
+service, or connected platform until those systems are implemented," and
+separately that "Signed-in users can open /delete-data, review the
+scope, type the confirmation word, and delete browser-prototype data."
+Both statements predate Prompt 004's real backend port — this workspace
+now has a genuinely working, audited `DELETE /api/privacy/account` (real
+anonymization/storage-cleanup/audit-trail pipeline, verified by reading
+the route in full this session) and `POST /api/privacy/deletion-
+requests` (real server-recorded requests), neither of which is a browser-
+only local-storage prototype. A user reading this policy page would be
+told their deletion request cannot be proven or trusted, when the real
+mechanism underneath now can be.
+**Mitigation:** not fixed here — `lib/legal/**` content is explicitly
+must-not-change for this prompt; `/data-deletion` renders this content
+verbatim (`components/app/privacy/DeletionPolicyContent.tsx`). A future
+prompt with `lib/legal/deletion-content.ts` in its allowed-files list
+should update this section to describe the real, current deletion
+mechanism.
+**Residual:** low (a documentation-accuracy gap, not a functional one —
+the real deletion mechanism itself is correct and unaffected; users are
+undersold on trust, never oversold).
+
+## R16 — `DELETE /api/me` / `lib/auth.ts`'s `deleteCurrentAccount()` is a dead, structurally weaker duplicate of the real account-deletion path (found 2026-07-25, Prompt 045)
+
+Read, not assumed: `app/api/me/route.ts`'s own `DELETE` handler exists
+alongside the real, audited `DELETE /api/privacy/account`
+(`app/api/privacy/account/route.ts`) — but the two are not equivalent.
+The `/api/me` path only requires a literal `"DELETE"` confirmation
+string, has no email-match or recent-authentication check, and its own
+deletion logic is a single direct `admin.auth.admin.deleteUser(user.id)`
+call with **no** anonymization of billing/order/invoice records, no
+private-storage cleanup, and no `altr_deletion_requests`/
+`altr_deletion_request_history` audit trail — everything
+`/api/privacy/account` does deliberately, in that order, before deleting
+the Auth user. `lib/auth.ts`'s own `deleteCurrentAccount()` client helper
+calls this weaker route. Confirmed via a repo-wide grep that
+`deleteCurrentAccount` has **zero callers anywhere** in this workspace —
+fully dead code today, not currently reachable from any UI — but it
+sits ready to be wired up by a future prompt that reasonably assumes
+"the" account-deletion function already exists in `lib/auth.ts` (the
+same file `signOutAccount`/`updateCurrentProfile`/etc. all live in),
+without realizing it bypasses every real deletion safeguard.
+**Mitigation:** this prompt's own new account-deletion ceremony
+(`components/app/privacy/useAccountDeletion.ts`) calls `/api/privacy/
+account` directly, never `deleteCurrentAccount()` — verified by grep
+before writing this entry. Not removed here — `app/api/**` and
+`lib/auth.ts` are both outside Prompt 045's allowed-files list. A future
+prompt that can touch both files should either delete the dead
+`/api/me` `DELETE` handler and `deleteCurrentAccount()` entirely, or
+make `/api/me`'s handler delegate to the same real logic
+`/api/privacy/account` uses, so no second, weaker path can ever be
+accidentally wired up.
+**Residual:** low today (unreachable from any UI, confirmed by grep —
+no active exploit path), but genuinely medium if a future prompt wires
+it up without reading this entry first: a user who somehow triggered
+that path would believe their account was fully, safely deleted while
+billing/order records were never anonymized and no audit trail exists.

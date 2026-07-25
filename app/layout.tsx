@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { LocaleHtmlSync } from "@/components/LocaleHtmlSync";
+import { CookieConsent } from "@/components/legal/CookieConsent";
 import { getAppUrl } from "@/lib/env";
 
 const inter = Inter({
@@ -48,6 +49,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <LocaleHtmlSync />
         {children}
+        {/*
+          Prompt 045 — necessary-but-unlisted-file touch (`app/layout.tsx`
+          isn't in this prompt's own allowed-files list, but a cookie
+          banner is only meaningful mounted globally, and every route
+          group's own layout is either must-not-change (`(app)`) or
+          nonexistent (`(public)` has none) — see STATUS.md for the full
+          reasoning, matching the established "document, don't silently
+          expand scope" pattern for exactly this situation.
+        */}
+        <CookieConsent />
       </body>
     </html>
   );
