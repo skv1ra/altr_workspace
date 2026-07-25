@@ -1,0 +1,91 @@
+.wrap {
+  margin-top: var(--space-10);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--edge-hairline);
+}
+
+.heading {
+  font-size: var(--text-h4);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.intro {
+  margin-top: var(--space-2);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+/* Archival list, not a chat log (this prompt's own visual requirement):
+   plain rows separated by hairlines, no bubbles, no avatars. */
+.list {
+  margin-top: var(--space-6);
+  list-style: none;
+}
+
+.row {
+  width: 100%;
+  text-align: left;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--edge-hairline);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.list li:last-child .row {
+  border-bottom: 1px solid var(--edge-hairline);
+}
+
+.rowMeta {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.rowExcerpt {
+  color: var(--text-primary);
+}
+
+.rowDraftExcerpt {
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.pager {
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pagerLabel {
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.detail {
+  margin-top: var(--space-6);
+}
+
+.detailBlock {
+  margin-top: var(--space-5);
+}
+
+.detailLabel {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.detailText {
+  margin-top: var(--space-2);
+  white-space: pre-wrap;
+  color: var(--text-primary);
+}
+
+.empty {
+  margin-top: var(--space-6);
+  color: var(--text-muted);
+}

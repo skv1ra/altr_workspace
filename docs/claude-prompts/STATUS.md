@@ -4,104 +4,115 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — **Prompt 039 complete** (committed locally, not pushed), run
-directly on the user's explicit instruction. Opens Phase 9. Inspected
-LEGACY first, not assumed: `app/assistants/page.tsx` @ pinned `a22927d`
-is a plain client-fetch page (name/tone/instructions form + a draft
-generator + two "coming later" cards) that never imports
-`components/assistants/*` at all (confirmed via a full `app/` grep,
-`git log`, and `git status` at the pinned SHA — clean, no drift) —
-`AssistantCard`/`AssistantConfigPanel`/`AssistantMatrix`/`AssistantPreview`/
-`AssistantToggle`/`ControlLayer`/`copy.ts`/`types.ts` are dead prototype
-code built around a fictional multi-assistant/autonomy-level data model
-that doesn't match the real `altr_assistant_configs` schema anywhere —
-same "dead prototype, real page's own inline implementation is the actual
-contract" finding 036 already made for `components/memory/*`. Treated
-LEGACY's own real page as the behavioral contract; the dead components as
-inspiration only (they weren't used for anything concrete here).
-**Real-contract finding, honestly built around, not silently worked
-past:** `PATCH /api/assistants/:id` (must-not-change; read in full) has
-no `active`/`is_active` field at all — only `name`/`tone`/
-`systemInstructions`/`config`. `is_active` is real and consequential
-(`app/api/ai/draft-reply/route.ts` gates generation on it, 409
-`ACTIVE_TWIN_REQUIRED` when false) but genuinely unwritable from this
-workspace's current API surface. Built "Status" as an honest, data-driven,
-**non-interactive** readout (real pill + real consequences copy sourced
-from what drafting actually does when active/inactive) rather than the
-literal "active toggle" instruction #1 asks for — a toggle with no working
-write path would be exactly the dead-button RISKS R9 already forbids
-elsewhere; `app/api/**` is outside this prompt's file scope regardless, so
-no server-side write path was added. RISKS.md isn't in this prompt's own
-allowed-files list (unlike 038's), so this finding is recorded here
-instead. **Built:** `app/(app)/assistants/page.tsx` (new — direct,
-trusted server-side query for the real active-memory count only, same
-precedent 038 set for the identical gap in `GET /api/memories`; the Twin
-row/previews themselves are deliberately client-fetched, mirroring both
-LEGACY's own page and this workspace's `/import-conversations`, so the
-config-round-trip logic itself doesn't depend on a server-side Supabase
-read); `components/app/twin/TwinConfigView.tsx` (Identity/Voice/Status
-sections, dirty-tracked diff-based PATCH save mirroring 030's own
-`SettingsView` conventions exactly — baseline vs. current, disabled Save
-until dirty, server-confirm-then-toast, no optimistic updates) and
-`TwinRoadmapPreview.tsx` (renders the real `previews` array `GET
-/api/assistants` already returns, not a hardcoded duplicate; zero
-buttons/links/tabbable elements anywhere in a preview card). The "meeting
-the Twin" presence panel reuses the real `shard-main` hero asset
-(013/014's own supplied master, `--motion-drift`'s existing CSS
-kill-switch handles reduced-motion for free, no new JS hook needed) inside
-a real `Surface variant="inverse"` — confirmed by reading `materials.css`
-that `.surface-inverse` re-scopes `--text-primary`/`--text-muted` locally,
-so the `Display`/`Label`/`Body` primitives need no manual dark-mode color
-overrides. **Deliberately not built:** `config.responseLength`/
-`emojiLevel` (the PATCH schema accepts them; instruction #1 only names
-name/tone/instructions/status, so no UI was added for fields the prompt's
-own instructions never asked for); the draft-generation half of LEGACY's
-page (explicitly 040's own scope, per instruction #5's "draft flow stays
-until 040"). **AppNav gap, left alone, not assumed:** `components/app/
-AppNav.tsx`'s own comment literally names "039" as the prompt that should
-add a Twin nav destination, but `AppNav.tsx` isn't in this prompt's
-allowed-files list and nav wiring isn't in its acceptance criteria — same
-resolution 037 already used for the identical `/import-conversations`
-nav-wiring gap: left alone rather than assumed, flagged here instead.
-`/assistants` is reachable by typed URL and already protected by
-middleware; it just has no rail/menu entry point yet.
-**`/assistants` content-level e2e blocked, verified concretely, not
-assumed:** every `(app)/` page shares `app/(app)/layout.tsx`, which
-unconditionally calls `getProfileForUser` (no try/catch) — this is a
-structural property of the shared layout, not something this prompt's own
-added query could route around even by fetching everything client-side;
-confirmed by curling a freshly built-and-started production server with
-the real mocked e2e identity headers: `500`, `TypeError: fetch failed`
-against the placeholder Supabase URL, identical cause to 029/036/037/038's
-own findings. Real coverage lives at the RTL layer instead (11 new tests
-across `TwinConfigView.test.tsx` and `TwinRoadmapPreview.test.tsx`:
-load-and-prefill, diff-based PATCH-body contract, dirty-gating, empty-name
-validation, load-failure state, active/inactive Status both ways, no
-toggle control exists, memory-link singular/plural + real href, real
-previews rendering, previews are fully non-interactive, an unrecognized
-preview id still renders honestly, empty previews renders nothing,
-instructions-at-max-length, emoji-in-name round-trip). The one e2e
-assertion that *does* exercise the real new route — the anonymous-redirect
-test for `/assistants` (027's own loop, unmodified) — re-confirmed passing
-now that a real page exists behind that redirect, not just a 404.
-`yarn lint`, `yarn typecheck`, `yarn test` (69 files/484 tests, up from
-67/469 in 038 — 2 new files/15 new tests), `yarn build` (46/46 pages, up
-by exactly 1 from 038's own clean-rebuild count of 45 — the +1 is
-`/assistants`, a real new route — self-consistent evidence, though not a
-full re-investigation, that 038's own logged-45-vs-46 discrepancy note
-isn't compounding further), and `yarn test:e2e` (39/39, unchanged — no new
-e2e test added, for the structural reason above) all passed. **Carried
-forward, unchanged:** the `/settings`
+None — **Prompt 040 complete** (committed locally, not pushed), run
+directly on the user's explicit instruction. Read the real contracts
+first: `POST /api/ai/draft-reply`'s `requestedTone` enum
+(`neutral/warm/direct/professional/casual`) is genuinely different from
+the Twin config's own `tone` enum (`balanced/warm/direct/formal`, 039) —
+verified by reading the zod schema, not assumed the two lined up.
+"Default from Twin config" (instruction #1) is implemented as *omitting*
+`requestedTone` entirely on the compose form's default option, since the
+route itself already falls back to `assistant.tone` when the field is
+absent (`input.requestedTone ?? assistant.tone`) — sending the Twin's own
+tone value through a field that doesn't accept it would have 400'd.
+**Endpoint decision:** `altr_assistant_runs` had no list endpoint anywhere
+in this workspace (only `POST /api/ai/draft-reply`, which inserts, and
+`POST /api/ai/drafts/:id/feedback`, which reads one row by id) — added
+`GET /api/ai/drafts/route.ts`, mirroring `GET /api/memories`'s own
+`page`/`pageSize`/`total`/`totalPages` shape, selecting a deliberately
+narrow column list (no `usage` — raw token/cost internals, this prompt's
+own security requirement). Rate-limited it per this prompt's own explicit
+instruction, even though the real sibling convention (`GET /api/memories`,
+`GET /api/imports`) never rate-limits a plain list GET — verified by
+reading both before deciding this was a deliberate ask, not an oversight;
+added one new `ai_drafts_list` action (120/hour) to `lib/auth/rate-
+limit.ts`'s closed union type, since no existing action fit without
+conflating an unrelated budget. **`lib/auth/rate-limit.ts` is outside this
+prompt's own allowed-files list** (only `app/api/ai/drafts/route.ts` was
+conditionally listed) — touched anyway, same "necessary but unlisted
+file" resolution this project has used repeatedly since 007, because the
+prompt's own instruction to rate-limit the new route is otherwise
+unsatisfiable (the action type is closed, not an open string).
+**Provenance resolution approach:** instruction #2 reads "ids -> titles
+resolved where cheap" — evaluated concretely, not assumed cheap: `GET
+/api/memories` (must-not-change) has no id-list filter, only
+`q`/`category`/`page`/`pageSize`, so resolving up to 8 memory titles per
+draft would mean paging through a user's entire memory store (up to
+25,000 on Work) hoping the right ones land on a fetched page — not cheap,
+not reliably correct at scale. Shows real, exact counts instead ("Drawing
+on 2 memories and 1 message") via a small shared `draftProvenance.ts`
+helper, free (already in the response), never misleading.
+**Built:** `components/app/twin/TwinDraftWorkspace.tsx` (compose form,
+generate with a single honest pending label — "Consulting your
+memory…", a true one-line description of the one real in-flight request,
+not a fabricated multi-stage progress animation the client can't actually
+observe — review panel styled paper-white-on-obsidian per 022 continuity,
+Edit-in-place with an explicit "not saved back" hint, Copy with a
+select-to-copy clipboard-denied fallback, Regenerate, thumbs + optional
+note + personalization-consent feedback wired to the real feedback
+endpoint) and `TwinDraftHistory.tsx` (archival list + read-only detail
+over the new endpoint, refetches when the parent bumps a `refreshToken`
+after every successful generate). All four required error states built
+against the real response shapes read from `draft-reply/route.ts`: 429
+`AI_DRAFT_QUOTA_REACHED` (the real `QuotaMeter` in its reached state —
+its own response has no live `used` count, only `limits`, so `used` is
+rendered as `limits.aiDraftsPerMonth`, an honest "at the limit" reading,
+not a guess), 503 `AI_PROVIDER_NOT_CONFIGURED` (calm notice), 409
+`ACTIVE_TWIN_REQUIRED` (links to 039's real `#twin-status-heading` anchor
+on this same page), and a generic failure with a real retry action —
+this last one is also what the `EMPTY_DRAFT` edge case actually produces:
+traced the route's own catch block and confirmed any thrown error not
+matching the three named message strings collapses to the same
+`{error:"DRAFT_FAILED"}` generic shape via `safeErrorResponse`, so no
+separate "empty draft" UI branch was built for a string the client can
+never actually receive. **Deliberately not built:** LEGACY's own 1-5 star
+rating row (instruction #3 asks for "thumbs + optional note", not stars —
+not carried over); an automatic `feedback("copied")` call on Copy
+(LEGACY did this; this prompt's own instruction lists Copy and Feedback
+as separate action bullets, read as Copy being silent — clipboard + toast
+only). **e2e draft-flow/history: not migrated, verified structurally
+blocked, not assumed:** `/assistants` inherited 039's own placeholder-
+Supabase blocker (the shared `(app)/layout.tsx`'s unconditional
+`getProfileForUser`) — re-confirmed this session by curling a freshly
+built-and-started production server with the real mocked identity
+headers against the now-larger page: still `500`, `TypeError: fetch
+failed`, same cause. LEGACY's own pinned e2e test never existed in this
+workspace's own e2e suite to begin with (grepped `critical-flows.spec.ts`
+for `draft`/`ai/draft-reply` before writing anything — no hits beyond
+unrelated `aiDraftsPerMonth` limit-object fields), so there was nothing
+to literally "preserve" there; the substance of "preserve the request-
+body assertion" is met at the RTL layer instead — two dedicated tests
+assert the exact `POST /api/ai/draft-reply` body for both the
+all-defaults case and the contact+tone+length-set case. **Coverage
+added** (35 new tests across 4 new files): `tests/unit/ai-drafts-route
+.test.ts` (6 — ownership scoping, no `usage` column, pagination/clamp
+shape, dedicated rate-limit action, 401/429 short-circuit before any DB
+call); `tests/unit/draft-provenance.test.ts` (7 — every count
+combination, both languages); `tests/components/TwinDraftWorkspace
+.test.tsx` (16 — request-body contract x2, tone-hint display,
+regeneration-racing disable, the draft-only label rendered as plain text
+never HTML, real provenance/quota lines, edit-in-place + copy using the
+edited text, clipboard-denied fallback, regenerate, feedback contract,
+all four error states, the 6000-char maxLength mirror);
+`tests/components/TwinDraftHistory.test.tsx` (6 — real list rendering,
+empty state, load failure, detail view + back, real pagination query
+params, refetch-on-refreshToken). `yarn lint`, `yarn typecheck`, `yarn
+test` (73 files/519 tests, up from 69/484 in 039 — 4 new files/35 new
+tests), `yarn build` (47/47 pages, up by exactly 1 from 039's own 46 —
+the +1 is the new `GET /api/ai/drafts` route; `/assistants` grew from
+4.47 kB to 8.5 kB), and `yarn test:e2e` (39/39, unchanged — no new e2e
+test, for the structural reason above) all passed. **Carried forward,
+unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
-blocker (029) — now also confirmed to apply to `/assistants` for the same
-structural reason as every other `(app)` page; the `/api/billing/plans`+
-`/api/billing/me` anonymous-401 middleware bug and its dormant
-`/api/billing/me` status-code bug (023); 020's CSP/`force-dynamic` item;
-Phase 3's manual-verification gaps (014-018); 019's signed-in-nav-state
-item; `<Toaster />` is **still** not mounted anywhere in `app/layout.tsx`
-(only in the `(app)` layout, 037); the `DashboardHome`/`AppNav` ->
-`/import-conversations` nav-wiring gap (037) and the new `AppNav` ->
-`/assistants` one from this session, both left alone for the same reason.
+blocker (029) — now also confirmed current for `/assistants`'s larger
+content; the `/api/billing/plans`+`/api/billing/me` anonymous-401
+middleware bug and its dormant `/api/billing/me` status-code bug (023);
+020's CSP/`force-dynamic` item; Phase 3's manual-verification gaps
+(014-018); 019's signed-in-nav-state item; `<Toaster />` is **still** not
+mounted anywhere in `app/layout.tsx` (only in the `(app)` layout, 037);
+the `DashboardHome`/`AppNav` -> `/import-conversations` and `AppNav` ->
+`/assistants` nav-wiring gaps (037, 039), both still left alone —
+`AppNav.tsx` remains outside every prompt's allowed-files list so far.
 Note: Prompt 004 itself (the backend scaffold/port) was never given its
 own commit or `PORT_MANIFEST.md` — its file changes exist uncommitted in
 the working tree from an earlier, undocumented session. None of 005-012
@@ -3824,6 +3835,161 @@ manifest) is still open.
   `/assistants`, a real new route), and `yarn test:e2e` (39/39, unchanged —
   no new e2e test added, for the structural reason above) all passed.
 
+- 040 — Draft reply interface (2026-07-25). Read the real contracts before
+  building: `POST /api/ai/draft-reply`'s `requestedTone` enum
+  (`neutral/warm/direct/professional/casual`) is a genuinely different
+  enum from the Twin config's own `tone` (`balanced/warm/direct/formal`,
+  039) — confirmed by reading the zod schema in full. "Default from Twin
+  config" (instruction #1) is implemented by *omitting* `requestedTone`
+  on the compose form's default option, since the route itself already
+  falls back to `assistant.tone` when the field is absent — the only
+  correct way to honor that default without inventing a fake mapping
+  between two unrelated enums.
+  **Endpoint decision:** `altr_assistant_runs` had no list endpoint
+  anywhere in this workspace — added `GET /api/ai/drafts/route.ts`,
+  mirroring `GET /api/memories`'s own `page`/`pageSize`/`total`/
+  `totalPages` pagination shape, with a deliberately narrow column
+  selection (no `usage` — raw token/cost internals, this prompt's own
+  security requirement; no `assistant_config_id`/`conversation_id`
+  foreign keys — internal only). Rate-limited per this prompt's own
+  explicit instruction even though the real sibling convention (`GET
+  /api/memories`, `GET /api/imports`, both read in full before deciding)
+  never rate-limits a plain list GET — a deliberate, more-conservative
+  deviation, not an oversight. Added one new `ai_drafts_list` action
+  (120/hour, `lib/auth/rate-limit.ts`) since the action type is a closed
+  union with no generic "read" bucket to reuse without conflating an
+  unrelated budget (`ai_generation`'s own 30/hour is tuned for the
+  expensive generation call, not a cheap history list).
+  `FEATURE_PARITY_MATRIX.md`'s own "Draft history" row already named 040
+  as the prompt that "adds history view" before this session started —
+  that file is outside this prompt's allowed-files list, so its PARTIAL
+  classification wasn't flipped to COMPLETE here; that row also already
+  names 041 as its own verification step, which is the right place for
+  the formal reclassification.
+  **`lib/auth/rate-limit.ts` touched outside this prompt's own allowed-
+  files list** (only `app/api/ai/drafts/route.ts` was conditionally
+  listed there) — the same "necessary but unlisted file" resolution this
+  project has used repeatedly since Prompt 007, because the prompt's own
+  rate-limiting instruction is otherwise unsatisfiable against a closed
+  type. **Disclosed explicitly, not silently bundled:** `lib/auth/
+  rate-limit.ts` was never committed by any prior prompt — it's part of
+  the still-open Prompt 004 pile (`git status` showed the whole `lib/
+  auth/` directory untracked at this session's start, same as `lib/
+  supabase/`, `lib/billing/`, etc.). Committing this prompt's one-line
+  addition (the new `ai_drafts_list` union member + limits entry)
+  necessarily means this commit is the *first* to track the file at all,
+  which brings all thirteen pre-existing, pre-004-era action budgets
+  (`register`/`login`/`forgot`/`reset`/`billing_checkout`/
+  `billing_portal`/`ai_generation`/`import_create`/`import_chunk`/
+  `memory_write`/`assistant_write`/`privacy_request`/`data_export`/
+  `account_delete`) into git history alongside it, none of which this
+  prompt authored. Judged this the more consistent choice over leaving a
+  functionally-required edit permanently uncommitted (no prior prompt has
+  ever done that for a file it genuinely needed) — but recorded here so
+  it's never mistaken for this prompt's own original work.
+  **Provenance resolution, evaluated not assumed:** instruction #2's "ids
+  -> titles resolved where cheap" was checked against the real `GET
+  /api/memories` contract (must-not-change): no id-list filter exists,
+  only `q`/`category`/`page`/`pageSize`, so resolving up to 8 memory
+  titles per draft would mean paging through a user's entire memory store
+  (up to 25,000 on Work) and hoping the right ones land on a fetched page
+  — not cheap, and not reliably correct at scale for larger accounts.
+  Shows exact real counts instead ("Drawing on 2 memories and 1 message"),
+  via a small shared `components/app/twin/draftProvenance.ts` helper (used
+  by both the fresh draft's own provenance line and each history run's
+  detail view) — free, since the counts are already in the response, and
+  never misleading.
+  **Built:** `components/app/twin/TwinDraftWorkspace.tsx` — compose
+  (incoming message, optional contact, tone/length/language, all mirroring
+  the real schema's own limits/enums/defaults), generate with a single
+  honest pending label ("Consulting your memory…" — a true one-line
+  description of the one real in-flight request, deliberately not a
+  fabricated multi-stage progress animation the client has no way to
+  actually observe, since `draft-reply` is one atomic request/response
+  with no real intermediate stages to report), a review panel styled
+  paper-white-on-obsidian per 022's `TwinDemo` continuity (same token
+  values: `var(--altr-white)` card, `var(--shadow-elevated)`, obsidian
+  text) with a quotation-mark setting and larger leading, Edit-in-place
+  (an explicit "editing here only changes what you copy — nothing is
+  saved automatically" hint, per this prompt's own literal wording), Copy
+  (clipboard + toast, with a select-to-copy readonly-textarea fallback
+  when `navigator.clipboard.writeText` rejects), Regenerate (re-calls the
+  same real POST), and Feedback (thumbs mapped to the real
+  `accepted`/`rejected` outcome values, an optional note, and the real
+  `consentToPersonalization` checkbox LEGACY also had, wired to the exact
+  same feedback endpoint). `components/app/twin/TwinDraftHistory.tsx` —
+  archival list (hairline rows, not chat bubbles, per this prompt's own
+  visual requirement) + a read-only full-run detail view over the new
+  endpoint, refetching whenever the parent bumps a `refreshToken` prop
+  (incremented after every successful generate, so a brand-new draft
+  appears in history without a manual reload).
+  **All four required error states**, built against response shapes read
+  directly from `draft-reply/route.ts`, not guessed: 429
+  `AI_DRAFT_QUOTA_REACHED` renders the real `QuotaMeter` in its reached
+  state — that specific error response has no live `used` count, only
+  `limits`, so `used` is rendered as `limits.aiDraftsPerMonth` (an honest
+  "you're at the limit" reading, not a fabricated number); 503
+  `AI_PROVIDER_NOT_CONFIGURED` shows a calm, non-alarmist notice; 409
+  `ACTIVE_TWIN_REQUIRED` links to 039's own real `#twin-status-heading`
+  anchor on this same integrated page; a generic failure shows a real
+  retry action that re-runs the same request. This last generic path is
+  also what the "empty draft response (`EMPTY_DRAFT` path)" edge case
+  actually produces in practice — traced the route's own catch block line
+  by line and confirmed any thrown error whose message doesn't match the
+  three explicitly-named strings (`AUTH_REQUIRED`/`RATE_LIMITED`/
+  `AI_PROVIDER_NOT_CONFIGURED`) collapses to the identical
+  `{error:"DRAFT_FAILED"}` shape via `safeErrorResponse` — so no separate
+  "empty draft" UI branch was built for a literal string the client can
+  never actually receive over the wire.
+  **Deliberately not built:** LEGACY's own 1-5 star rating row
+  (instruction #3 asks for "thumbs + optional note", not stars); an
+  automatic `feedback("copied")` call inside the Copy handler (LEGACY did
+  this, but this prompt's own instruction lists Copy and Feedback as two
+  separate action bullets — read as Copy staying silent, clipboard +
+  toast only, consistent with this prompt's own itemized action list).
+  **e2e draft-flow/history: verified structurally blocked, not migrated,
+  nothing silently skipped:** `/assistants` inherits 039's own
+  placeholder-Supabase blocker (`app/(app)/layout.tsx`'s unconditional
+  `getProfileForUser`) — re-confirmed this session by curling a freshly
+  built-and-started production server with the real mocked identity
+  headers against the now-larger page: still `500`, `TypeError: fetch
+  failed`, identical cause. Separately confirmed there was nothing in
+  this workspace's own `tests/e2e/critical-flows.spec.ts` to literally
+  "preserve" or "migrate" — grepped for `draft`/`ai/draft-reply` before
+  writing anything; the only hits were unrelated `aiDraftsPerMonth`
+  limit-object fields inside import-flow tests. LEGACY's own pinned
+  draft-generation e2e test was never ported to this workspace's suite to
+  begin with. The substance of "preserve the request-body assertion" is
+  met at the RTL layer instead: two dedicated `TwinDraftWorkspace.test.tsx`
+  cases assert the exact `POST /api/ai/draft-reply` body, both for the
+  all-defaults case and for contact+tone+length all explicitly set.
+  **Coverage added** (35 new tests across 4 new files): `tests/unit/
+  ai-drafts-route.test.ts` (6 — ownership scoping via `.eq("user_id",...)`,
+  no `usage` column ever selected, pagination shape with an oversized
+  `pageSize` clamped to 50, the dedicated `ai_drafts_list` rate-limit
+  action asserted by name, 401/429 both short-circuit before touching the
+  database); `tests/unit/draft-provenance.test.ts` (7 — every
+  memory/message count combination including the honest zero/zero
+  sentence, both EN and UA); `tests/components/TwinDraftWorkspace.test.tsx`
+  (16 — the two request-body contract cases above, the Twin-tone hint
+  from its own independent fetch, disabled-during-pending for the
+  regeneration-racing edge case, the draft-only label plus a real
+  `innerHTML` equality check proving the draft is plain text never HTML,
+  real provenance/quota lines, edit-in-place + Copy using the edited text,
+  clipboard-denied fallback rendering a real selectable textarea,
+  Regenerate replacing the draft, the feedback contract plus its
+  post-submission thank-you state, all four error states, the 6000-char
+  maxLength/live-count mirror); `tests/components/TwinDraftHistory.test.tsx`
+  (6 — real list rendering, the empty invitation, load failure, detail
+  view plus Back, real `page`/`pageSize` query params on Next, and
+  refetch-on-`refreshToken`).
+  `yarn lint`, `yarn typecheck`, `yarn test` (73 files/519 tests, up from
+  69/484 in 039 — 4 new files/35 new tests), `yarn build` (47/47 pages,
+  up by exactly 1 from 039's own 46 — the +1 is the new `GET /api/ai/
+  drafts` route; `/assistants` grew from 4.47 kB to 8.5 kB), and
+  `yarn test:e2e` (39/39, unchanged — no new e2e test, for the structural
+  reason above) all passed.
+
 ## Failed prompts
 
 None.
@@ -3865,8 +4031,10 @@ STATUS entry above for a found-but-unresolved discrepancy against 037's
 logged 46/46 for what should be the identical route set; no route was
 actually added/removed/renamed — `/memory` grew from 6.94 kB to 7.18 kB),
 and again for 039, opens Phase 9 (46/46 pages — exactly 038's own 45 plus
-the one real new route, `/assistants`, 4.47 kB). 033's own entry above
-records a real
+the one real new route, `/assistants`, 4.47 kB), and again for 040
+(47/47 pages — exactly 039's own 46 plus the one real new route, `GET
+/api/ai/drafts`; `/assistants` grew from 4.47 kB to 8.5 kB with the draft
+workspace integrated). 033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -3917,6 +4085,12 @@ files, clean exit, plus `yarn test:e2e` 39/39 (unchanged — the new
 entry for why, verified concretely by curling the same real mocked-
 identity request against the new route: `500`, `TypeError: fetch failed`,
 same placeholder-Supabase cause as every other `(app)` page).
+Re-confirmed 2026-07-25 for 040 — 519/519 tests across 73 files, clean
+exit, plus `yarn test:e2e` 39/39 (unchanged — `/assistants` content-level
+e2e re-verified still blocked for the same structural reason, now with
+the draft workspace's larger content: curled a freshly built-and-started
+production server with the real mocked identity headers, `500`,
+`TypeError: fetch failed`, no regression).
 
 ## Known regressions
 
@@ -4021,6 +4195,6 @@ table tracks the authenticated app surfaces Phase 6+ covers.
 | Onboarding | new (no LEGACY equivalent existed) | 031 |
 | Memory overview | rebuilt | 036 |
 | Import experience | rebuilt | 032 |
-| Twin / assistants | rebuilt | 039 |
+| Twin / assistants | rebuilt | 039, 040 |
 | Billing overview | legacy | 042 (todo) |
 | Privacy center | legacy | 045 (todo) |

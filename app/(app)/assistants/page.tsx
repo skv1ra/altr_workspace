@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TwinConfigView } from "@/components/app/twin/TwinConfigView";
+import { TwinDraftWorkspace } from "@/components/app/twin/TwinDraftWorkspace";
 import { createSupabaseAdminClient, requireUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Twin" };
@@ -41,5 +42,10 @@ export default async function AssistantsPage() {
     // `app/(app)/memory/page.tsx` already set for this identical query).
   }
 
-  return <TwinConfigView activeMemoryCount={activeMemoryCount} />;
+  return (
+    <>
+      <TwinConfigView activeMemoryCount={activeMemoryCount} />
+      <TwinDraftWorkspace />
+    </>
+  );
 }
