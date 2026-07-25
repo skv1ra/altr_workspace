@@ -138,6 +138,12 @@ export function MemoryOverview({
   // memories at all" vs "no matches for filter") stay correct within the
   // session, not just on the next full page load.
   const [remainingTotal, setRemainingTotal] = useState(totalMemories);
+  // Prompt 038: the header QuotaMeter and the create dialog's own quota
+  // notice both need the real active count to stay live within a session
+  // (create/enable/disable/delete all change it), not just the server's
+  // snapshot at first load — same "start from server, adjust locally"
+  // pattern `remainingTotal` above already established.
+  const [activeCount, setActiveCount] = useState(activeMemoryCount);
 
   const debounceRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
@@ -227,6 +233,10 @@ export function MemoryOverview({
         setEditorState(null);
         toast.push(t.createSuccessToast);
         setRemainingTotal((value) => value + 1);
+        // A manually created memory is always active — `createSchema`
+        // (server) defaults `active` to `true` and this dialog's own
+        // `MemoryEditPatch` never sends the field, so this always holds.
+        setActiveCount((value) => value + 1);
         await load();
         return;
       }
@@ -266,6 +276,7 @@ export function MemoryOverview({
       });
       if (!response.ok) throw new Error((await response.json()).error);
       toast.push(nextActive ? t.enableSuccessToast : t.disableSuccessToast);
+      setActiveCount((value) => (nextActive ? value + 1 : Math.max(0, value - 1)));
       await load();
     } finally {
       setTogglingId(null);
@@ -279,6 +290,7 @@ export function MemoryOverview({
       if (!response.ok) throw new Error((await response.json()).error);
       setConfirmingClearAll(false);
       setRemainingTotal(0);
+      setActiveCount(0);
       setPage(1);
       toast.push(t.clearAllSuccessToast);
       await load();
@@ -287,8 +299,9 @@ export function MemoryOverview({
     }
   }
 
-  function handleRowDeleted() {
+  function handleRowDeleted(wasActive: boolean) {
     setRemainingTotal((value) => Math.max(0, value - 1));
+    if (wasActive) setActiveCount((value) => Math.max(0, value - 1));
     void load();
   }
 
@@ -311,7 +324,7 @@ export function MemoryOverview({
 
       <MemoryStatusHeader
         lang={lang}
-        activeMemoryCount={activeMemoryCount}
+        activeMemoryCount={activeCount}
         memoryLimit={memoryLimit}
         learningEnabled={learningEnabled}
         connections={connections}
@@ -418,7 +431,7 @@ export function MemoryOverview({
                 onEdit={() => setEditorState({ mode: "edit", memory })}
                 onOpenProvenance={() => setProvenanceMemory(memory)}
                 onToggleActive={() => void handleToggleActive(memory)}
-                onDeleted={handleRowDeleted}
+                onDeleted={() => handleRowDeleted(memory.is_active)}
                 togglingActive={togglingId === memory.id}
               />
             ))}
@@ -446,6 +459,8 @@ export function MemoryOverview({
         saving={savingEdit}
         categoryOptions={categoryCounts.map((entry) => entry.category)}
         goneError={goneError}
+        activeMemoryCount={activeCount}
+        memoryLimit={memoryLimit}
         onCancel={closeEditor}
         onSave={(patch) => void handleSaveEdit(patch)}
       />

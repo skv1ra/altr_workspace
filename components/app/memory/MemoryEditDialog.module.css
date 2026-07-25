@@ -47,3 +47,45 @@
 .gone {
   padding-block: var(--space-6);
 }
+
+/*
+ * Quota-reached notice inside the create form (Prompt 038). Deliberately
+ * calm, no red: the note goes from `--text-muted` (silver, same as
+ * QuotaMeter's own normal-state numbers) to `--text-primary` (denser,
+ * not a color-coded alert) for the heading — "silver -> denser type at
+ * reached; no red bars" per this prompt's own visual requirement. This is
+ * new UI, not a recolor of the pre-existing `QuotaMeter` component (which
+ * already ships red for its own reached state, per Prompt 031's own
+ * documented decision to reuse this app's existing error/alert red rather
+ * than invent a new accent) — `QuotaMeter.tsx`/`.module.css` are outside
+ * this prompt's file scope, so that established, already-shipped
+ * convention is left exactly as it is; this notice simply follows its own
+ * prompt's literal spec for the new surface it introduces.
+ */
+.quotaNotice {
+  margin-bottom: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--edge-hairline);
+  background: rgb(var(--altr-graphite-rgb) / 4%);
+}
+
+.quotaNoticeHeading {
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.quotaNoticeBody {
+  margin-top: var(--space-1);
+  font-size: var(--text-label);
+  color: var(--text-muted);
+}
+
+.quotaNoticeLink {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: var(--text-label);
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

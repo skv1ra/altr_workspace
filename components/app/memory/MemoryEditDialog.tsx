@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -32,6 +33,13 @@ export interface MemoryEditDialogProps {
    *  another tab" edge case) — renders a designed gone-state instead of a
    *  raw error and blocks further saves. */
   goneError: boolean;
+  /** Real, live active-memory count and this plan's real `maxActiveMemories`
+   *  (`lib/billing/limits.ts`, same numbers `MemoryStatusHeader`'s own
+   *  QuotaMeter renders) — used only in create mode to decide whether to
+   *  show the quota-reached notice below. Never affects edit mode: editing
+   *  an already-existing memory never changes the active count either way. */
+  activeMemoryCount: number;
+  memoryLimit: number;
   onCancel: () => void;
   onSave: (patch: MemoryEditPatch) => void;
 }
@@ -53,8 +61,16 @@ export interface MemoryEditDialogProps {
  * this prompt upgrades it to suggest-from-real-data + free-entry, per its
  * own "combobox over existing categories + free entry" instruction).
  */
-export function MemoryEditDialog({ state, lang, saving, categoryOptions, goneError, onCancel, onSave }: MemoryEditDialogProps) {
-  const t = getSharedCopy(lang).memory;
+export function MemoryEditDialog({ state, lang, saving, categoryOptions, goneError, activeMemoryCount, memoryLimit, onCancel, onSave }: MemoryEditDialogProps) {
+  const copy = getSharedCopy(lang);
+  const t = copy.memory;
+  // Only ever gates NEW memories — editing/toggling/deleting an existing
+  // one never routes through this check, per this prompt's own "never
+  // blocks viewing/editing" instruction. Manual creation's own server
+  // route (`POST /api/memories`) does not enforce `maxActiveMemories`
+  // (see RISKS.md's newest entry) — this is UX-only, communicated before
+  // the user writes anything, not a real limit enforced anywhere below it.
+  const quotaReached = state?.mode === "create" && activeMemoryCount >= memoryLimit;
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -78,6 +94,7 @@ export function MemoryEditDialog({ state, lang, saving, categoryOptions, goneErr
 
   function submit(event: FormEvent) {
     event.preventDefault();
+    if (quotaReached) return;
     if (!title.trim() || !category.trim() || !description.trim()) return;
     onSave({
       title: title.trim().slice(0, LIMITS.title),
@@ -103,6 +120,17 @@ export function MemoryEditDialog({ state, lang, saving, categoryOptions, goneErr
         </div>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-5">
+          {quotaReached && (
+            <div className={styles.quotaNotice} role="status">
+              <p className={styles.quotaNoticeHeading}>{t.createQuotaReachedHeading}</p>
+              <p className={styles.quotaNoticeBody}>
+                {t.createQuotaReachedBody} ({activeMemoryCount}/{memoryLimit})
+              </p>
+              <Link href="/pricing" className={styles.quotaNoticeLink}>
+                {copy.quota.upgradeLink}
+              </Link>
+            </div>
+          )}
           <TextField
             label={t.editDialogTitleLabel}
             value={title}
@@ -159,7 +187,7 @@ export function MemoryEditDialog({ state, lang, saving, categoryOptions, goneErr
             <button type="button" onClick={onCancel} className="btn btn-secondary control-focus">
               {getSharedCopy(lang).common.cancel}
             </button>
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving} disabled={quotaReached}>
               {t.editDialogSave}
             </Button>
           </div>

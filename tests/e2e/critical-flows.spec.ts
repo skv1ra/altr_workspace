@@ -642,6 +642,15 @@ test.describe("import experience", () => {
     await expect(page.getByText("Extraction paused: you've reached your monthly memory limit.", { exact: false })).toBeVisible({
       timeout: 15_000,
     });
+    // Prompt 038's own "extraction-quota outcomes link here with consistent
+    // copy" instruction — `ImportFlow.tsx` renders this link only for the
+    // `MEMORY_LIMIT_REACHED` reason (never for the sibling
+    // `MEMORY_PROCESSING_CONCURRENCY_LIMIT` reason), reusing the exact same
+    // shared `quota.upgradeLink` copy/`/pricing` href as `QuotaMeter`'s own
+    // reached state — this was previously exercised only by the sibling
+    // "monthly import quota" test above, never for the memory-limit reason
+    // specifically, until this prompt.
+    await expect(page.getByRole("link", { name: "Upgrade plan" })).toHaveAttribute("href", "/pricing");
     await page.getByRole("button", { name: "Retry memory extraction" }).click();
     await expect(page.getByText(/3 memories saved\./)).toBeVisible({ timeout: 10_000 });
 

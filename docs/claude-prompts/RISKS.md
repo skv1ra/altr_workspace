@@ -112,3 +112,32 @@ scope; correct the citation the next time a prompt is allowed to edit it
 test assertion for this invariant rather than relying on structural
 convention alone.
 **Residual:** low (documentation accuracy only; no real security gap).
+
+## R13 — Manual memory creation/reactivation does not enforce `maxActiveMemories` server-side (found 2026-07-24, Prompt 038)
+
+Read, not assumed: `app/api/memories/route.ts`'s `POST` handler inserts a new
+`altr_memories` row straight from the parsed body with no active-count check
+at all. `app/api/memories/[id]/route.ts`'s `PATCH` handler (used both for
+edits and for the row-level enable/disable toggle) is the same — setting
+`active: true` on a previously-disabled memory has no quota check either.
+This is a real gap, not a stylistic one: `lib/ai/memory-extraction.ts`'s own
+extraction path *does* enforce the identical limit (`activeMemories.count >=
+limits.maxActiveMemories` before inserting, and again per-candidate inside
+its insert loop), so the two memory-creation paths in this app currently
+behave inconsistently — one honors `PLAN_LIMITS[plan].maxActiveMemories`,
+the other doesn't.
+**Mitigation:** Prompt 038 added UI-only gating in `MemoryEditDialog`
+(`components/app/memory/`) — the create form shows a calm quota-reached
+notice with the real `used`/`limit` numbers and disables the Save button
+once `activeMemoryCount >= memoryLimit` — but this is UX-only, exactly per
+this prompt's own "UI gating is UX only" requirement. A direct API call to
+`POST /api/memories` or `PATCH /api/memories/:id` (`{"active": true}`)
+still succeeds unconditionally past the plan limit; two browser tabs
+racing the same limit would also both succeed. Real server-side enforcement
+(mirroring `memory-extraction.ts`'s own check) should be added to both
+routes in a future prompt — not done here, since `app/api/**` is outside
+Prompt 038's allowed-files list and the prompt's own instructions
+explicitly say not to add it silently.
+**Residual:** low (no auth/data-exposure impact — a user can only ever
+over-fill their *own* memory store; the promised plan ceiling is
+UX-enforced, not hard-enforced, for these two paths only).

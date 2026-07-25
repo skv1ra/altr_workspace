@@ -4,34 +4,55 @@ Updated by every implementation prompt at the end of its session.
 
 ## Current active prompt
 
-None — Prompt 037 complete (committed locally, not pushed), run directly on
-the user's explicit instruction. Rebuilds memory manipulation on top of
-036's list: `MemoryEditDialog` now handles create *and* edit in one
-component (a genuinely new capability — LEGACY's own UI never exposed
-memory creation even though `POST /api/memories` always supported it),
-with a real category combobox (native `<datalist>` over this user's own
-actual categories, still free-entry), maxLength/live-count validation
-mirroring the server schema exactly, and a designed gone-state for the
-"edited in another tab" 404. Clear-all now requires typing "DELETE ALL
-MEMORIES" (`ConfirmDialog`'s existing `typedConfirmation`, from 010) —
-stricter than 036's plain confirm, in the spirit of MASTER_CONTEXT's
-invariant #8. Added a real `MemoryProvenanceDialog` (sources, excerpts as
-plain text only, extraction model/version, monospaced linked-record ids
-on a hairline timeline). **Verified, not assumed, that "disabled memories
-are never used by your Twin" is true**, by reading the actual retrieval
-RPC's SQL (`supabase/migrations/20260715120000_phase_7_real_altr_twin_ai
-.sql`'s `altr_match_active_memories`: `and m.is_active = true`) — cited
-directly in both the row's own persistent hint and the disable toast.
-Mounted `<Toaster />` for the first time in this workspace (`app/(app)/
-layout.tsx`, Prompt 010's own comment anticipated exactly this) so the
-new "server confirm → list refresh → toast" flow this prompt's own
-instruction #1 asks for has somewhere to render. **`/memory` content-
-level e2e remains blocked** by the same placeholder-Supabase gap 036
-already empirically verified (identity mocking works, `createSupabase
-AdminClient()` doesn't) — LEGACY's memory-CRUD e2e contract stayed
-migrated to the RTL layer, now across five test files instead of one.
-See 037's own entry below for the full schema-mirror table and command
-results. **Carried forward, unchanged:** the `/settings`
+None — **Prompt 038 complete, closes Phase 8** (committed locally, not
+pushed), run directly on the user's explicit instruction. Read-only
+inspection first, per the prompt's own instructions: `lib/ai/memory-
+extraction.ts`'s extraction path already enforces `maxActiveMemories`
+(`activeMemories.count >= limits.maxActiveMemories`, checked once before
+the batch and again per-candidate inside the insert loop), but manual
+creation (`POST /api/memories`) and the enable/disable toggle (`PATCH
+/api/memories/:id` with `{active: true}`) do not — confirmed by reading
+both route handlers line-by-line, no quota check exists in either.
+Recorded honestly as **RISKS.md R13**, per this prompt's own explicit "do
+not silently add server enforcement" instruction — `app/api/**` is outside
+this prompt's file scope regardless. **Quota surfaces:** the header meter
+(036's `MemoryStatusHeader` + `QuotaMeter`) already existed and needed no
+changes; new work is the create-entry-point gate — `MemoryEditDialog`
+(create mode only) now shows a calm reached notice with the real used/limit
+numbers and a `/pricing` upgrade link, and disables Save, once
+`activeMemoryCount >= memoryLimit`. Deliberately **new** UI, not a recolor
+of the pre-existing `QuotaMeter` (out of this prompt's file scope, already
+uses this app's established error-red for its own reached state per
+Prompt 031's own documented decision) — this prompt's own "no red bars"
+visual wording is honored by the new notice alone (`--text-muted` ->
+`--text-primary`, never a color change), while `QuotaMeter` itself is left
+exactly as shipped. `MemoryOverview`'s active-memory count is now live
+local state (mirrors the existing `remainingTotal` pattern) so both the
+header meter and a freshly-reopened create dialog reflect create/enable/
+disable/delete within the same session, not just the server's snapshot at
+load. Extraction-quota outcomes (033's `ImportFlow` pause state) already
+reused the shared `quota.upgradeLink` copy/`/pricing` href — verified,
+not assumed, that this held for the `MEMORY_LIMIT_REACHED` reason
+specifically (only the sibling `IMPORT_MONTHLY_QUOTA_REACHED` e2e test had
+ever asserted the link before); extended the existing e2e extraction-pause
+test to assert it there too. **`/memory` content-level e2e remains
+blocked**, re-verified concretely this session (not assumed from 036/037's
+prior finding): built + started the production server with
+`ALTR_E2E_MOCKS=1` and curled `/memory` with the real mocked identity
+header — 500, `TypeError: fetch failed` against the placeholder Supabase
+URL, identical cause to 036/037's own finding, no regression from this
+prompt's changes. Coverage added: 11 new tests (`tests/unit/memory-quota
+.test.ts` — 6, new, importing real `PLAN_LIMITS` constants, covering
+79/85/100/110% of both the free (250) and work (25,000) limits per this
+prompt's own manual-verification instruction, run through the real
+`QuotaMeter` component rather than duplicating its logic; `MemoryEditDialog
+.test.tsx` — 3 new, reached/under-quota/edit-mode-unaffected; `MemoryOverview
+.test.tsx` — 2 new, integration-level gate-plus-never-blocks-viewing and
+live-count-after-a-real-create). `yarn lint`, `yarn typecheck`, `yarn test`
+(67 files/469 tests, up from 66/458 in 037), `yarn build` (45/45 pages,
+`/memory` grew from 6.94 kB to 7.18 kB, no route changes), and
+`yarn test:e2e` (39/39, unchanged count, one test's own coverage widened)
+all passed. **Carried forward, unchanged:** the `/settings`
 middleware-protection gap (030); the placeholder Supabase credentials
 blocker (029) — still applies to every *other* `(app)` page (dashboard,
 memory, settings, onboarding); the `/api/billing/plans`+`/api/billing/me`
@@ -3563,6 +3584,123 @@ open.
   6.94 kB, no route changes), and `yarn test:e2e` (39/39, unchanged —
   0 regressions) all passed.
 
+- 038 — Memory quotas and tests, closes Phase 8 (2026-07-25). Started with
+  the prompt's own step-1 inspection, done by reading code rather than
+  assuming: `lib/ai/memory-extraction.ts`'s extraction path already
+  enforces `maxActiveMemories` twice (once before the batch, once
+  per-candidate inside the insert loop, both against `activeMemories.count`
+  read live from `altr_memories`), but neither `app/api/memories/route.ts`'s
+  `POST` (manual creation) nor `app/api/memories/[id]/route.ts`'s `PATCH`
+  (used for both edits and the enable/disable toggle, `{active: true}`)
+  has any quota check at all — read both handlers in full, confirmed the
+  absence rather than inferring it from a missing grep hit. Recorded as
+  **RISKS.md R13**, exactly per this prompt's own instruction: honest
+  finding, no silent server-side fix (`app/api/**` is outside this
+  prompt's file scope regardless).
+  **Quota surfaces:** the header meter (036's `MemoryStatusHeader` +
+  031's `QuotaMeter`, both already wired with real `activeMemoryCount`/
+  `memoryLimit`) needed no changes — it already showed near-limit/reached
+  states with real numbers. The actual new work is the creation entry
+  point: `MemoryEditDialog` (create mode only — edit mode is untouched by
+  design, since editing an existing memory never changes the active
+  count) now computes `quotaReached = activeMemoryCount >= memoryLimit`
+  and, when true, renders a notice above the form with the real used/limit
+  numbers and a `/pricing` upgrade link (reusing the shared
+  `quota.upgradeLink` copy, same string `ImportFlow` already uses for its
+  own extraction-quota outcome), and disables the Save button — both a
+  defensive `if (quotaReached) return;` guard in the submit handler and
+  the button's own `disabled` attribute, belt-and-braces. This never
+  blocks opening the dialog, filling the fields, or viewing/editing/
+  toggling/deleting any *existing* memory — only the final create action
+  itself, per this prompt's own "communicates... before the user writes
+  content... never blocks viewing/editing" instruction, read as: gating
+  is real but scoped to new-creation only.
+  **Build-count discrepancy found, not silently resolved:** a clean
+  `rm -rf .next && yarn run build` (run twice, identical result both
+  times) reports `Generating static pages (45/45)` for the exact same
+  51-row `Route (app)` table this session leaves unchanged (`find app
+  -name page.tsx` before/after this prompt: identical 16 files; no
+  `app/**` route was added, removed, or renamed — this prompt's own file
+  scope never touches `app/api/**`, and `app/(app)/memory/page.tsx` was
+  read only). 037's own STATUS entry above logs `46/46` for what should
+  be the same route set (037 added no routes either). Recorded honestly
+  rather than papered over: either 037's own logged number was already
+  off by one, or some Next.js-internal counting detail differs between
+  sessions for a reason this prompt didn't chase down (the lockfile is
+  unchanged). Documentation-accuracy question only, not a functional
+  one — the real route table (16 pages + 33 route handlers + 2 metadata
+  files = 51 rows) is verified identical before and after.
+  **Visual requirement reconciled, not silently overridden:** this
+  prompt's own wording is "silver -> denser type at reached; no red
+  bars," but the pre-existing `QuotaMeter` (`components/app/`, outside
+  038's file scope) already ships literal red (`#b91c1c`) for its own
+  reached state — a deliberate, documented Prompt 031 decision to reuse
+  this app's established error/alert red rather than invent a new accent,
+  and it's the same component 036 already wired into this very page's
+  header, directly above where the new notice appears. Recoloring it was
+  out of scope (would ripple to every other `QuotaMeter` consumer —
+  imports, drafts — never asked to change here) and would also contradict
+  031's own considered reasoning. Resolution: the new create-dialog notice
+  (genuinely new UI, not a recolor) follows this prompt's literal spec —
+  `--text-muted` (silver) for the body copy, `--text-primary` (denser,
+  still neutral gray/obsidian) for the heading, no red anywhere — while
+  `QuotaMeter` itself is left exactly as shipped. Both conventions now
+  coexist on the same page by design, not by oversight.
+  **Live local state, not just a server snapshot:** `MemoryOverview`'s
+  `activeMemoryCount` prop is now seeded into local `activeCount` state
+  (mirrors the existing `remainingTotal` pattern from 036/037) and adjusted
+  on every action that actually changes it — `+1` on a successful create
+  (manually created memories are always `active: true` — confirmed by
+  reading `createSchema`'s own `.default(true)` and that `MemoryEditPatch`
+  never sends the field), `+1`/`-1` on enable/disable, `-1` on deleting an
+  active row (0 if the deleted row was already disabled — `onDeleted` now
+  passes the row's own `is_active` through), reset to `0` on clear-all.
+  Without this, the header meter and a freshly-reopened create dialog
+  would both silently understate the true count for the rest of the
+  session after any of those actions — verified with a dedicated
+  integration test that creates one memory and confirms both the meter's
+  `aria-valuenow` and a second dialog-open's reached notice update without
+  a page reload.
+  **Extraction-quota outcomes, verified rather than assumed already
+  consistent:** `ImportFlow.tsx`'s `extractionPaused`/`MEMORY_LIMIT_REACHED`
+  branch already rendered the same shared `quota.upgradeLink` text/`/pricing`
+  href this prompt's own header meter and new notice both use — but no
+  existing test had ever asserted that link for *this* specific reason
+  (only the sibling `IMPORT_MONTHLY_QUOTA_REACHED` e2e test asserted an
+  "Upgrade plan" link before). Extended the existing e2e "extraction pause"
+  test with that one assertion — real, additive coverage of behavior that
+  already worked, not previously proven.
+  **`/memory` content-level e2e re-confirmed blocked, concretely, not
+  assumed from 036/037's prior finding:** ran `yarn build` then manually
+  started `next start -p 3000` with `ALTR_E2E_MOCKS=1` and curled `/memory`
+  with the real mocked `x-altr-e2e-user`/`x-altr-e2e-email` headers this
+  session — `500`, body containing `TypeError: fetch failed` against the
+  placeholder Supabase URL, identical failure mode 036 first found and 037
+  re-confirmed; no regression traced to any 038 change. This is why the
+  "e2e memory CRUD extended with a quota-reached mock" instruction is
+  satisfied via the one live, reachable memory-quota e2e surface (the
+  import/extraction-pause flow above) rather than a new `/memory`-page
+  scenario — that page's own content e2e remains structurally blocked
+  until the real Supabase environment gap (029) is resolved.
+  **Coverage added** (11 new tests total): `tests/unit/memory-quota.test.tsx`
+  (new file, 6 tests) — imports the real `PLAN_LIMITS` constants (never a
+  copied number) and renders the real `QuotaMeter` at 79%/85%/100%/110%
+  of both the free (250) and work (25,000) limits, per this prompt's own
+  manual-verification instruction, plus a personal-plan (5,000) reached
+  case to prove all three tiers use their own distinct real constant, not
+  a shared hardcoded one. `tests/components/MemoryEditDialog.test.tsx`
+  (+3): reached-state notice/disabled-Save/blocked-submit, just-under-quota
+  shows nothing, edit mode never shows the notice even when already over
+  quota. `tests/components/MemoryOverview.test.tsx` (+2): the New-memory
+  button stays clickable at quota while the dialog it opens gates
+  creation only (editing an existing row right after is unaffected), and
+  the live-count-after-a-real-create integration case described above.
+  `yarn lint`, `yarn typecheck`, `yarn test` (67 files/469 tests, up from
+  66/458 in 037 — 1 new file/11 new tests), `yarn build` (45/45 pages,
+  `/memory` grew from 6.94 kB to 7.18 kB, no route changes), and
+  `yarn test:e2e` (39/39, unchanged count — one existing test's own
+  coverage widened, no new/removed test) all passed.
+
 ## Failed prompts
 
 None.
@@ -3599,7 +3737,11 @@ prompt, `/import-conversations` itself grew from 7.86 kB to 11.5 kB in
 034); re-confirmed again for 035 (45/45 pages, no route changes — a pure
 test/fix-level prompt), and again for 036 and 037 (46/46 pages both
 times, unchanged route count — `/memory` grew from 5.58 kB to 6.94 kB in
-037). 033's own entry above records a real
+037), and again for 038, closes Phase 8 (45/45 pages — see 038's own
+STATUS entry above for a found-but-unresolved discrepancy against 037's
+logged 46/46 for what should be the identical route set; no route was
+actually added/removed/renamed — `/memory` grew from 6.94 kB to 7.18 kB).
+033's own entry above records a real
 `yarn test:e2e` gotcha worth reading before running that command again:
 `webServer` serves whatever `.next` build already exists (`next start`,
 not `next dev`) — always run `yarn build` first if `.next` might predate
@@ -3636,6 +3778,14 @@ directly `curl`-ing the built server).
 Re-confirmed same day for 037 — 458/458 tests across 66 files, clean
 exit, plus `yarn test:e2e` 39/39 (unchanged — `/memory` content-level e2e
 still blocked for the same reason 036 already proved, not re-tested).
+Re-confirmed 2026-07-25 for 038, closes Phase 8 — 469/469 tests across 67
+files, clean exit, plus `yarn test:e2e` 39/39 (unchanged count; the
+existing "extraction pause" test gained one new assertion, no test
+added/removed). `/memory` content-level e2e re-verified blocked this
+session by directly curling a freshly built-and-started production server
+with the real mocked e2e identity headers (`500`, `TypeError: fetch
+failed` against the placeholder Supabase URL) — same cause 036 first
+found and 037 already re-confirmed, not just assumed still true.
 
 ## Known regressions
 

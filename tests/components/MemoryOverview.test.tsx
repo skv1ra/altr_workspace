@@ -225,6 +225,69 @@ describe("MemoryOverview", () => {
     expect(await screen.findByText("Short, direct replies")).toBeInTheDocument();
   });
 
+  it("New memory button always stays clickable at quota, but the dialog it opens shows the reached notice and disables Save (never blocks opening/viewing)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ memories: [memoryFixture()], total: 1, totalPages: 1 }) })));
+    render(<MemoryOverview {...defaultProps} activeMemoryCount={250} memoryLimit={250} />);
+    await screen.findByText("Short, direct replies");
+
+    const newMemoryButton = screen.getByRole("button", { name: /New memory/ });
+    expect(newMemoryButton).toBeEnabled();
+    await userEvent.click(newMemoryButton);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("You've reached your active memory limit.")).toBeInTheDocument();
+    expect(within(dialog).getByText(/250\/250/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Upgrade plan" })).toHaveAttribute("href", "/pricing");
+    expect(within(dialog).getByRole("button", { name: "Save changes" })).toBeDisabled();
+
+    // Editing the already-listed memory is completely unaffected by the
+    // create-only gate above — this prompt's own "never blocks
+    // viewing/editing" requirement.
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await userEvent.click(screen.getByRole("button", { name: /Edit/ }));
+    expect(screen.queryByText("You've reached your active memory limit.")).not.toBeInTheDocument();
+  });
+
+  it("the header meter and the create dialog's own quota check both update live after a real create, without a full page reload", async () => {
+    let createCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/memories" && init?.method === "POST") {
+          createCalls += 1;
+          return { ok: true, json: async () => ({ memory: memoryFixture({ id: "22222222-2222-4222-8222-222222222222", title: "Second memory" }) }) };
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            memories: createCalls > 0 ? [memoryFixture(), memoryFixture({ id: "22222222-2222-4222-8222-222222222222", title: "Second memory" })] : [memoryFixture()],
+            total: createCalls > 0 ? 2 : 1,
+            totalPages: 1,
+          }),
+        };
+      }),
+    );
+    // One below the limit: the real create should push it exactly to the
+    // limit, and a second dialog open right after must show the reached
+    // notice from local state alone — no extra network round trip needed.
+    render(<MemoryOverview {...defaultProps} activeMemoryCount={1} memoryLimit={2} />);
+    await screen.findByText("Short, direct replies");
+
+    expect(screen.getByRole("progressbar", { name: "Active memories" })).toHaveAttribute("aria-valuenow", "50");
+
+    await userEvent.click(screen.getByRole("button", { name: /New memory/ }));
+    await userEvent.type(screen.getByLabelText(/Title/), "Second memory");
+    await userEvent.type(screen.getByLabelText(/Category/), "people");
+    await userEvent.type(screen.getByLabelText(/Description/), "Added straight from the editor.");
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await screen.findByText("Second memory");
+
+    expect(screen.getByRole("progressbar", { name: "Active memories" })).toHaveAttribute("aria-valuenow", "100");
+
+    await userEvent.click(screen.getByRole("button", { name: /New memory/ }));
+    expect(await screen.findByText("You've reached your active memory limit.")).toBeInTheDocument();
+  });
+
   it("editing a memory deleted in another tab (the real 404) shows the designed gone-state and refreshes the list instead of throwing", async () => {
     let deleted = false;
     vi.stubGlobal(
