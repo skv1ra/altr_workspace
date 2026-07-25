@@ -634,6 +634,80 @@ export const sharedCopy = {
       historyIncomingLabel: "Incoming message",
       historyDraftLabel: "Draft",
     },
+    // Prompt 042 — billing overview redesign. `pricingPage.planNames` is
+    // reused as-is for the plan display name (same source `PlanBadge`
+    // already uses); `quota.upgradeLink`/`common.error` are not reused —
+    // this page's own upgrade path is "Choose a plan" to `/pricing`
+    // (distinct copy, since it's a full re-subscribe action, not a quota
+    // nudge). `statusLabels` covers the real, exhaustive
+    // `altr_subscriptions.status` enum verified against
+    // `lib/billing/webhook.ts`'s `normalizeSubscriptionStatus` (the only
+    // seven values ever written); `invoiceStatusLabels` covers the real,
+    // exhaustive `altr_billing_invoices.status` values verified against
+    // `lib/billing/webhook-handler.ts` (only "paid"/"failed"/"refunded"
+    // are ever written there, despite the column having no db-level check
+    // constraint).
+    billing: {
+      eyebrow: "Billing",
+      title: "Subscription and invoices.",
+      loadFailed: "Couldn't load your billing information.",
+      planHeading: "Plan",
+      statusLabel: "Status",
+      statusLabels: {
+        on_trial: "Trial",
+        active: "Active",
+        paused: "Paused",
+        past_due: "Payment past due",
+        unpaid: "Unpaid",
+        cancelled: "Cancelled",
+        expired: "Expired",
+      },
+      testModeNotice: "Test mode",
+      neverSubscribedHeading: "You're on the Free plan.",
+      neverSubscribedBody: "Upgrade any time for more memory, drafts, and imports.",
+      chooseAPlanAction: "Choose a plan",
+      renewsPrefix: "Renews",
+      trialEndsPrefix: "Trial ends",
+      accessUntilPrefix: "Access continues until",
+      accessEndedHeading: "Your plan access has ended.",
+      accessEndedBody: "Choose a plan to pick up where you left off — your memory and history stay intact.",
+      manageSubscriptionAction: "Manage subscription",
+      managePendingLabel: "Opening…",
+      manageErrorGeneric: "Couldn't open the billing portal — try again.",
+      manageNotFoundNotice: "This subscription can no longer be managed here. Refresh the page and try again.",
+      resubscribeAction: "Resubscribe",
+      pastDueHeading: "There was a problem with your last payment.",
+      pastDueGraceBody: "Your access continues for a short grace period while the payment is retried. Update your payment method to keep it.",
+      pastDueLapsedBody: "Your access has paused until this is resolved.",
+      fixPaymentAction: "Fix payment method",
+      quotaHeading: "Usage this period",
+      quotaMemoriesLabel: "Active memories",
+      quotaDraftsLabel: "AI drafts this month",
+      quotaImportsLabel: "Imports this month",
+      historyHeading: "Invoices",
+      historyEmptyFree: "Invoices appear here once you're on a paid plan.",
+      historyEmptySubscribed: "No invoices yet.",
+      historyPendingReceipt: "Payment received — the receipt is on its way and will appear here shortly.",
+      tableDateHeader: "Date",
+      tableDescriptionHeader: "Description",
+      tableAmountHeader: "Amount",
+      tableStatusHeader: "Status",
+      tableReceiptHeader: "Receipt",
+      receiptLinkLabel: "View receipt",
+      receiptUnavailable: "—",
+      // Deliberately generic, not "{plan} plan" — `/api/billing/me`'s
+      // invoice rows carry no `plan_id` of their own (verified by reading
+      // its own `select(...)` list), so attributing a specific plan tier
+      // to a historical invoice would be a guess, potentially wrong for
+      // the "multiple historical subscriptions" edge case this prompt's
+      // own instructions name.
+      invoiceDescription: "Altr subscription",
+      invoiceStatusLabels: {
+        paid: "Paid",
+        failed: "Failed",
+        refunded: "Refunded",
+      },
+    },
   },
   UA: {
     nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
@@ -1202,6 +1276,61 @@ export const sharedCopy = {
       historyDetailHeading: "Деталі чернетки",
       historyIncomingLabel: "Вхідне повідомлення",
       historyDraftLabel: "Чернетка",
+    },
+    billing: {
+      eyebrow: "Оплата",
+      title: "Підписка та рахунки.",
+      loadFailed: "Не вдалося завантажити дані про оплату.",
+      planHeading: "План",
+      statusLabel: "Статус",
+      statusLabels: {
+        on_trial: "Пробний період",
+        active: "Активний",
+        paused: "Призупинено",
+        past_due: "Прострочений платіж",
+        unpaid: "Не оплачено",
+        cancelled: "Скасовано",
+        expired: "Закінчився",
+      },
+      testModeNotice: "Тестовий режим",
+      neverSubscribedHeading: "Ти на безкоштовному плані.",
+      neverSubscribedBody: "Онови план у будь-який час, щоб отримати більше памʼяті, чернеток і імпортів.",
+      chooseAPlanAction: "Обрати план",
+      renewsPrefix: "Поновлення",
+      trialEndsPrefix: "Пробний період закінчується",
+      accessUntilPrefix: "Доступ триває до",
+      accessEndedHeading: "Доступ за твоїм планом закінчився.",
+      accessEndedBody: "Обери план, щоб продовжити з того самого місця — твоя памʼять та історія збережені.",
+      manageSubscriptionAction: "Керувати підпискою",
+      managePendingLabel: "Відкриваємо…",
+      manageErrorGeneric: "Не вдалося відкрити портал оплати — спробуй ще раз.",
+      manageNotFoundNotice: "Цю підписку більше не можна керувати тут. Онови сторінку і спробуй ще раз.",
+      resubscribeAction: "Відновити підписку",
+      pastDueHeading: "Виникла проблема з останнім платежем.",
+      pastDueGraceBody: "Доступ триває ще недовго, поки платіж повторюється. Онови спосіб оплати, щоб зберегти доступ.",
+      pastDueLapsedBody: "Доступ призупинено, поки це не вирішено.",
+      fixPaymentAction: "Виправити спосіб оплати",
+      quotaHeading: "Використання за цей період",
+      quotaMemoriesLabel: "Активні спогади",
+      quotaDraftsLabel: "AI-чернеток цього місяця",
+      quotaImportsLabel: "Імпортів цього місяця",
+      historyHeading: "Рахунки",
+      historyEmptyFree: "Рахунки зʼявляться тут, коли ти перейдеш на платний план.",
+      historyEmptySubscribed: "Поки що немає рахунків.",
+      historyPendingReceipt: "Платіж отримано — квитанція вже в дорозі і скоро зʼявиться тут.",
+      tableDateHeader: "Дата",
+      tableDescriptionHeader: "Опис",
+      tableAmountHeader: "Сума",
+      tableStatusHeader: "Статус",
+      tableReceiptHeader: "Квитанція",
+      receiptLinkLabel: "Переглянути квитанцію",
+      receiptUnavailable: "—",
+      invoiceDescription: "Підписка Altr",
+      invoiceStatusLabels: {
+        paid: "Оплачено",
+        failed: "Невдало",
+        refunded: "Повернено",
+      },
     },
   },
 } as const satisfies Record<Lang, unknown>;

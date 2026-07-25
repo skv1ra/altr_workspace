@@ -1,0 +1,64 @@
+.wrap {
+  margin-top: var(--space-6);
+  overflow-x: auto;
+}
+
+/*
+ * "Typeset like a fine invoice" (this prompt's own visual requirement):
+ * a real <table>, hairline rules only (no zebra striping, no filled
+ * cells), tabular numerals on the amount column, status as plain
+ * typographic weight/case — never a colored chip.
+ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 32rem;
+}
+
+.table th {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--edge-hairline);
+  text-align: left;
+  font-size: var(--text-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-muted);
+}
+
+.table td {
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--edge-hairline);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+.amountCell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statusCell {
+  font-weight: 500;
+}
+
+.statusFailed {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.receiptLink {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--text-primary);
+}
+
+.receiptUnavailable {
+  color: var(--text-muted);
+}
+
+.empty {
+  margin-top: var(--space-6);
+  color: var(--text-muted);
+}
