@@ -1,0 +1,4 @@
+-- Retired compatibility entrypoint.
+-- Do not use this file to bootstrap billing tables.
+-- Apply the ordered files in supabase/migrations instead.
+-- Historical provider data must be handled according to docs/LEGACY_BILLING_MIGRATION.md.
