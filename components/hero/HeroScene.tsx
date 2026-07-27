@@ -65,6 +65,13 @@ export function HeroScene() {
   const pointerRef = useHeroPointer(sceneRef);
   const scrollRef = useHeroScroll(sceneRef);
 
+  /*
+   * The glass is the photographic shard renders themselves (the same
+   * black-glass fracture renders as the scene reference in references/) —
+   * no synthetic WebGL re-interpretation on top. The former Prompt 018
+   * glass layer (components/hero/glass/) is intentionally unmounted: the
+   * reference look is the real render, not a drawn imitation of it.
+   */
   const shardElsRef = useRef(new Map<string, HTMLDivElement>());
   function registerShardEl(id: string, el: HTMLDivElement | null) {
     if (el) shardElsRef.current.set(id, el);
@@ -93,6 +100,7 @@ export function HeroScene() {
       <div aria-hidden="true">
         <HeroLayers tier="front" reducedMotion={reducedMotion} registerShardEl={registerShardEl} />
       </div>
+      <div className={styles.vignette} aria-hidden="true" />
       <div aria-hidden="true">
         <HeroParticles className={styles.particles} reducedMotion={reducedMotion} maxParticles={36} />
       </div>

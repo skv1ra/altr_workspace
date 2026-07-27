@@ -5,6 +5,13 @@
   min-height: 92vh;
   overflow: hidden;
   /*
+   * Void-black canvas (user-approved): the hero sits on the same pure
+   * black as the rest of the site. The smoky depth from the dark scene
+   * reference survives only as a restrained cool glow in .fogBase — the
+   * ground itself never lifts off #000.
+   */
+  background-color: #000000;
+  /*
    * Prompt 017: the mobile/desktop shard composition below is driven by
    * this element's own inline size, not the viewport — a plain `@media
    * (max-width)` would be indistinguishable from the /hero-lab tier-preview
@@ -23,9 +30,12 @@
 }
 
 /*
- * Silver volumetric fog, base wash: brightest zone sits left-of-center —
- * behind the headline, keeping its contrast high — with two cooler, wider
- * haze layers behind it for depth rather than a single flat wash.
+ * Smoky blue-gray volume, matched to the dark reference still: the
+ * brightest haze sits center-frame — directly behind the main shard, the
+ * way the reference's key light blooms through the smoke there — with a
+ * cooler secondary haze upper-left and a dimmer floor wash below. The
+ * headline block (left 7%) sits over the darker left slope of that glow,
+ * keeping white copy comfortably readable.
  */
 .fogBase {
   position: absolute;
@@ -33,9 +43,9 @@
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(46% 54% at 24% 42%, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0) 68%),
-    radial-gradient(60% 56% at 62% 50%, rgba(217, 221, 225, 0.6), rgba(217, 221, 225, 0) 78%),
-    radial-gradient(80% 72% at 55% 78%, rgba(185, 192, 199, 0.36), rgba(185, 192, 199, 0) 84%);
+    radial-gradient(52% 62% at 52% 42%, rgba(163, 177, 192, 0.2), rgba(163, 177, 192, 0) 70%),
+    radial-gradient(72% 66% at 34% 26%, rgba(122, 136, 152, 0.12), rgba(122, 136, 152, 0) 75%),
+    radial-gradient(90% 72% at 60% 80%, rgba(96, 108, 122, 0.09), rgba(96, 108, 122, 0) 82%);
   filter: blur(18px);
   /*
    * Prompt 016 scroll choreography: "fog opacity eases down" over the
@@ -67,7 +77,7 @@
   inset: 0;
   pointer-events: none;
   z-index: 25;
-  background: radial-gradient(65% 60% at 88% 8%, rgba(198, 204, 210, 0.5), rgba(198, 204, 210, 0) 74%);
+  background: radial-gradient(65% 60% at 88% 8%, rgba(180, 192, 205, 0.12), rgba(180, 192, 205, 0) 74%);
 }
 
 .particles {
@@ -77,6 +87,26 @@
   pointer-events: none;
   width: 100%;
   height: 100%;
+}
+
+/*
+ * Edge vignette, matched to the reference still's darkened corners: the
+ * frame falls off into deep slate-black all around while the center keeps
+ * the smoky glow. Sits above the shard field (24) and below the fog veil
+ * (25) so the falloff darkens glass and haze together, exactly like the
+ * reference's in-camera vignette.
+ */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  background: radial-gradient(
+    118% 98% at 50% 44%,
+    rgba(0, 0, 0, 0) 52%,
+    rgba(10, 13, 18, 0.32) 78%,
+    rgba(6, 8, 12, 0.6) 100%
+  );
 }
 
 .shard {

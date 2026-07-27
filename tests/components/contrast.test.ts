@@ -16,34 +16,42 @@ function contrastRatio(hexA: string, hexB: string): number {
 
 const WCAG_AA_BODY_TEXT = 4.5;
 
-// Hex values below must match app/styles/tokens.css.
-const ALTR_WHITE = "#f5f6f7"; // --altr-white / --surface-page
-const ALTR_GRAPHITE = "#3a3f45"; // --altr-graphite / --text-primary (light surfaces)
-const ALTR_OBSIDIAN = "#15171a"; // --altr-obsidian / --surface-inverse
-const ALTR_MIST = "#b9c0c7"; // --altr-mist / --text-muted override on .surface-inverse
-
-// Effective rendered color of --text-muted (rgb(var(--altr-graphite-rgb) / 78%))
-// composited over --surface-page, as a browser would paint it — see the
-// comment above --text-muted in tokens.css.
-const TEXT_MUTED_ON_PAGE = "#63676c";
+// Hex values below must match app/styles/tokens.css (black-velvet theme).
+const VOID_BLACK = "#000000"; // --surface-page / --color-void-black
+const SURFACE_LIFT = "#0b0e14"; // --surface-inverse / --surface-lift
+const WHITE = "#ffffff"; // --text-heading
+const BONE_WHITE = "#f0f0f0"; // --text-primary / --altr-white / --altr-graphite
+const ASH_GRAY = "#a1a4a5"; // --text-muted / --altr-mist
+const IRIS_VIOLET = "#9281f7"; // --accent-code
+const ALARM_RED = "#ff9592"; // --color-alarm-red (error text)
+const GRAPHITE_HAIRLINE = "#292d30"; // --edge-hairline — border, never text
 
 describe("token contrast pairs (WCAG AA, body text)", () => {
-  it("primary text on the page surface: graphite on white", () => {
-    expect(contrastRatio(ALTR_GRAPHITE, ALTR_WHITE)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  it("heading text on the void canvas: white on black", () => {
+    expect(contrastRatio(WHITE, VOID_BLACK)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
   });
 
-  it("primary text on the inverse surface: white on obsidian", () => {
-    expect(contrastRatio(ALTR_WHITE, ALTR_OBSIDIAN)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  it("primary text on the void canvas: bone white on black", () => {
+    expect(contrastRatio(BONE_WHITE, VOID_BLACK)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
   });
 
-  it("muted text on the inverse surface: mist on obsidian", () => {
-    expect(contrastRatio(ALTR_MIST, ALTR_OBSIDIAN)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  it("primary and muted text on the lifted panel surface", () => {
+    expect(contrastRatio(BONE_WHITE, SURFACE_LIFT)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+    expect(contrastRatio(ASH_GRAY, SURFACE_LIFT)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
   });
 
-  it("muted text on the page surface is compliant, unlike raw mist-on-white", () => {
-    // --altr-mist itself on white is ~1.7:1 — far below AA — which is exactly
-    // why --text-muted does not resolve to plain --altr-mist on light surfaces.
-    expect(contrastRatio(ALTR_MIST, ALTR_WHITE)).toBeLessThan(WCAG_AA_BODY_TEXT);
-    expect(contrastRatio(TEXT_MUTED_ON_PAGE, ALTR_WHITE)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  it("muted text on the void canvas: ash gray on black", () => {
+    expect(contrastRatio(ASH_GRAY, VOID_BLACK)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  });
+
+  it("accent and status text on the void canvas clear AA", () => {
+    expect(contrastRatio(IRIS_VIOLET, VOID_BLACK)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+    expect(contrastRatio(ALARM_RED, VOID_BLACK)).toBeGreaterThanOrEqual(WCAG_AA_BODY_TEXT);
+  });
+
+  it("the hairline is a border color, not a text color", () => {
+    // #292d30 on black is ~1.6:1 — far below AA — which is exactly why
+    // --edge-hairline may only ever draw 1px borders, never label text.
+    expect(contrastRatio(GRAPHITE_HAIRLINE, VOID_BLACK)).toBeLessThan(WCAG_AA_BODY_TEXT);
   });
 });

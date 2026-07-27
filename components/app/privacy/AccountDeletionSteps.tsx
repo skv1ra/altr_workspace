@@ -78,7 +78,7 @@ export function AccountDeletionSteps({
           />
         </div>
         {state.errorKey && (
-          <p role="alert" className="mt-4 text-body text-red-700">
+          <p role="alert" className="mt-4 text-body text-alarm-red">
             {t[errorCopyKey[state.errorKey]]}
           </p>
         )}

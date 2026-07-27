@@ -35,7 +35,7 @@
 }
 
 .node[data-state="error"] .dot {
-  background: #ff8a8a;
+  background: var(--color-alarm-red);
   box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.18);
 }
 
@@ -54,7 +54,7 @@
 }
 
 .node[data-state="error"] .label {
-  color: #ff8a8a;
+  color: var(--color-alarm-red);
 }
 
 .connector {

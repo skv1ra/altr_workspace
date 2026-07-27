@@ -47,7 +47,7 @@ export function MobileMenu({ open, onClose, lang, setLang, signedIn }: MobileMen
               <Link
                 href={link.href}
                 onClick={onClose}
-                className="text-h3 font-normal text-altr-obsidian"
+                className="text-h3 font-normal text-text-heading"
               >
                 {t.nav[link.key]}
               </Link>
@@ -58,7 +58,7 @@ export function MobileMenu({ open, onClose, lang, setLang, signedIn }: MobileMen
         <Link
           href={signedIn ? "/dashboard" : "/auth?mode=login"}
           onClick={onClose}
-          className="text-h3 font-normal text-altr-obsidian"
+          className="text-h3 font-normal text-text-heading"
         >
           {signedIn ? t.common.backDashboard : t.nav.login}
         </Link>
@@ -78,7 +78,7 @@ export function MobileMenu({ open, onClose, lang, setLang, signedIn }: MobileMen
               type="button"
               aria-pressed={lang === code}
               onClick={() => setLang(code)}
-              className="text-label uppercase text-text-muted aria-pressed:text-altr-obsidian"
+              className="text-label uppercase text-text-muted aria-pressed:text-text-heading"
             >
               {code}
             </button>

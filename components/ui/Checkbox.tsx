@@ -50,7 +50,7 @@ export function Checkbox({ label, indeterminate = false, error, checked, id, ...
         <span className="text-body text-text-primary">{label}</span>
       </label>
       {error && (
-        <p id={errorId} role="alert" className="mt-1 text-label normal-case text-red-700">
+        <p id={errorId} role="alert" className="mt-1 text-label normal-case text-alarm-red">
           {error}
         </p>
       )}

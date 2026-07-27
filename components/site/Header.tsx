@@ -102,7 +102,7 @@ export function Header() {
                 type="button"
                 aria-pressed={lang === code}
                 onClick={() => setLang(code)}
-                className="text-label uppercase text-text-muted transition-colors hover:text-text-primary aria-pressed:text-altr-obsidian"
+                className="text-label uppercase text-text-muted transition-colors hover:text-text-primary aria-pressed:text-text-heading"
               >
                 {code}
               </button>

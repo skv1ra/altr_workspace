@@ -89,7 +89,7 @@ export function DeletionRequestForm({ lang, defaultEmail = "" }: { lang: Lang; d
       </Field>
       <Checkbox label={t.requestConfirmLabel} checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
       {error && (
-        <p role="alert" className="text-body text-red-700">
+        <p role="alert" className="text-body text-alarm-red">
           {error}
         </p>
       )}

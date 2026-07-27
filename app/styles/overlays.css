@@ -13,12 +13,8 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
-  background: radial-gradient(
-    120% 100% at 50% 20%,
-    rgb(var(--altr-white-rgb) / 55%),
-    rgb(var(--altr-silver-rgb) / 45%)
-  );
-  backdrop-filter: blur(6px);
+  background: var(--surface-backdrop-blur);
+  backdrop-filter: blur(25px);
   animation: overlay-fade var(--motion-fast) var(--ease-altr);
 }
 
@@ -133,10 +129,6 @@
 }
 
 .menu-item[data-active="true"] {
-  background: rgb(var(--altr-graphite-rgb) / 8%);
-}
-
-.surface-inverse .menu-item[data-active="true"] {
   background: rgb(var(--altr-white-rgb) / 10%);
 }
 

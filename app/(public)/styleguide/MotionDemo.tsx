@@ -54,7 +54,7 @@ export function MotionDemo() {
 
       <div>
         <p className="text-label uppercase text-text-muted">Drift (24s ambient, CSS-only)</p>
-        <div className="motion-drift mt-2 h-12 w-12 rounded-full bg-altr-obsidian" aria-hidden="true" />
+        <div className="motion-drift mt-2 h-12 w-12 rounded-full bg-altr-white" aria-hidden="true" />
       </div>
 
       <div>

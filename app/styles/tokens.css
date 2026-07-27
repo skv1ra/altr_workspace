@@ -1,56 +1,106 @@
 /*
  * Altr design tokens — single source of truth (ADR-009).
- * Values sourced from docs/claude-prompts/DESIGN_DIRECTION.md.
+ * Theme: "black velvet with violet neon" (Resend-style reference).
+ * Pure #000000 canvas, hairline #292d30 borders, white-on-black type,
+ * a single violet brand accent reserved for code/identifiers, and
+ * status hues reserved for data indicators.
  * Consumed by tailwind.config.ts via var(...) references; do not duplicate
  * raw values elsewhere.
  */
 
 :root {
-  /* Palette — cinematic white / silver / graphite / black. No accent hues. */
-  --altr-white: #f5f6f7;
-  --altr-silver: #d9dde1;
-  --altr-mist: #b9c0c7;
-  --altr-graphite: #3a3f45;
-  --altr-obsidian: #15171a;
-  --altr-black: #0a0b0c;
+  /* Palette — void black canvas, graphite hairlines, tiered whites. */
+  --color-void-black: #000000;
+  --color-graphite-hairline: #292d30;
+  --color-white: #ffffff;
+  --color-bone-white: #f0f0f0;
+  --color-ash-gray: #a1a4a5;
+  --color-smoke-gray: #abafb4;
+  --color-iron: #6e727a;
+  --color-charcoal: #464a4d;
+
+  /* Brand accent — Iris Violet. Belongs to code strings, identifiers and
+     small emphasized phrases; never to buttons or large decorative type. */
+  --color-iris-violet: #9281f7;
+  --color-iris-violet-glow: #baa7ff;
+  --gradient-iris-violet: linear-gradient(
+    to right bottom in oklab,
+    rgb(146, 129, 247) 0%,
+    rgb(154, 84, 220) 100%
+  );
+
+  /* Status / data-indicator hues — never UI chrome. */
+  --color-signal-blue: #3b9eff;
+  --color-sky-blue: #70b8ff;
+  --color-pulse-green: #3ad389;
+  --color-alarm-red: #ff9592;
+  --color-crimson: #ff6465;
+  --color-amber: #ffca16;
+  --color-amber-glow: #ffd60a;
+
+  /* Surfaces */
+  --surface-void: #000000;
+  --surface-lift: #0b0e14;
+  --surface-backdrop-blur: rgb(0 0 0 / 95%);
+  --gradient-surface: linear-gradient(rgb(27, 27, 27), rgb(3, 3, 3));
+
+  /*
+   * Legacy role aliases (--altr-*). The original light theme named these
+   * after literal colors; on the black canvas they are kept as *roles* so
+   * every existing consumer retains a correct contrast pairing:
+   *   --altr-white    → primary text / brightest ink (bone white)
+   *   --altr-silver   → hairline borders (graphite hairline)
+   *   --altr-mist     → muted text (ash gray)
+   *   --altr-graphite → primary reading color (bone white)
+   *   --altr-obsidian → lifted panel surface
+   *   --altr-black    → the void canvas
+   */
+  --altr-white: #f0f0f0;
+  --altr-silver: #292d30;
+  --altr-mist: #a1a4a5;
+  --altr-graphite: #f0f0f0;
+  --altr-obsidian: #0b0e14;
+  --altr-black: #000000;
 
   /* RGB triplets for opacity composition (Tailwind rgb(var(...) / <alpha>) pattern). */
-  --altr-white-rgb: 245 246 247;
-  --altr-silver-rgb: 217 221 225;
-  --altr-mist-rgb: 185 192 199;
-  --altr-graphite-rgb: 58 63 69;
-  --altr-obsidian-rgb: 21 23 26;
-  --altr-black-rgb: 10 11 12;
+  --altr-white-rgb: 240 240 240;
+  --altr-silver-rgb: 41 45 48;
+  --altr-mist-rgb: 161 164 165;
+  --altr-graphite-rgb: 240 240 240;
+  --altr-obsidian-rgb: 11 14 20;
+  --altr-black-rgb: 0 0 0;
+  --iris-violet-rgb: 146 129 247;
 
   /* Semantic aliases */
-  --surface-page: var(--altr-white);
-  --surface-inverse: var(--altr-obsidian);
-  --text-primary: var(--altr-graphite);
-  /*
-   * --altr-mist on --altr-white measures ~1.7:1 (WCAG AA body text needs
-   * 4.5:1) — too light to use directly as muted text on light surfaces.
-   * Graphite at 78% opacity composites to ~#63676c over --altr-white,
-   * ~5.3:1 (see tests/components/contrast.test.ts). `.surface-inverse`
-   * (materials.css) overrides this back to the plain --altr-mist, which
-   * measures ~9.8:1 against --altr-obsidian — plenty on dark.
-   */
-  --text-muted: rgb(var(--altr-graphite-rgb) / 78%);
-  --edge-hairline: var(--altr-silver);
+  --surface-page: var(--color-void-black);
+  --surface-inverse: var(--surface-lift);
+  --text-heading: var(--color-white);
+  --text-primary: var(--color-bone-white);
+  /* Ash gray on black measures ~7.0:1 — comfortably above WCAG AA body
+     text (4.5:1); see tests/components/contrast.test.ts. */
+  --text-muted: var(--color-ash-gray);
+  --text-link: var(--color-smoke-gray);
+  --accent-code: var(--color-iris-violet);
+  --edge-hairline: var(--color-graphite-hairline);
 
-  /* Fluid type scale (clamp: min, fluid, max). Refined in Prompt 007. */
-  --text-display: clamp(2.6rem, 6.5vw, 5.5rem);
-  --text-h1: clamp(2.25rem, 4.2vw, 3.5rem);
+  /* Fluid type scale (clamp: min, fluid, max). Display tops out at the
+     96px editorial-serif hero size; headings at the 56px compressed sans. */
+  --text-display: clamp(2.75rem, 7vw, 6rem);
+  --text-h1: clamp(2.25rem, 4.5vw, 3.5rem);
   --text-h2: clamp(1.75rem, 3vw, 2.5rem);
   --text-h3: clamp(1.375rem, 2vw, 1.75rem);
   --text-h4: clamp(1.125rem, 1.4vw, 1.375rem);
   --text-body: clamp(1rem, 1.05vw, 1.125rem);
   --text-label: clamp(0.6875rem, 0.75vw, 0.75rem);
 
-  /* Type rhythm */
-  --leading-display: 1.05;
-  --leading-heading: 1.15;
+  /* Type rhythm — tight negative tracking is the display signature:
+     -0.01em on the serif hero, -0.05em on 56px sans headings. */
+  --leading-display: 1;
+  --leading-heading: 1.2;
   --leading-body: 1.6;
+  --tracking-display: -0.01em;
   --tracking-tight: -0.02em;
+  --tracking-heading: -0.05em;
   --tracking-label: 0.06em;
   --measure-body: 68ch;
 
@@ -71,19 +121,22 @@
   --space-20: 5rem;
   --space-24: 6rem;
 
-  /* Radii — modest, never a pill on primary actions. */
+  /* Radii — a two-value scale: 6px for buttons/badges/inputs, 16px for
+     cards and code windows; 24px only for large panels. */
   --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-md: 6px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Shadow recipes — soft, large-radius, low-opacity only. */
+  /* Elevation — 1px hairline rings against the void, never drop shadows. */
   --shadow-hairline: 0 1px 0 0 rgb(var(--altr-silver-rgb) / 100%);
-  --shadow-soft: 0 24px 80px rgb(var(--altr-black-rgb) / 8%);
-  --shadow-elevated: 0 12px 40px rgb(var(--altr-black-rgb) / 12%);
+  --shadow-soft: 0 0 0 1px rgb(var(--altr-silver-rgb) / 100%);
+  --shadow-elevated: 0 0 0 1px rgb(var(--altr-silver-rgb) / 100%);
+  --shadow-ring-subtle: rgba(176, 199, 217, 0.145) 0px 0px 0px 1px;
 
-  /* Motion */
-  --motion-fast: 180ms;
+  /* Motion — restrained: short ease-out transitions. */
+  --motion-fast: 150ms;
   --motion-slow: 600ms;
   --motion-drift: 24s;
   --ease-altr: cubic-bezier(0.22, 1, 0.36, 1);

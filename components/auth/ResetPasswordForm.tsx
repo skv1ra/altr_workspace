@@ -105,7 +105,7 @@ export function ResetPasswordForm() {
 
           {status === "invalid" && (
             <div className="mt-8">
-              <AlertTriangle aria-hidden="true" width={28} height={28} strokeWidth={1.25} className="text-red-700" />
+              <AlertTriangle aria-hidden="true" width={28} height={28} strokeWidth={1.25} className="text-alarm-red" />
               <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.invalidTitle}</h1>
               <p className="mt-3 max-w-[46ch] text-body text-text-muted">{t.invalidBody}</p>
               <Link href="/auth/forgot-password" className={`${styles.submit} btn btn-primary control-focus mt-8 inline-flex items-center justify-center`}>

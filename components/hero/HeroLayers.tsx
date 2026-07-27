@@ -104,7 +104,7 @@ export const SHARDS: ShardDef[] = [
     x: 71,
     y: 56,
     sizeBasis: "width",
-    sizeValue: 30,
+    sizeValue: 38,
     rotate: -4,
     blur: 0,
     opacity: 1,
@@ -112,7 +112,7 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 8,
     driftDelay: 0,
-    mobile: { x: 58, y: 70, sizeValue: 62 },
+    mobile: { x: 58, y: 70, sizeValue: 68 },
   },
   {
     id: "lower-mid-support",
@@ -123,7 +123,7 @@ export const SHARDS: ShardDef[] = [
     x: 35,
     y: 88,
     sizeBasis: "width",
-    sizeValue: 16,
+    sizeValue: 20,
     rotate: 9,
     blur: 3,
     opacity: 0.85,
@@ -147,7 +147,7 @@ export const SHARDS: ShardDef[] = [
     x: 16,
     y: 10,
     sizeBasis: "width",
-    sizeValue: 11,
+    sizeValue: 13,
     rotate: -14,
     blur: 9,
     opacity: 0.4,
@@ -165,7 +165,7 @@ export const SHARDS: ShardDef[] = [
     x: 96,
     y: 55,
     sizeBasis: "width",
-    sizeValue: 12.5,
+    sizeValue: 15,
     rotate: -5,
     blur: 6,
     opacity: 0.42,
@@ -185,7 +185,7 @@ export const SHARDS: ShardDef[] = [
     x: 57,
     y: 10,
     sizeBasis: "width",
-    sizeValue: 15,
+    sizeValue: 19,
     rotate: 6,
     blur: 10,
     opacity: 0.4,
@@ -204,7 +204,7 @@ export const SHARDS: ShardDef[] = [
     x: 72,
     y: 17,
     sizeBasis: "width",
-    sizeValue: 9,
+    sizeValue: 11,
     rotate: -10,
     blur: 8,
     opacity: 0.4,
@@ -224,7 +224,7 @@ export const SHARDS: ShardDef[] = [
     x: 52,
     y: 44,
     sizeBasis: "width",
-    sizeValue: 7.5,
+    sizeValue: 9.5,
     rotate: 8,
     blur: 0,
     opacity: 0.85,
@@ -249,7 +249,7 @@ export const SHARDS: ShardDef[] = [
     x: 82,
     y: 74,
     sizeBasis: "width",
-    sizeValue: 6,
+    sizeValue: 8,
     rotate: -16,
     blur: 1,
     opacity: 0.9,
@@ -257,6 +257,83 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 7,
     driftDelay: -17,
+  },
+  {
+    // Density pass (user request: "more glass"): four extra desktop-only
+    // placements of the same real renders, all verified clear of the
+    // headline clear-space box (x 7-45%, y 31-70%) — top strip, right
+    // column, and the lower-center gap. No `mobile` placement: the mobile
+    // tier keeps its lightweight 4-shard budget untouched.
+    id: "upper-far-left-distant",
+    role: "Upper-far-left distant shard",
+    base: "/assets/hero/shards-trimmed/shard-background-01",
+    w: 420,
+    h: 540,
+    x: 5,
+    y: 18,
+    sizeBasis: "width",
+    sizeValue: 8,
+    rotate: 18,
+    blur: 9,
+    opacity: 0.4,
+    z: 1,
+    tier: "back",
+    parallaxPx: 4,
+    driftDelay: -7,
+  },
+  {
+    id: "mid-top-accent",
+    role: "Mid-top accent fragment",
+    base: "/assets/hero/shards-trimmed/shard-foreground-02",
+    w: 319,
+    h: 437,
+    x: 66,
+    y: 32,
+    sizeBasis: "width",
+    sizeValue: 7,
+    rotate: -12,
+    blur: 2,
+    opacity: 0.85,
+    z: 3,
+    tier: "back",
+    parallaxPx: 8,
+    driftDelay: -13,
+  },
+  {
+    id: "right-upper-mass",
+    role: "Right-upper supporting mass",
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
+    w: 481,
+    h: 690,
+    x: 88,
+    y: 30,
+    sizeBasis: "width",
+    sizeValue: 12,
+    rotate: 10,
+    blur: 5,
+    opacity: 0.55,
+    z: 2,
+    tier: "back",
+    parallaxPx: 5,
+    driftDelay: -23,
+  },
+  {
+    id: "lower-center-distant",
+    role: "Lower-center distant shard",
+    base: "/assets/hero/shards-trimmed/shard-background-01",
+    w: 420,
+    h: 540,
+    x: 55,
+    y: 80,
+    sizeBasis: "width",
+    sizeValue: 7,
+    rotate: -24,
+    blur: 7,
+    opacity: 0.45,
+    z: 1,
+    tier: "back",
+    parallaxPx: 4,
+    driftDelay: -16,
   },
   {
     // Foreground tier: heavily pre-blurred, cropped against the bottom-left
@@ -270,7 +347,7 @@ export const SHARDS: ShardDef[] = [
     x: 7,
     y: 94,
     sizeBasis: "height",
-    sizeValue: 26,
+    sizeValue: 31,
     rotate: -8,
     blur: 18,
     opacity: 0.92,
@@ -291,7 +368,7 @@ export const SHARDS: ShardDef[] = [
     x: 92,
     y: 94,
     sizeBasis: "width",
-    sizeValue: 30,
+    sizeValue: 36,
     rotate: 3,
     blur: 22,
     opacity: 0.8,
@@ -370,27 +447,38 @@ const MOBILE_SOURCE_MEDIA = "(max-width: 768px), (prefers-reduced-data: reduce)"
  * `<source media>` art-direction, neither of which next/image's own
  * (single-`<img>`, content-negotiated-by-the-optimizer) output produces.
  */
+// Shards this soft or softer swap to the pre-blurred asset variants
+// (`${base}-blur.*`) instead of a live CSS `filter: blur()`. Live blur on a
+// large, drifting, parallaxing layer forces expensive re-rasterization; a
+// baked blur is raster-free. Small softenings (1-3px) stay as cheap CSS
+// filters, since no per-level baked variant exists.
+const PREBLURRED_ASSET_MIN_PX = 5;
+
 function ShardPicture({ shard, isPrimary }: { shard: ShardDef; isPrimary: boolean }) {
   const desktopSize = shardSize(shard.sizeBasis, shard.sizeValue);
   const mobileSize = shard.mobile ? shardSize(shard.sizeBasis, shard.mobile.sizeValue) : undefined;
 
-  const mobileAvif = shard.mobile ? `${shard.base}@1x.avif` : TRANSPARENT_PIXEL;
-  const mobileWebp = shard.mobile ? `${shard.base}@1x.webp` : TRANSPARENT_PIXEL;
-  const fallbackSrc = shard.mobile ? `${shard.base}@1x.png` : TRANSPARENT_PIXEL;
+  const usePreblurred = shard.blur >= PREBLURRED_ASSET_MIN_PX;
+  const assetBase = usePreblurred ? `${shard.base}-blur` : shard.base;
+  const cssBlur = usePreblurred ? 0 : shard.blur;
+
+  const mobileAvif = shard.mobile ? `${assetBase}@1x.avif` : TRANSPARENT_PIXEL;
+  const mobileWebp = shard.mobile ? `${assetBase}@1x.webp` : TRANSPARENT_PIXEL;
+  const fallbackSrc = shard.mobile ? `${assetBase}@1x.png` : TRANSPARENT_PIXEL;
 
   const imgStyle: CSSProperties = {
     "--w-desktop": desktopSize.width,
     "--h-desktop": desktopSize.height,
     ...(mobileSize && { "--w-mobile": mobileSize.width, "--h-mobile": mobileSize.height }),
-    filter: shard.blur > 0 ? `blur(${shard.blur}px)` : undefined,
+    filter: cssBlur > 0 ? `blur(${cssBlur}px)` : undefined,
   } as CSSProperties;
 
   return (
     <picture>
       <source media={MOBILE_SOURCE_MEDIA} type="image/avif" srcSet={mobileAvif} />
       <source media={MOBILE_SOURCE_MEDIA} type="image/webp" srcSet={mobileWebp} />
-      <source type="image/avif" srcSet={`${shard.base}.avif`} />
-      <source type="image/webp" srcSet={`${shard.base}.webp`} />
+      <source type="image/avif" srcSet={`${assetBase}.avif`} />
+      <source type="image/webp" srcSet={`${assetBase}.webp`} />
       <img
         src={fallbackSrc}
         alt=""
@@ -447,7 +535,10 @@ export function HeroLayers({
           animationDelay: reducedMotion ? undefined : `${shard.driftDelay}s`,
         } as CSSProperties;
 
-        const classNames = [styles.shard];
+        // "hero-shard" is a plain global class (not a CSS-module class) so
+        // HeroFragments.module.css can scope its hover-reveal rule to the
+        // hovered shard wrapper across module boundaries.
+        const classNames = [styles.shard, "hero-shard"];
         if (!reducedMotion) classNames.push("motion-drift");
         if (!shard.mobile) classNames.push(styles.hiddenOnMobile);
 

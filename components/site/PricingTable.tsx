@@ -161,7 +161,7 @@ export function PricingTable({ injectedPlans, injectedMe }: PricingTableProps) {
     <div>
       <div className={styles.intro}>
         <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h1 className="mt-4 text-h1 font-normal text-altr-obsidian">{t.title}</h1>
+        <h1 className="mt-4 text-h1 font-normal text-text-heading">{t.title}</h1>
         <p className="mt-4 text-body text-text-muted">{t.subtitle}</p>
       </div>
 
@@ -197,7 +197,7 @@ export function PricingTable({ injectedPlans, injectedMe }: PricingTableProps) {
                 {limitRows.map((row) => (
                   <div key={row.key} className={styles.limitRow}>
                     <dt className="text-label uppercase text-text-muted">{row.label}</dt>
-                    <dd className="text-body font-medium text-altr-obsidian">{row.format(limits)}</dd>
+                    <dd className="text-body font-medium text-text-heading">{row.format(limits)}</dd>
                   </div>
                 ))}
               </dl>

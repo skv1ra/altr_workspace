@@ -46,7 +46,7 @@ export function ProductSection() {
       <div className={`${styles.grid} relative`}>
         <Reveal>
           <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-          <h2 className="mt-4 max-w-2xl text-h1 font-normal text-altr-obsidian">{t.title}</h2>
+          <h2 className="mt-4 max-w-2xl text-h1 font-normal text-text-heading">{t.title}</h2>
           <p className="mt-6 max-w-[52ch] text-body text-text-muted">{t.body}</p>
 
           <dl className="mt-10 max-w-[52ch] space-y-6">

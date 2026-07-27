@@ -30,7 +30,7 @@ export function HowItWorks() {
     <Surface variant="page" as="section" id="how-it-works" className={styles.section}>
       <Reveal className={styles.intro}>
         <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h2 className="mt-4 max-w-2xl text-h1 font-normal text-altr-obsidian">{t.title}</h2>
+        <h2 className="mt-4 max-w-2xl text-h1 font-normal text-text-heading">{t.title}</h2>
       </Reveal>
 
       <div className={styles.steps}>
@@ -41,7 +41,7 @@ export function HowItWorks() {
                 {step.number}
               </span>
               <div>
-                <h3 className="text-h3 font-normal text-altr-obsidian">{step.title}</h3>
+                <h3 className="text-h3 font-normal text-text-heading">{step.title}</h3>
                 <p className="mt-3 max-w-[56ch] text-body text-text-muted">{step.body}</p>
               </div>
             </div>

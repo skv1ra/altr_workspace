@@ -37,7 +37,7 @@ export function PrivacySection() {
     <Surface variant="page" as="section" id="privacy" className={styles.section}>
       <Reveal className={styles.intro}>
         <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h2 className="mt-4 max-w-2xl text-h1 font-normal text-altr-obsidian">{t.title}</h2>
+        <h2 className="mt-4 max-w-2xl text-h1 font-normal text-text-heading">{t.title}</h2>
       </Reveal>
 
       <Reveal delay={0.1} className={styles.list}>
@@ -48,7 +48,7 @@ export function PrivacySection() {
               <li key={guarantee.title} className={`${styles.row} hairline-top`}>
                 <Glyph aria-hidden="true" className={styles.glyph} width={20} height={20} strokeWidth={1.5} />
                 <div>
-                  <p className="text-body font-medium text-altr-obsidian">{guarantee.title}</p>
+                  <p className="text-body font-medium text-text-heading">{guarantee.title}</p>
                   <p className="mt-1 text-body text-text-muted">{guarantee.body}</p>
                 </div>
               </li>

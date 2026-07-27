@@ -128,7 +128,7 @@ function ConsentCard({
         </button>
       </div>
       {error && (
-        <p role="alert" className="mt-3 text-label text-red-700">
+        <p role="alert" className="mt-3 text-label text-alarm-red">
           {error}
         </p>
       )}

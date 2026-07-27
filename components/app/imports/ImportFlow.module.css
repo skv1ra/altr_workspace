@@ -112,5 +112,5 @@
 .statusAlert {
   border-color: rgba(255, 138, 138, 0.35);
   background: rgba(185, 28, 28, 0.12);
-  color: #ff8a8a;
+  color: var(--color-alarm-red);
 }

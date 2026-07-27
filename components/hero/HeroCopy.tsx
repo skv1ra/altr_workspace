@@ -16,10 +16,9 @@ export const HERO_SECONDARY_LABEL = "How it works";
  * pixel-for-pixel) — no shard in HeroLayers is placed inside this box at
  * any breakpoint (verified with real screenshots, see STATUS.md).
  *
- * Headline color is `--altr-obsidian` specifically (not the `--text-primary`
- * token, which resolves to the lighter `--altr-graphite` on this light
- * surface) — this prompt requires >= 7:1 measured contrast, and obsidian is
- * what was actually measured against the fog background to clear that bar.
+ * Headline is pure white (`--text-heading`) editorial serif on the void-black
+ * canvas — white-on-black measures ~21:1, far above the >= 7:1 bar this
+ * prompt requires, and the fog overlay only ever adds <= 4% white beneath it.
  *
  * The headline wraps naturally (no forced <br/>) rather than a hard two-line
  * split: it keeps the fixed copy as one real text node (so the RTL test and
@@ -49,7 +48,7 @@ export function HeroCopy() {
     >
       <h1
         style={{ fontSize: "clamp(56px, 5.16vw, 74px)" }}
-        className="font-normal leading-[1.05] tracking-[-0.02em] text-altr-obsidian"
+        className="font-serif font-normal leading-none tracking-[-0.01em] text-text-heading"
       >
         {HERO_HEADLINE}
       </h1>

@@ -18,7 +18,7 @@ export function Logo({ className = "" }: { className?: string }) {
     <Link
       href="/"
       aria-label="Altr home"
-      className={`inline-flex items-center gap-2.5 text-body font-medium text-altr-obsidian ${className}`}
+      className={`inline-flex items-center gap-2.5 text-body font-medium text-text-heading ${className}`}
     >
       <svg
         aria-hidden="true"
@@ -28,7 +28,7 @@ export function Logo({ className = "" }: { className?: string }) {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M9 0L1 18H9V0Z" className="fill-altr-obsidian" />
+        <path d="M9 0L1 18H9V0Z" className="fill-altr-white" />
         <path d="M9 0L17 18H9V0Z" fill="url(#altr-logo-facet)" />
         <defs>
           <linearGradient id="altr-logo-facet" x1="9" y1="0" x2="17" y2="18" gradientUnits="userSpaceOnUse">

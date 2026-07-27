@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { LocaleHtmlSync } from "@/components/LocaleHtmlSync";
 import { CookieConsent } from "@/components/legal/CookieConsent";
@@ -8,6 +8,22 @@ import { getAppUrl } from "@/lib/env";
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// Domaine substitute — editorial serif reserved for the hero display type.
+const playfair = Playfair_Display({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400"],
+  variable: "--font-domaine",
+  display: "swap",
+});
+
+// Commit Mono substitute — code blocks, identifiers, terminal-style labels.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400"],
+  variable: "--font-commit-mono",
   display: "swap",
 });
 
@@ -40,12 +56,16 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#F5F6F7",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <LocaleHtmlSync />
         {children}

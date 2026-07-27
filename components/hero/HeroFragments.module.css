@@ -1,9 +1,42 @@
+/*
+ * Hover-reveal choreography (user request): at rest the glass is just
+ * glass — the memory etching is fully transparent and softened an extra
+ * 6px past its own DOF blur. Hovering the shard wrapper (global
+ * `.hero-shard`, set in HeroLayers.tsx) fades the memory in and focuses
+ * it back to its measured per-tier `--fragment-opacity` / `--fragment-blur`
+ * (set inline by HeroFragmentGlyph). Pointer-less devices never get the
+ * hover, so they keep the always-visible etching instead — see the
+ * `(hover: none)` block below.
+ */
 .fragment {
   position: absolute;
   color: rgba(214, 221, 229, 0.6);
   text-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   overflow: hidden;
+  opacity: 0;
+  filter: blur(calc(var(--fragment-blur, 0px) + 6px));
+  transition:
+    opacity 450ms var(--ease-altr),
+    filter 450ms var(--ease-altr);
+}
+
+:global(.hero-shard):hover .fragment {
+  opacity: var(--fragment-opacity, 0.6);
+  filter: blur(var(--fragment-blur, 0px));
+}
+
+@media (hover: none) {
+  .fragment {
+    opacity: var(--fragment-opacity, 0.6);
+    filter: blur(var(--fragment-blur, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fragment {
+    transition: none;
+  }
 }
 
 .kicker {

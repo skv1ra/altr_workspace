@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import styles from "./HeroFragments.module.css";
 import { HERO_FRAGMENTS, type HeroFragment } from "./fragments";
 
@@ -61,13 +62,20 @@ export function HeroFragmentGlyph({
     <div
       className={styles.fragment}
       aria-hidden="true"
-      style={{
-        left: `${fragment.x}%`,
-        top: `${fragment.y}%`,
-        width: `${fragment.width}%`,
-        opacity,
-        filter: blur > 0 ? `blur(${blur}px)` : undefined,
-      }}
+      // Resting/revealed opacity+blur are handed to CSS as custom
+      // properties (not applied directly) so HeroFragments.module.css can
+      // own the hover choreography: the glass reads clear until the shard
+      // is hovered, then the memory fades/sharpens in to exactly these
+      // measured per-tier values. See `.fragment` rules for the states.
+      style={
+        {
+          left: `${fragment.x}%`,
+          top: `${fragment.y}%`,
+          width: `${fragment.width}%`,
+          "--fragment-opacity": opacity,
+          "--fragment-blur": `${blur}px`,
+        } as CSSProperties
+      }
     >
       {fragment.kicker && <p className={styles.kicker}>{fragment.kicker}</p>}
       <p className={fragment.italic ? `${styles.title} ${styles.titleItalic}` : styles.title}>

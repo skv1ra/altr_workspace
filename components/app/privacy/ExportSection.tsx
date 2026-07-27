@@ -67,7 +67,7 @@ export function ExportSection({ lang }: { lang: Lang }) {
       </div>
       {pending && <p className="mt-3 text-label text-text-muted">{t.exportPending}</p>}
       {error && (
-        <p role="alert" className="mt-3 text-label text-red-700">
+        <p role="alert" className="mt-3 text-label text-alarm-red">
           {error}
         </p>
       )}

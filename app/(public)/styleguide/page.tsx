@@ -103,12 +103,12 @@ export default function StyleguidePage() {
         </div>
 
         <div className="flex flex-wrap gap-6">
-          <div className="rounded-lg bg-altr-white px-6 py-6 shadow-soft">
+          <div className="rounded-lg bg-surface-inverse px-6 py-6 shadow-soft">
             <Label as="p" uppercase={false}>
               shadow-soft
             </Label>
           </div>
-          <div className="rounded-lg bg-altr-white px-6 py-6 shadow-elevated">
+          <div className="rounded-lg bg-surface-inverse px-6 py-6 shadow-elevated">
             <Label as="p" uppercase={false}>
               shadow-elevated
             </Label>
