@@ -379,18 +379,23 @@ export const SHARDS: ShardDef[] = [
     // Moved out from under lower-mid-support (user direction: the two were
     // crossing into one another at the bottom edge) — now clear of it with
     // real black between the silhouettes.
+    // background-01 is the one silhouette no other placement uses — a kite
+    // slab with a clean cut edge on one side and a ragged fracture on the
+    // other. Same rendered footprint as the triangle it replaces (0.78 vs
+    // 0.70 aspect at the same width), so the composition's weight is
+    // unchanged; only the shape reads differently.
     id: "mid-left-low",
     role: "Lower-left mid-band shard",
-    base: "/assets/hero/shards-trimmed/shard-mid-02",
-    w: 481,
-    h: 690,
+    base: "/assets/hero/shards-trimmed/shard-background-01",
+    w: 420,
+    h: 540,
     x: 22,
     y: 70,
     sizeBasis: "width",
     sizeValue: 10,
     rotate: 26,
-    blur: 5,
-    opacity: 0.5,
+    blur: 3,
+    opacity: 0.62,
     z: 2,
     tier: "back",
     parallaxPx: 5,
