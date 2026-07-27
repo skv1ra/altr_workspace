@@ -1,10 +1,10 @@
 .section {
   position: relative;
   min-height: 100svh;
-  padding: clamp(7rem, 12vw, 11rem) clamp(1.5rem, 5vw, 5rem);
+  padding: clamp(7rem, 11vw, 10rem) clamp(1.5rem, 5vw, 5rem) clamp(7rem, 10vw, 9rem);
   background:
-    radial-gradient(circle at 72% 42%, rgb(var(--altr-white-rgb) / 68%) 0%, transparent 30%),
-    linear-gradient(180deg, rgb(var(--altr-white-rgb) / 0%) 0%, rgb(var(--altr-white-rgb) / 92%) 18%, var(--altr-white) 100%);
+    radial-gradient(circle at 58% 42%, rgb(var(--altr-white-rgb) / 72%) 0%, transparent 34%),
+    linear-gradient(180deg, rgb(var(--altr-white-rgb) / 0%) 0%, rgb(var(--altr-white-rgb) / 94%) 15%, var(--altr-white) 100%);
 }
 
 .frame {
@@ -16,11 +16,11 @@
 
 .intro {
   display: grid;
-  grid-template-columns: minmax(0, 0.72fr) minmax(22rem, 1.28fr);
+  grid-template-columns: minmax(0, 0.7fr) minmax(22rem, 1.3fr);
   column-gap: clamp(3rem, 8vw, 8rem);
   align-items: end;
-  padding-bottom: clamp(3rem, 6vw, 5.5rem);
-  border-bottom: 1px solid rgb(var(--altr-graphite-rgb) / 16%);
+  padding-bottom: clamp(3.25rem, 6vw, 5.5rem);
+  border-bottom: 1px solid rgb(var(--altr-graphite-rgb) / 14%);
 }
 
 .eyebrow {
@@ -29,77 +29,59 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgb(var(--altr-graphite-rgb) / 58%);
+  color: rgb(var(--altr-graphite-rgb) / 56%);
 }
 
 .title {
-  max-width: 12ch;
+  max-width: 11.5ch;
   margin: 0;
-  font-size: clamp(3rem, 6.2vw, 6.9rem);
+  font-size: clamp(3.2rem, 6.4vw, 7.1rem);
   font-weight: 400;
-  line-height: 0.93;
-  letter-spacing: -0.055em;
+  line-height: 0.92;
+  letter-spacing: -0.058em;
   color: var(--altr-obsidian);
 }
 
 .body {
   grid-column: 2;
-  max-width: 58ch;
-  margin: clamp(2rem, 4vw, 3.5rem) 0 0;
-  font-size: clamp(1rem, 1.4vw, 1.18rem);
+  max-width: 55ch;
+  margin: clamp(2rem, 4vw, 3.25rem) 0 0;
+  font-size: clamp(1rem, 1.3vw, 1.16rem);
   line-height: 1.72;
-  color: rgb(var(--altr-graphite-rgb) / 72%);
+  color: rgb(var(--altr-graphite-rgb) / 70%);
 }
 
-.composition {
-  display: grid;
-  grid-template-columns: minmax(0, 1.16fr) minmax(20rem, 0.84fr);
-  gap: clamp(3rem, 8vw, 8rem);
-  align-items: center;
-  min-height: clamp(38rem, 72vw, 56rem);
-  padding-top: clamp(4rem, 8vw, 8rem);
+.visualStage {
+  display: flex;
+  justify-content: center;
+  padding: clamp(4.5rem, 9vw, 8rem) 0 clamp(4rem, 8vw, 7rem);
 }
 
 .assetField {
   position: relative;
-  min-height: clamp(31rem, 55vw, 47rem);
+  width: min(72vw, 42rem);
+  aspect-ratio: 0.76;
   isolation: isolate;
 }
 
 .assetField::before {
   content: "";
   position: absolute;
-  inset: 18% 9% 12% 4%;
+  inset: 14% 10% 10%;
   z-index: -1;
-  background: radial-gradient(ellipse, rgb(var(--altr-black-rgb) / 8%) 0%, transparent 68%);
-  filter: blur(34px);
-}
-
-.primaryShard,
-.secondaryShard {
-  position: absolute;
-  display: block;
+  background: radial-gradient(ellipse, rgb(var(--altr-black-rgb) / 9%) 0%, transparent 70%);
+  filter: blur(42px);
 }
 
 .primaryShard {
-  left: 12%;
-  top: 3%;
-  width: min(54%, 28rem);
-  transform: rotate(-7deg);
-  filter: drop-shadow(0 3rem 5rem rgb(var(--altr-black-rgb) / 16%));
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform: rotate(-6deg);
+  filter: drop-shadow(0 3.2rem 5.5rem rgb(var(--altr-black-rgb) / 16%));
 }
 
-.secondaryShard {
-  right: 4%;
-  bottom: 4%;
-  width: min(42%, 21rem);
-  transform: rotate(17deg);
-  opacity: 0.56;
-  filter: blur(0.4px) drop-shadow(0 2rem 4rem rgb(var(--altr-black-rgb) / 11%));
-}
-
-.primaryShard img,
-.secondaryShard img {
+.primaryShard img {
   display: block;
   width: 100%;
   height: auto;
@@ -107,16 +89,16 @@
 
 .memoryEtching {
   position: absolute;
-  left: 32%;
+  left: 35%;
   top: 45%;
   z-index: 2;
   display: grid;
   gap: 0.35rem;
   width: max-content;
   max-width: 12rem;
-  transform: rotate(-7deg);
-  color: rgb(225 230 235 / 80%);
-  text-shadow: 0 1px 9px rgb(0 0 0 / 50%);
+  transform: rotate(-6deg);
+  color: rgb(225 230 235 / 82%);
+  text-shadow: 0 1px 9px rgb(0 0 0 / 52%);
 }
 
 .memoryEtching span {
@@ -126,48 +108,58 @@
 }
 
 .memoryEtching strong {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-style: italic;
   font-weight: 400;
   letter-spacing: 0.02em;
 }
 
 .sequence {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid rgb(var(--altr-graphite-rgb) / 16%);
+  border-top: 1px solid rgb(var(--altr-graphite-rgb) / 14%);
 }
 
 .beat {
-  display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  gap: clamp(1.25rem, 2vw, 2.25rem);
-  padding: clamp(1.75rem, 3vw, 2.8rem) 0;
-  border-bottom: 1px solid rgb(var(--altr-graphite-rgb) / 16%);
+  min-height: 15rem;
+  padding: clamp(1.75rem, 3vw, 2.75rem) clamp(1.25rem, 3vw, 2.6rem) 0;
+  border-right: 1px solid rgb(var(--altr-graphite-rgb) / 14%);
+}
+
+.beat:first-child {
+  padding-left: 0;
+}
+
+.beat:last-child {
+  padding-right: 0;
+  border-right: 0;
 }
 
 .beatNumber {
-  padding-top: 0.22rem;
+  display: block;
+  margin-bottom: clamp(2.5rem, 5vw, 4.25rem);
   font-size: 0.66rem;
   letter-spacing: 0.16em;
-  color: rgb(var(--altr-graphite-rgb) / 45%);
+  color: rgb(var(--altr-graphite-rgb) / 43%);
 }
 
 .beatTitle {
   margin: 0;
-  font-size: clamp(1.25rem, 2.2vw, 2rem);
+  font-size: clamp(1.35rem, 2.1vw, 2rem);
   font-weight: 400;
   letter-spacing: -0.025em;
   color: var(--altr-obsidian);
 }
 
 .beatBody {
-  max-width: 38ch;
-  margin: 0.8rem 0 0;
+  max-width: 31ch;
+  margin: 0.85rem 0 0;
   font-size: 0.96rem;
-  line-height: 1.65;
-  color: rgb(var(--altr-graphite-rgb) / 68%);
+  line-height: 1.64;
+  color: rgb(var(--altr-graphite-rgb) / 66%);
 }
 
 @media (max-width: 900px) {
@@ -176,18 +168,14 @@
     padding-top: 7rem;
   }
 
-  .intro,
-  .composition {
-    grid-template-columns: 1fr;
-  }
-
   .intro {
+    grid-template-columns: 1fr;
     gap: 1.5rem;
     align-items: start;
   }
 
   .title {
-    max-width: 13ch;
+    max-width: 12ch;
   }
 
   .body {
@@ -195,24 +183,29 @@
     margin-top: 0.5rem;
   }
 
-  .composition {
-    gap: 2.5rem;
-    min-height: auto;
-    padding-top: 3.5rem;
-  }
-
   .assetField {
-    min-height: clamp(27rem, 88vw, 39rem);
+    width: min(84vw, 36rem);
   }
 
-  .primaryShard {
-    left: 13%;
-    width: min(55%, 24rem);
+  .sequence {
+    grid-template-columns: 1fr;
   }
 
-  .secondaryShard {
-    right: 8%;
-    width: min(40%, 18rem);
+  .beat,
+  .beat:first-child,
+  .beat:last-child {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1.4rem;
+    min-height: 0;
+    padding: 1.8rem 0;
+    border-right: 0;
+    border-bottom: 1px solid rgb(var(--altr-graphite-rgb) / 14%);
+  }
+
+  .beatNumber {
+    margin: 0;
+    padding-top: 0.2rem;
   }
 }
 
@@ -226,8 +219,8 @@
   }
 
   .title {
-    max-width: 11ch;
-    font-size: clamp(2.7rem, 13vw, 4.6rem);
+    max-width: 10.5ch;
+    font-size: clamp(2.75rem, 13vw, 4.5rem);
   }
 
   .body {
@@ -235,35 +228,25 @@
     line-height: 1.65;
   }
 
-  .composition {
-    padding-top: 2.75rem;
+  .visualStage {
+    padding: 3.5rem 0 3.75rem;
   }
 
   .assetField {
-    min-height: 25rem;
-  }
-
-  .primaryShard {
-    left: 7%;
-    top: 0;
-    width: 60%;
-  }
-
-  .secondaryShard {
-    right: 0;
-    bottom: 1%;
-    width: 47%;
+    width: min(92vw, 28rem);
   }
 
   .memoryEtching {
-    left: 28%;
-    top: 42%;
+    left: 31%;
+    top: 43%;
   }
 
-  .beat {
-    grid-template-columns: 2.4rem 1fr;
-    gap: 0.85rem;
-    padding-block: 1.5rem;
+  .beat,
+  .beat:first-child,
+  .beat:last-child {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 1.55rem 0;
   }
 
   .beatTitle {
@@ -273,7 +256,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .primaryShard,
-  .secondaryShard,
   .memoryEtching {
     transform: none;
   }
