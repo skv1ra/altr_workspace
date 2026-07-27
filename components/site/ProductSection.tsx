@@ -26,7 +26,7 @@ export function ProductSection() {
           <p className={styles.body}>{t.body}</p>
         </Reveal>
 
-        <Reveal delay={0.08} className={styles.composition}>
+        <Reveal delay={0.08} className={styles.visualStage}>
           <div className={styles.assetField} aria-hidden="true">
             <picture className={styles.primaryShard}>
               <source
@@ -46,30 +46,14 @@ export function ProductSection() {
               />
             </picture>
 
-            <picture className={styles.secondaryShard}>
-              <source
-                srcSet="/assets/hero/shards-trimmed/shard-background-01@1x.avif"
-                type="image/avif"
-              />
-              <source
-                srcSet="/assets/hero/shards-trimmed/shard-background-01@1x.webp"
-                type="image/webp"
-              />
-              <img
-                src="/assets/hero/shards-trimmed/shard-background-01@1x.png"
-                alt=""
-                width={420}
-                height={540}
-                loading="lazy"
-              />
-            </picture>
-
             <div className={styles.memoryEtching}>
               <span>{t.fragmentKicker}</span>
               <strong>{t.fragmentLine}</strong>
             </div>
           </div>
+        </Reveal>
 
+        <Reveal delay={0.14}>
           <ol className={styles.sequence}>
             {t.beats.map((beat, index) => (
               <li key={beat.label} className={styles.beat}>
