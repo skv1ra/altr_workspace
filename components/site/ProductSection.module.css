@@ -60,7 +60,7 @@
 .assetField {
   position: relative;
   width: min(72vw, 42rem);
-  aspect-ratio: 0.76;
+  aspect-ratio: 481 / 690;
   isolation: isolate;
 }
 
@@ -251,12 +251,5 @@
 
   .beatTitle {
     font-size: 1.25rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .primaryShard,
-  .memoryEtching {
-    transform: none;
   }
 }
