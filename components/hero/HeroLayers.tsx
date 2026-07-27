@@ -89,6 +89,10 @@ type ShardDef = {
    * cycle — every shard uses the same keyframes/amplitude ceiling, so this
    * is the only thing that keeps them from all drifting in lockstep. */
   driftDelay: number;
+  /** Mirror the render horizontally (scaleX(-1)) so a reused asset reads
+   * as a different shard, not a copy. Only ever set on shards that carry
+   * no memory fragment — a flipped wrapper would mirror its text too. */
+  flip?: boolean;
   /** Mobile/reduced-data placement (Prompt 017). Absent = this shard is
    * structurally hidden in that tier, not just scaled down. */
   mobile?: ShardPlacement;
@@ -173,15 +177,21 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 4,
     driftDelay: -14,
+    flip: true,
   },
   {
     // Nudged right (54 -> 57) for extra clearance from the headline box's
     // right edge (45%) once this shard's 6deg rotation is accounted for.
+    // Silhouette swapped mid-01 -> mid-03 (user direction): as a diamond it
+    // was a straight repeat of the large sharp date-diamond directly below
+    // it. mid-03 keeps the wide-and-short proportion this slot needs — it
+    // must clear the date diamond's top edge, and its own MEMORY fragment
+    // has to fit inside the silhouette on the mobile tier too.
     id: "upper-center-blurred",
     role: "Upper-center blurred shard",
-    base: "/assets/hero/shards-trimmed/shard-mid-01",
-    w: 1025,
-    h: 635,
+    base: "/assets/hero/shards-trimmed/shard-mid-03",
+    w: 1279,
+    h: 665,
     x: 57,
     y: 10,
     sizeBasis: "width",
@@ -196,24 +206,29 @@ export const SHARDS: ShardDef[] = [
     mobile: { x: 16, y: 84, sizeValue: 40 },
   },
   {
-    // Asset swapped background-01 -> mid-01 (crack-webbed diamond) so even
-    // the distant tier carries the fractured-glass character.
+    // Follows upper-center-blurred off mid-03 so the two immediate
+    // neighbours don't become twins again — this is the thin wedge, the one
+    // silhouette nothing else in the top band uses.
     id: "upper-right-distant",
     role: "Small upper-right distant shard",
-    base: "/assets/hero/shards-trimmed/shard-mid-01",
-    w: 1025,
-    h: 635,
+    base: "/assets/hero/shards-trimmed/shard-background-02",
+    w: 685,
+    h: 200,
     x: 72,
     y: 17,
     sizeBasis: "width",
-    sizeValue: 11,
-    rotate: -10,
-    blur: 8,
-    opacity: 0.4,
+    sizeValue: 18,
+    // Lower blur than the rest of this tier on purpose: background-02 is a
+    // dark, low-contrast render with no bright rim to survive a heavy blur —
+    // at 8px it dissolved into a grey smear rather than reading as glass.
+    rotate: -18,
+    blur: 4,
+    opacity: 0.5,
     z: 1,
     tier: "back",
     parallaxPx: 4,
     driftDelay: -2,
+    flip: true,
   },
   {
     // Nudged right (49 -> 52) for extra clearance from the headline box's
@@ -226,14 +241,14 @@ export const SHARDS: ShardDef[] = [
     base: "/assets/hero/shards-trimmed/shard-mid-01",
     w: 1025,
     h: 635,
-    x: 52,
-    y: 44,
+    x: 46,
+    y: 30,
     sizeBasis: "width",
-    sizeValue: 9.5,
+    sizeValue: 32,
     rotate: 8,
     blur: 0,
-    opacity: 0.85,
-    z: 3,
+    opacity: 0.9,
+    z: 6,
     tier: "back",
     parallaxPx: 8,
     driftDelay: -11,
@@ -271,31 +286,37 @@ export const SHARDS: ShardDef[] = [
     // headline clear-space box (x 7-45%, y 31-70%) — top strip, right
     // column, and the lower-center gap. No `mobile` placement: the mobile
     // tier keeps its lightweight 4-shard budget untouched.
+    // Asset differentiated from upper-left-background (both were mid-02
+    // triangles reading as a duplicate pair behind the headline): this one
+    // is now the tall ragged foreground-01 sliver.
     id: "upper-far-left-distant",
     role: "Upper-far-left distant shard",
-    base: "/assets/hero/shards-trimmed/shard-mid-02",
-    w: 481,
-    h: 690,
+    base: "/assets/hero/shards-trimmed/shard-foreground-01",
+    w: 383,
+    h: 724,
     x: 5,
     y: 18,
     sizeBasis: "width",
-    sizeValue: 8,
-    rotate: 18,
+    sizeValue: 6,
+    rotate: 24,
     blur: 9,
     opacity: 0.4,
     z: 1,
     tier: "back",
     parallaxPx: 4,
     driftDelay: -7,
+    flip: true,
   },
   {
+    // Moved out of the enlarged date-diamond's footprint (it would have been
+    // fully occluded there) into the empty upper-center band.
     id: "mid-top-accent",
     role: "Mid-top accent fragment",
     base: "/assets/hero/shards-trimmed/shard-mid-03",
     w: 1279,
     h: 665,
-    x: 66,
-    y: 32,
+    x: 36,
+    y: 18,
     sizeBasis: "width",
     sizeValue: 7,
     rotate: -12,
@@ -325,11 +346,13 @@ export const SHARDS: ShardDef[] = [
     driftDelay: -23,
   },
   {
+    // mid-03 -> mid-02: it sat directly above lower-mid-support, which is
+    // also a mid-03 plate, so the two read as a repeated silhouette.
     id: "lower-center-distant",
     role: "Lower-center distant shard",
-    base: "/assets/hero/shards-trimmed/shard-mid-03",
-    w: 1279,
-    h: 665,
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
+    w: 481,
+    h: 690,
     x: 55,
     y: 80,
     sizeBasis: "width",
@@ -341,6 +364,63 @@ export const SHARDS: ShardDef[] = [
     tier: "back",
     parallaxPx: 4,
     driftDelay: -16,
+  },
+  {
+    // Fill pass for the once-empty center band (x ~34-62%, y ~60-84%,
+    // below/right of the headline clear-space box): a mirrored triangular
+    // wedge and a steeply-tilted mirrored mid-02 veil layered behind the
+    // main shard's lower edge. Both fragment-free, so flips and hard
+    // rotations are safe. (A third sharp sliver here was cut by user
+    // direction — the enlarged small-central diamond now owns this band.)
+    //
+    // Silhouette swapped mid-01 -> mid-02 (user direction): a third soft
+    // diamond in this corner read as a repeat of the two above it; the
+    // tall triangular wedge breaks that rhythm.
+    // Moved out from under lower-mid-support (user direction: the two were
+    // crossing into one another at the bottom edge) — now clear of it with
+    // real black between the silhouettes.
+    id: "mid-left-low",
+    role: "Lower-left mid-band shard",
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
+    w: 481,
+    h: 690,
+    x: 22,
+    y: 70,
+    sizeBasis: "width",
+    sizeValue: 10,
+    rotate: 26,
+    blur: 5,
+    opacity: 0.5,
+    z: 2,
+    tier: "back",
+    parallaxPx: 5,
+    driftDelay: -29,
+    flip: true,
+  },
+  {
+    // Silhouette swapped mid-02 -> foreground-01 (user direction): a third
+    // soft triangle in the lower band read as a repeat. The ragged sliver is
+    // the one shape nothing else nearby uses.
+    id: "center-veil",
+    role: "Center veil shard behind the main mass",
+    base: "/assets/hero/shards-trimmed/shard-foreground-01",
+    w: 383,
+    h: 724,
+    x: 60,
+    y: 72,
+    sizeBasis: "width",
+    sizeValue: 8,
+    // Same reasoning as upper-right-distant: foreground-01 is a dark render
+    // meant for heavy blur at the very front; at this size it needs a light
+    // blur for its ragged silhouette to read at all.
+    rotate: -40,
+    blur: 3,
+    opacity: 0.6,
+    z: 2,
+    tier: "back",
+    parallaxPx: 4,
+    driftDelay: -32,
+    flip: true,
   },
   {
     // Foreground tier: heavily pre-blurred, cropped against the bottom-left
@@ -538,7 +618,7 @@ export function HeroLayers({
           // useHeroShardMotion via the separate `translate` CSS *property*
           // (composes before `transform`), not baked into this string, so
           // it never needs recomputing here.
-          transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)`,
+          transform: `translate(-50%, -50%) rotate(${shard.rotate}deg)${shard.flip ? " scaleX(-1)" : ""}`,
           animationDelay: reducedMotion ? undefined : `${shard.driftDelay}s`,
         } as CSSProperties;
 
