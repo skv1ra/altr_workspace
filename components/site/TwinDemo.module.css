@@ -71,14 +71,16 @@
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.04em;
-  color: var(--color-iris-violet);
+  /* --accent-code, not the raw token: `.surface-inverse` re-scopes it to
+     the bright violet, which is what this card's dark ground needs. */
+  color: var(--accent-code);
 }
 
 .draftMessage {
   margin: 10px 0 0;
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--color-bone-white);
+  color: var(--altr-white);
 }
 
 .provenance {

@@ -17,9 +17,9 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: rgb(var(--altr-black-rgb) / 80%);
-  backdrop-filter: blur(25px);
-  border-bottom: 1px solid rgb(var(--altr-silver-rgb) / 100%);
+  background: rgb(var(--altr-white-rgb) / 78%);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgb(var(--altr-silver-rgb) / 60%);
   opacity: 0;
   transition: opacity var(--motion-fast) var(--ease-altr);
 }

@@ -1,24 +1,33 @@
 /*
  * Interactive control primitives — imported after materials.css.
  * Buttons/fields/checkbox read CSS custom properties (not raw Tailwind
- * color utilities). On the black-velvet theme every surface is dark, so a
- * single :root scope covers page and panel alike; the primary button is
- * the signature ghost (transparent fill, hairline border, white label).
+ * color utilities) specifically so `.surface-inverse` can flip the primary
+ * button and re-scope the focus ring with no JS, same technique as
+ * materials.css's --text-primary/--text-muted override.
  */
 
 :root {
-  /* The signature button is a ghost: transparent fill, 1px graphite
-     hairline border, white label. Hover brightens the border, never the
-     fill. Checked controls (checkbox) fill with bone white instead. */
-  --button-primary-bg: transparent;
+  /* The primary action is a solid obsidian slab with white type — the one
+     piece of high-contrast weight on the silver canvas. */
+  --button-primary-bg: var(--altr-obsidian);
   --button-primary-fg: var(--color-white);
-  --button-primary-border: var(--color-graphite-hairline);
-  --button-primary-border-hover: rgb(var(--altr-white-rgb) / 60%);
-  --control-checked-bg: var(--color-bone-white);
-  --control-checked-fg: var(--color-void-black);
+  --button-primary-border: transparent;
+  --button-primary-border-hover: transparent;
+  --control-checked-bg: var(--altr-obsidian);
+  --control-checked-fg: var(--color-white);
+  --control-border: rgb(var(--altr-graphite-rgb) / 28%);
+  --control-border-hover: rgb(var(--altr-graphite-rgb) / 45%);
+  --control-focus-ring: var(--altr-obsidian);
+}
+
+.surface-inverse {
+  --button-primary-bg: var(--altr-white);
+  --button-primary-fg: var(--altr-obsidian);
+  --control-checked-bg: var(--altr-white);
+  --control-checked-fg: var(--altr-obsidian);
   --control-border: rgb(var(--altr-white-rgb) / 28%);
   --control-border-hover: rgb(var(--altr-white-rgb) / 45%);
-  --control-focus-ring: var(--color-white);
+  --control-focus-ring: var(--altr-white);
 }
 
 /* Buttons */
@@ -43,6 +52,11 @@
     opacity var(--motion-fast) var(--ease-altr);
 }
 
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
 .btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: none;
@@ -61,6 +75,11 @@
 
 .btn-primary:hover:not(:disabled) {
   border-color: var(--button-primary-border-hover);
+  background-color: var(--altr-black);
+}
+
+.surface-inverse .btn-primary:hover:not(:disabled) {
+  background-color: var(--color-white);
 }
 
 .btn-secondary {
@@ -79,16 +98,29 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
+  background-color: rgb(var(--altr-graphite-rgb) / 6%);
+}
+
+.surface-inverse .btn-ghost:hover:not(:disabled) {
   background-color: rgb(var(--altr-white-rgb) / 8%);
 }
 
 .btn-danger {
   background-color: transparent;
-  border-color: rgb(255 149 146 / 35%);
+  border-color: rgb(179 38 30 / 35%);
   color: var(--color-alarm-red);
 }
 
 .btn-danger:hover:not(:disabled) {
+  background-color: rgb(179 38 30 / 6%);
+}
+
+.surface-inverse .btn-danger {
+  border-color: rgb(255 149 146 / 35%);
+  color: var(--color-alarm-red-bright);
+}
+
+.surface-inverse .btn-danger:hover:not(:disabled) {
   background-color: rgb(255 149 146 / 8%);
 }
 
@@ -101,6 +133,9 @@
 @media (prefers-reduced-motion: reduce) {
   .btn {
     transition: none;
+  }
+  .btn:hover:not(:disabled) {
+    transform: none;
   }
 }
 
@@ -137,6 +172,10 @@
 }
 
 .field-input[aria-invalid="true"] {
+  border-color: rgb(179 38 30 / 70%);
+}
+
+.surface-inverse .field-input[aria-invalid="true"] {
   border-color: rgb(255 149 146 / 70%);
 }
 

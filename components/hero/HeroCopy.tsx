@@ -16,9 +16,11 @@ export const HERO_SECONDARY_LABEL = "How it works";
  * pixel-for-pixel) — no shard in HeroLayers is placed inside this box at
  * any breakpoint (verified with real screenshots, see STATUS.md).
  *
- * Headline is pure white (`--text-heading`) editorial serif on the void-black
- * canvas — white-on-black measures ~21:1, far above the >= 7:1 bar this
- * prompt requires, and the fog overlay only ever adds <= 4% white beneath it.
+ * Headline is obsidian (`--text-heading`) editorial serif over the silver
+ * fog. The fog's bright core is deliberately placed left-of-centre, behind
+ * exactly this block, so the darkest ink sits on the lightest ground —
+ * obsidian on that core measures well past the >= 7:1 bar this prompt
+ * requires, and the fog can only ever lighten what is beneath it.
  *
  * The headline wraps naturally (no forced <br/>) rather than a hard two-line
  * split: it keeps the fixed copy as one real text node (so the RTL test and
