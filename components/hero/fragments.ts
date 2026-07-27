@@ -37,18 +37,17 @@ export interface HeroFragment {
  * no real names, phone numbers, or a real person's memories. Dates, the
  * place name, and every phrase below are invented for this design exercise.
  * Kept deliberately restrained (DESIGN_DIRECTION's copy voice: calm,
- * precise, never saccharine) — five fragments, one per content archetype
- * DESIGN_DIRECTION names (voice memo, message excerpt, memory title,
- * emotional phrase, date), except location, which is folded into the
- * memory-title fragment's detail line rather than given its own anchor —
- * the only shard left over for a sixth fragment (`mid-right-support`,
- * ~86px wide at 1440px) measured too small to hold even a short label
- * legibly.
+ * precise, never saccharine) — nine fragments across the content
+ * archetypes DESIGN_DIRECTION names (voice memo, message excerpt, memory
+ * title, emotional phrase, date, photo, note), with location folded into
+ * the memory-title fragment's detail line rather than given its own
+ * anchor.
  *
- * Anchored to exactly the two `blur: 0` back-tier shards (`main`,
- * `small-central`) plus three softer ones — by construction, never more
- * than 2 fragments render fully sharp at once, satisfying this prompt's
- * "max 2 simultaneously sharp" rule without needing a runtime check.
+ * The original "max 2 simultaneously sharp" rule is now satisfied by the
+ * hover-reveal choreography itself (HeroFragments.module.css): fragments
+ * are invisible at rest and only the hovered shard's memory is shown, so
+ * adding anchors — including on the once-too-small `mid-right-support`,
+ * which has since grown to 8vw — can never crowd the scene.
  */
 export const HERO_FRAGMENTS: HeroFragment[] = [
   {
@@ -109,6 +108,46 @@ export const HERO_FRAGMENTS: HeroFragment[] = [
     x: 24,
     y: 36,
     width: 62,
+  },
+  {
+    id: "photo",
+    shardId: "mid-top-accent",
+    kicker: "PHOTO",
+    title: "June 21, 2015",
+    detail: ["The pier at dawn — you kept the ticket stub."],
+    x: 24,
+    y: 26,
+    width: 55,
+  },
+  {
+    // mid-02 is a triangle widening toward the bottom (same silhouette
+    // lesson as "phrase" above) — the note sits low, inside the wide facet.
+    id: "note",
+    shardId: "mid-right-support",
+    kicker: "NOTE",
+    title: "“call mum back”",
+    italic: true,
+    x: 22,
+    y: 56,
+    width: 62,
+  },
+  {
+    id: "message-rain",
+    shardId: "right-upper-mass",
+    kicker: "MESSAGE",
+    title: "May 2, 2021",
+    detail: ["Half the city still smells like rain."],
+    x: 24,
+    y: 52,
+    width: 58,
+  },
+  {
+    id: "date-winter",
+    shardId: "lower-center-distant",
+    title: "December 31, 2017",
+    x: 26,
+    y: 34,
+    width: 60,
   },
 ];
 

@@ -196,11 +196,13 @@ export const SHARDS: ShardDef[] = [
     mobile: { x: 16, y: 84, sizeValue: 40 },
   },
   {
+    // Asset swapped background-01 -> mid-01 (crack-webbed diamond) so even
+    // the distant tier carries the fractured-glass character.
     id: "upper-right-distant",
     role: "Small upper-right distant shard",
-    base: "/assets/hero/shards-trimmed/shard-background-01",
-    w: 420,
-    h: 540,
+    base: "/assets/hero/shards-trimmed/shard-mid-01",
+    w: 1025,
+    h: 635,
     x: 72,
     y: 17,
     sizeBasis: "width",
@@ -216,11 +218,14 @@ export const SHARDS: ShardDef[] = [
   {
     // Nudged right (49 -> 52) for extra clearance from the headline box's
     // right edge (45%) once this shard's 8deg rotation is accounted for.
+    // Asset swapped foreground-02 -> mid-01 (user direction: every shard
+    // reads as fractured glass like the main shard; foreground-02 is the
+    // one clean, crack-free render and no longer appears sharp anywhere).
     id: "small-central",
     role: "Small central fragment",
-    base: "/assets/hero/shards-trimmed/shard-foreground-02",
-    w: 319,
-    h: 437,
+    base: "/assets/hero/shards-trimmed/shard-mid-01",
+    w: 1025,
+    h: 635,
     x: 52,
     y: 44,
     sizeBasis: "width",
@@ -241,11 +246,13 @@ export const SHARDS: ShardDef[] = [
     mobile: { x: 74, y: 58, sizeValue: 20 },
   },
   {
+    // Asset swapped foreground-02 -> mid-02 (fractured triangular piece),
+    // same reasoning as small-central.
     id: "mid-right-support",
     role: "Mid-right support fragment",
-    base: "/assets/hero/shards-trimmed/shard-foreground-02",
-    w: 319,
-    h: 437,
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
+    w: 481,
+    h: 690,
     x: 82,
     y: 74,
     sizeBasis: "width",
@@ -266,9 +273,9 @@ export const SHARDS: ShardDef[] = [
     // tier keeps its lightweight 4-shard budget untouched.
     id: "upper-far-left-distant",
     role: "Upper-far-left distant shard",
-    base: "/assets/hero/shards-trimmed/shard-background-01",
-    w: 420,
-    h: 540,
+    base: "/assets/hero/shards-trimmed/shard-mid-02",
+    w: 481,
+    h: 690,
     x: 5,
     y: 18,
     sizeBasis: "width",
@@ -284,9 +291,9 @@ export const SHARDS: ShardDef[] = [
   {
     id: "mid-top-accent",
     role: "Mid-top accent fragment",
-    base: "/assets/hero/shards-trimmed/shard-foreground-02",
-    w: 319,
-    h: 437,
+    base: "/assets/hero/shards-trimmed/shard-mid-03",
+    w: 1279,
+    h: 665,
     x: 66,
     y: 32,
     sizeBasis: "width",
@@ -320,9 +327,9 @@ export const SHARDS: ShardDef[] = [
   {
     id: "lower-center-distant",
     role: "Lower-center distant shard",
-    base: "/assets/hero/shards-trimmed/shard-background-01",
-    w: 420,
-    h: 540,
+    base: "/assets/hero/shards-trimmed/shard-mid-03",
+    w: 1279,
+    h: 665,
     x: 55,
     y: 80,
     sizeBasis: "width",
