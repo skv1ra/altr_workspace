@@ -32,29 +32,10 @@
   justify-content: center;
 }
 
-.visualLift {
-  transition: transform var(--motion-slow) var(--ease-altr);
-}
-
-.visualLift:hover .shardImg {
-  transform: scale(1.03) rotate(-1deg);
-}
-
-.glow {
-  position: absolute;
-  width: 78%;
-  aspect-ratio: 1;
-  border-radius: var(--radius-full);
-  background: radial-gradient(closest-side, rgb(var(--iris-violet-rgb) / 16%), rgb(var(--iris-violet-rgb) / 0%) 78%);
-  pointer-events: none;
-}
-
 .shardImg {
-  position: relative;
   width: min(70%, 260px);
   height: auto;
   filter: drop-shadow(0 24px 60px rgb(var(--altr-black-rgb) / 14%));
-  transition: transform var(--motion-slow) var(--ease-altr);
 }
 
 @media (max-width: 900px) {
@@ -107,13 +88,4 @@
   font-style: italic;
   font-weight: 300;
   white-space: nowrap;
-}
-
-.fragmentNote {
-  margin: 4px 0 0;
-  font-size: 9.5px;
-  font-weight: 300;
-  line-height: 1.4;
-  opacity: 0.85;
-  max-width: 22ch;
 }

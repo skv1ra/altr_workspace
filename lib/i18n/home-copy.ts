@@ -79,7 +79,6 @@ export const productCopy = {
     ],
     fragmentKicker: "MEMORY",
     fragmentLine: "not a chatbot",
-    fragmentNote: "a continuation, not a chatbot",
   },
   UA: {
     eyebrow: "01 — Продукт",
@@ -92,7 +91,6 @@ export const productCopy = {
     ],
     fragmentKicker: "ПАМ'ЯТЬ",
     fragmentLine: "не чат-бот",
-    fragmentNote: "продовження, а не чат-бот",
   },
 } as const;
 
@@ -120,20 +118,6 @@ export const howItWorksCopy = {
   EN: {
     eyebrow: "02 — How it works",
     title: "Three movements, always in your control.",
-    panel: {
-      sources: "Sources",
-      parsed: "Parsed",
-      skipped: "Skipped",
-      memoryList: "Memory list",
-      on: "On",
-      off: "Off",
-      incoming: "Incoming · 09:42",
-      draft: "Draft — you review",
-      review: "Approve",
-      discard: "Discard",
-      reviewed: "Approved",
-      discarded: "Discarded",
-    },
     steps: [
       {
         number: "01",
@@ -155,20 +139,6 @@ export const howItWorksCopy = {
   UA: {
     eyebrow: "02 — Як це працює",
     title: "Три кроки, які завжди під твоїм контролем.",
-    panel: {
-      sources: "Джерела",
-      parsed: "Оброблено",
-      skipped: "Пропущено",
-      memoryList: "Список памʼяті",
-      on: "Увімк.",
-      off: "Вимк.",
-      incoming: "Вхідне · 09:42",
-      draft: "Чернетка — ти переглядаєш",
-      review: "Підтвердити",
-      discard: "Відхилити",
-      reviewed: "Підтверджено",
-      discarded: "Відхилено",
-    },
     steps: [
       {
         number: "01",
@@ -211,18 +181,6 @@ export const memoryDemoCopy = {
     title: "What Altr remembers, plainly.",
     body: "A preview of the real memory list — not a mockup, the same fields the actual product stores: a category, a short title, a description, and where it came from.",
     editingLabel: "Editing",
-    ui: {
-      status: "Altr is reading your history",
-      learning: "learning:",
-      ticks: ["2023", "2024", "Jan 2026", "Feb 2026", "Mar 2026", "Now"],
-      lines: [
-        "how you close a conversation",
-        "the phrases you actually use",
-        "who you write to differently",
-        "what you promise, and when",
-        "the decisions you already made",
-      ],
-    },
     memories: [
       {
         category: "Communication style",
@@ -256,18 +214,6 @@ export const memoryDemoCopy = {
     title: "Що памʼятає Altr, без прикрас.",
     body: "Попередній перегляд реального списку памʼяті — не макет, а ті самі поля, які насправді зберігає продукт: категорія, короткий заголовок, опис і джерело.",
     editingLabel: "Редагування",
-    ui: {
-      status: "Altr читає твою історію",
-      learning: "вивчає:",
-      ticks: ["2023", "2024", "січ 2026", "лют 2026", "бер 2026", "Зараз"],
-      lines: [
-        "як ти завершуєш розмову",
-        "фрази, якими ти справді говориш",
-        "з ким ти пишеш інакше",
-        "що ти обіцяєш і коли",
-        "рішення, які ти вже ухвалив",
-      ],
-    },
     memories: [
       {
         category: "Стиль спілкування",
@@ -319,7 +265,6 @@ export const twinDemoCopy = {
     draftLabel: "Draft — you decide what sends",
     draftMessage: "Yes — I'll confirm the final price and delivery date today. I'm checking the last details now and will follow up shortly.",
     provenance: "Drawing on 3 memories",
-    replay: "Draft again",
   },
   UA: {
     eyebrow: "04 — Твій Twin",
@@ -330,7 +275,6 @@ export const twinDemoCopy = {
     draftLabel: "Чернетка — ти вирішуєш, що надсилати",
     draftMessage: "Так — сьогодні підтверджу фінальну ціну і дату доставки. Зараз перевіряю останні деталі й скоро повернусь з відповіддю.",
     provenance: "На основі 3 спогадів",
-    replay: "Створити знову",
   },
 } as const;
 

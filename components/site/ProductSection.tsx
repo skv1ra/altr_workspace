@@ -45,7 +45,7 @@ export function ProductSection() {
       <Surface variant="fog" aria-hidden="true" />
       <div className={`${styles.grid} relative`}>
         <Reveal>
-          <p className="text-label uppercase text-iris-violet">{t.eyebrow}</p>
+          <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
           <h2 className="mt-4 max-w-2xl text-h1 font-normal text-text-heading">{t.title}</h2>
           <p className="mt-6 max-w-[52ch] text-body text-text-muted">{t.body}</p>
 
@@ -59,8 +59,7 @@ export function ProductSection() {
           </dl>
         </Reveal>
 
-        <Reveal delay={0.12} className={`${styles.visual} ${styles.visualLift}`}>
-          <div className={styles.glow} aria-hidden="true" />
+        <Reveal delay={0.12} className={styles.visual}>
           <picture>
             <source srcSet="/assets/hero/shards-trimmed/shard-mid-02@1x.avif" type="image/avif" />
             <source srcSet="/assets/hero/shards-trimmed/shard-mid-02@1x.webp" type="image/webp" />
@@ -76,7 +75,6 @@ export function ProductSection() {
           <div className={styles.fragment} aria-hidden="true">
             <p className={styles.fragmentKicker}>{t.fragmentKicker}</p>
             <p className={styles.fragmentLine}>{t.fragmentLine}</p>
-            <p className={styles.fragmentNote}>{t.fragmentNote}</p>
           </div>
         </Reveal>
       </div>

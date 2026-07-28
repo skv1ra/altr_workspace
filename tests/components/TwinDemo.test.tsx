@@ -27,14 +27,11 @@ describe("TwinDemo", () => {
     expect(screen.getByText(twinDemoCopy.EN.provenance)).toBeInTheDocument();
   });
 
-  it("is a labeled figure, not a fake live conversation, and has no send button — only a non-destructive replay control", () => {
+  it("is a labeled figure, not a fake live conversation, and has no send button", () => {
     render(<TwinDemo />);
 
     const figure = screen.getByRole("figure", { name: twinDemoCopy.EN.figureLabel });
     expect(figure).toBeInTheDocument();
-    const buttons = screen.queryAllByRole("button");
-    expect(buttons).toHaveLength(1);
-    expect(buttons[0]).toHaveTextContent(twinDemoCopy.EN.replay);
-    expect(buttons.some((button) => /send/i.test(button.textContent ?? ""))).toBe(false);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Laptop, Lock, ShieldCheck, UserCheck } from "lucide-react";
+import { Laptop, Lock, ShieldCheck, UserCheck } from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
 import { Surface } from "@/components/ui/Surface";
 import { privacySectionCopy } from "@/lib/i18n/home-copy";
@@ -48,7 +48,7 @@ export function PrivacySection() {
               <li key={guarantee.title} className={`${styles.row} hairline-top`}>
                 <Glyph aria-hidden="true" className={styles.glyph} width={20} height={20} strokeWidth={1.5} />
                 <div>
-                  <p className={`text-body font-medium text-text-heading ${styles.rowTitle}`}>{guarantee.title}</p>
+                  <p className="text-body font-medium text-text-heading">{guarantee.title}</p>
                   <p className="mt-1 text-body text-text-muted">{guarantee.body}</p>
                 </div>
               </li>
@@ -58,9 +58,8 @@ export function PrivacySection() {
       </Reveal>
 
       <Reveal delay={0.16} className={styles.linkRow}>
-        <Link href="/privacy" className={`text-body ${styles.privacyLink}`}>
+        <Link href="/privacy" className="text-body text-text-muted underline-offset-4 hover:text-text-primary hover:underline">
           {t.privacyLink}
-          <ArrowRight aria-hidden="true" className={styles.linkArrow} width={16} height={16} strokeWidth={1.5} />
         </Link>
       </Reveal>
     </Surface>
