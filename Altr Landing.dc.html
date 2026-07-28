@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html { scroll-behavior: smooth; background: #fff; }
+  body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: #0b0e14; }
+  @keyframes altr-drift { 0%,100% { transform: translate3d(0,0,0) rotate(0deg); } 50% { transform: translate3d(0,6px,0) rotate(0.6deg); } }
+  @keyframes hero-shard-fade-in { to { opacity: 1; } }
+  @keyframes fog-drift { from { opacity: .85; } to { opacity: 1; } }
+  @keyframes altr-caret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  @keyframes hw-sweep { 0%,100% { transform: translate3d(-10%,0,0); opacity: .55; } 50% { transform: translate3d(55%,6%,0); opacity: .95; } }
+  @keyframes hw-scan { 0% { transform: translateY(-130px); opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateY(340px); opacity: 0; } }
+  .hw-tap { transition: transform 260ms cubic-bezier(.22,1,.36,1), border-color 260ms, background 260ms, color 260ms, opacity 260ms; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .hw-tap:focus-visible { outline: 2px solid #0b0e14; outline-offset: 3px; }
+  @keyframes hw-rise { from { opacity: 0; transform: translateY(14px); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes mem-float { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(0,-26px,0) scale(1.04); } }
+  @keyframes mem-draw { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+  @keyframes mem-soft { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes mem-in { from { opacity: 0; transform: translateY(16px); filter: blur(5px); } to { transform: none; filter: none; } }
+  @keyframes mem-drift { 0%,100% { transform: translate3d(0,0,0); } 33% { transform: translate3d(6px,-14px,0); } 66% { transform: translate3d(-5px,9px,0); } }
+  @keyframes mem-flow { to { stroke-dashoffset: -44; } }
+  @keyframes mem-pulse { 0%,100% { opacity: .25; transform: scale(1); } 50% { opacity: 1; transform: scale(1.35); } }
+  @keyframes mem-progress { 0% { transform: translateX(-110%); } 55% { transform: translateX(60%); } 100% { transform: translateX(260%); } }
+  @keyframes mem-grain { 0% { transform: translate3d(0,0,0); } 33% { transform: translate3d(-2%,1%,0); } 66% { transform: translate3d(1%,-2%,0); } 100% { transform: translate3d(0,0,0); } }
+  @keyframes mem-drawx { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+  .mem-card { transition: transform 700ms cubic-bezier(.22,1,.36,1), box-shadow 700ms cubic-bezier(.22,1,.36,1), border-color 700ms; }
+  .mem-frag:hover .mem-card { transform: translateY(-6px) scale(1.02); border-color: #cfcdc7; box-shadow: 0 44px 80px -50px rgba(11,14,20,.7); }
+  @media (max-width: 1080px) { .mem-frag[data-parallax] .mem-card { padding: 13px 15px; } }
+  @media (max-width: 900px) {
+    .mem-stage { min-height: 0 !important; }
+    .mem-svg, .mem-frag { display: none !important; }
+    .mem-center { position: static !important; transform: none !important; width: 100% !important; }
+    .mem-fallback { display: block !important; }
+  }
+  .mem-entry { transition: opacity 700ms cubic-bezier(.22,1,.36,1), transform 700ms cubic-bezier(.22,1,.36,1), filter 700ms cubic-bezier(.22,1,.36,1); }
+  .mem-scene:hover .mem-entry { opacity: .34; filter: blur(1px); }
+  .mem-scene .mem-entry:hover { opacity: 1; filter: none; transform: translateY(-4px); }
+  .mem-entry .mem-act { opacity: 0; transform: translateY(6px); transition: opacity 520ms cubic-bezier(.22,1,.36,1), transform 520ms cubic-bezier(.22,1,.36,1); }
+  .mem-entry:hover .mem-act, .mem-entry:focus-within .mem-act { opacity: 1; transform: none; }
+  @media (hover: none) { .mem-scene:hover .mem-entry { opacity: 1; filter: none; } .mem-entry .mem-act { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .mem-frag, .mem-svg g, [style*="mem-float"], [style*="mem-draw"], [style*="mem-grain"], [style*="mem-progress"] { animation: none !important; } }
+  @media (max-width: 980px) {
+    .hw-grid { display: block !important; }
+    .hw-stage-col { height: min(64vh, 480px) !important; top: 76px !important; margin-bottom: clamp(24px, 4vw, 40px); z-index: 4; }
+    .hw-stage-col > div { height: 100% !important; max-height: 100% !important; aspect-ratio: auto !important; }
+    .hw-copy-col { padding-block: 0 clamp(56px, 9vw, 96px) !important; }
+    [data-act] { min-height: 52vh !important; }
+  }
+  @media (prefers-reduced-motion: reduce) { [style*="hw-scan"], [style*="hw-sweep"] { animation: none !important; } }
+  .hero-shard .hero-frag { opacity: 0; filter: blur(calc(var(--fb, 0px) + 6px)); transition: opacity 450ms cubic-bezier(.22,1,.36,1), filter 450ms cubic-bezier(.22,1,.36,1); }
+  .hero-shard:hover .hero-frag { opacity: var(--fo, .6); filter: blur(var(--fb, 0px)); }
+  @media (hover: none) { .hero-shard .hero-frag { opacity: var(--fo,.6); filter: blur(var(--fb,0px)); } }
+  @media (max-width: 900px) { .l-split { grid-template-columns: 1fr !important; } .l-sticky { position: static !important; } }
+  @media (max-width: 768px) {
+    .hero-copy { left: 6% !important; top: 8% !important; width: 88% !important; }
+    .hero-hide-mobile { display: none !important; }
+    .l-row { grid-template-columns: 1fr !important; gap: 8px !important; }
+    .l-foot { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+    .l-nav-desktop { display: none !important; }
+  }
+  @media (prefers-reduced-motion: reduce) { .hero-shard { animation: none !important; } }
+  [data-reveal] { opacity: 0; transform: translateY(22px); filter: blur(6px); transition: opacity 900ms cubic-bezier(.22,1,.36,1), transform 900ms cubic-bezier(.22,1,.36,1), filter 900ms cubic-bezier(.22,1,.36,1); }
+  [data-reveal][data-revealed="1"] { opacity: 1; transform: none; filter: none; }
+  @media (prefers-reduced-motion: reduce) { [data-reveal] { opacity: 1 !important; transform: none !important; filter: none !important; } }
+  .l-step { transition: background-color 420ms cubic-bezier(.22,1,.36,1), transform 420ms cubic-bezier(.22,1,.36,1); }
+  .l-step:hover { background-color: #fbfbfa; transform: translateX(6px); }
+  .l-step:hover .l-num { color: #9281f7; transform: translateY(-2px); }
+  .l-num { transition: color 420ms cubic-bezier(.22,1,.36,1), transform 420ms cubic-bezier(.22,1,.36,1); display: inline-block; }
+  .l-card { transition: box-shadow 600ms cubic-bezier(.22,1,.36,1), transform 600ms cubic-bezier(.22,1,.36,1); }
+  .l-card:hover { transform: translateY(-3px); box-shadow: 0 40px 80px -46px rgba(11,14,20,.45); }
+  .l-mrow { transition: background-color 380ms cubic-bezier(.22,1,.36,1); }
+  .l-mrow:hover { background-color: #fbfaf8; }
+  .l-mrow:hover .l-prov { color: #6d57e0; }
+  .l-prov { transition: color 380ms cubic-bezier(.22,1,.36,1); }
+  .l-arrow { display: inline-block; transition: transform 380ms cubic-bezier(.22,1,.36,1); }
+  .l-linkrow:hover .l-arrow { transform: translateX(6px); }
+  .l-draft { transition: box-shadow 600ms cubic-bezier(.22,1,.36,1), transform 600ms cubic-bezier(.22,1,.36,1); }
+  .l-draft:hover { transform: translateY(-2px); box-shadow: 0 36px 80px -40px rgba(11,14,20,.75), 0 0 0 1px rgba(146,129,247,.55); }
+  .l-glass { transition: transform 900ms cubic-bezier(.22,1,.36,1), filter 900ms cubic-bezier(.22,1,.36,1); }
+  .l-glass:hover img { transform: scale(1.03) rotate(-1deg); }
+  .l-glass img { transition: transform 900ms cubic-bezier(.22,1,.36,1); }
+</style>
+</helmet>
+
+<div style="background: #fff; color: #0b0e14;">
+
+<header data-header="1" style="position: fixed; inset-inline: 0; top: 0; z-index: 40;">
+  <div data-header-backdrop="1" aria-hidden="true" style="position: absolute; inset: 0; z-index: -1; pointer-events: none; background: rgb(255 255 255 / 82%); backdrop-filter: blur(25px); border-bottom: 1px solid #e6e5e1; opacity: 0; transition: opacity 150ms cubic-bezier(.22,1,.36,1);"></div>
+  <nav aria-label="Primary" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; max-width: 1440px; margin-inline: auto; padding: 24px clamp(24px, 4vw, 40px);">
+    <a href="#top" aria-label="Altr home" style="display: inline-flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 500; color: #0b0e14;">
+      <svg aria-hidden="true" width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 0L1 18H9V0Z" fill="#0b0e14"></path>
+        <path d="M9 0L17 18H9V0Z" fill="#9aa0a8"></path>
+      </svg>
+      <span>Altr</span>
+    </a>
+    <div class="l-nav-desktop" style="display: flex; align-items: center; gap: 36px;">
+      <a href="#product" style="white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #6a7078;" style-hover="color: #0b0e14;">{{ t.nav.product }}</a>
+      <a href="#how-it-works" style="white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #6a7078;" style-hover="color: #0b0e14;">{{ t.nav.howItWorks }}</a>
+      <a href="#pricing" style="white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #6a7078;" style-hover="color: #0b0e14;">{{ t.nav.pricing }}</a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="l-nav-desktop" style="display: flex; align-items: center; gap: 12px;">
+        <button type="button" onClick="{{ setEn }}" style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; color: {{ enColorLight }};">EN</button>
+        <button type="button" onClick="{{ setUa }}" style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; color: {{ uaColorLight }};">UA</button>
+      </div>
+      <a class="l-nav-desktop" href="#auth" style="white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #6a7078;" style-hover="color: #0b0e14;">{{ t.nav.login }}</a>
+      <a href="#auth" style="white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding-inline: 24px; border-radius: 6px; border: 1px solid #d6d5d1; color: #0b0e14; font-size: 15px; font-weight: 500; transition: border-color 150ms cubic-bezier(.22,1,.36,1);" style-hover="border-color: #0b0e14;">{{ t.nav.createAltr }}</a>
+    </div>
+  </nav>
+</header>
+
+<div id="top" data-hero="1" style="position: relative; isolation: isolate; width: 100%; min-height: 92vh; overflow: hidden; background-color: #fff;">
+  <div aria-hidden="true" data-hero-fog="1" style="position: absolute; inset: -20% -10%; pointer-events: none; z-index: 0; background: radial-gradient(52% 62% at 52% 42%, rgba(158,170,186,.20), rgba(158,170,186,0) 70%), radial-gradient(72% 66% at 34% 26%, rgba(176,185,197,.16), rgba(176,185,197,0) 75%), radial-gradient(90% 72% at 60% 80%, rgba(196,199,203,.22), rgba(196,199,203,0) 82%); filter: blur(18px); opacity: calc(1 - var(--scroll-progress, 0) * 0.6); will-change: opacity;"></div>
+
+  <div aria-hidden="true">
+    <div class="hero-shard" data-shard="main" data-par="8" data-dx="20" data-dy="20" style="position: absolute; left: 71%; top: 56%; transform-origin: center; transform: translate(-50%,-50%) rotate(-4deg); opacity: 1; z-index: 5; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: 0s;">
+      <img src="public/assets/hero/shards-trimmed/shard-main.png" alt="" width="1102" height="651" draggable="false" style="display: block; user-select: none; max-width: none; width: min(38vw, 729.6px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .6; --fb: 0px; position: absolute; left: 34%; top: 38%; width: 48%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">VOICE MEMO</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">March 14, 2019</p>
+        <p style="margin: 6px 0 0; font-size: 11px; line-height: 1.4; font-weight: 300;">I don't want to explain it —</p>
+        <p style="margin: 0; font-size: 11px; line-height: 1.4; font-weight: 300;">I just want you to remember it too.</p>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+          <svg width="60" height="14" aria-hidden="true" style="display: block;">
+            <rect x="0" y="11" width="2" height="3" rx="1" fill="currentColor"></rect><rect x="4" y="8" width="2" height="6" rx="1" fill="currentColor"></rect><rect x="8" y="10" width="2" height="4" rx="1" fill="currentColor"></rect><rect x="12" y="5" width="2" height="9" rx="1" fill="currentColor"></rect><rect x="16" y="9" width="2" height="5" rx="1" fill="currentColor"></rect><rect x="20" y="3" width="2" height="11" rx="1" fill="currentColor"></rect><rect x="24" y="8" width="2" height="6" rx="1" fill="currentColor"></rect><rect x="28" y="6" width="2" height="8" rx="1" fill="currentColor"></rect><rect x="32" y="10" width="2" height="4" rx="1" fill="currentColor"></rect><rect x="36" y="7" width="2" height="7" rx="1" fill="currentColor"></rect><rect x="40" y="4" width="2" height="10" rx="1" fill="currentColor"></rect><rect x="44" y="9" width="2" height="5" rx="1" fill="currentColor"></rect><rect x="48" y="11" width="2" height="3" rx="1" fill="currentColor"></rect><rect x="52" y="8" width="2" height="6" rx="1" fill="currentColor"></rect><rect x="56" y="6" width="2" height="8" rx="1" fill="currentColor"></rect>
+          </svg>
+          <span style="font-size: 9px; letter-spacing: .06em; opacity: .7; white-space: nowrap;">0:42</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="lower-mid-support" data-par="7" data-dx="-17.5" data-dy="17.5" style="position: absolute; left: 35%; top: 88%; transform-origin: center; transform: translate(-50%,-50%) rotate(9deg); opacity: .85; z-index: 4; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -4s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-03.png" alt="" width="1279" height="665" draggable="false" style="display: block; user-select: none; max-width: none; width: min(20vw, 384px); height: auto; filter: blur(3px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .6; --fb: .75px; position: absolute; left: 30%; top: 20%; width: 55%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">MESSAGE</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">October 3, 2020</p>
+        <p style="margin: 6px 0 0; font-size: 11px; line-height: 1.4; font-weight: 300;">Send the photos when you can.</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="upper-left-background" data-par="4" data-dx="-10" data-dy="-10" style="position: absolute; left: 16%; top: 10%; transform-origin: center; transform: translate(-50%,-50%) rotate(-14deg); opacity: .4; z-index: 1; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -9s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-02-blur.png" alt="" width="481" height="690" draggable="false" style="display: block; user-select: none; max-width: none; width: min(13vw, 249.6px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .5; --fb: 2px; position: absolute; left: 14%; top: 62%; width: 66%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 11px; font-weight: 300; font-style: italic; white-space: nowrap;">“you always called first”</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="far-right-background" data-par="4" data-dx="10" data-dy="10" style="position: absolute; left: 96%; top: 55%; transform-origin: center; transform: translate(-50%,-50%) rotate(-5deg) scaleX(-1); opacity: .42; z-index: 1; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -14s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-03-blur.png" alt="" width="1279" height="665" draggable="false" style="display: block; user-select: none; max-width: none; width: min(15vw, 288px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+
+    <div class="hero-shard" data-shard="upper-center-blurred" data-par="4" data-dx="10" data-dy="-10" style="position: absolute; left: 57%; top: 10%; transform-origin: center; transform: translate(-50%,-50%) rotate(6deg); opacity: .4; z-index: 2; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -19s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-03-blur.png" alt="" width="1279" height="665" draggable="false" style="display: block; user-select: none; max-width: none; width: min(19vw, 364.8px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .5; --fb: 2px; position: absolute; left: 22%; top: 28%; width: 58%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">MEMORY</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">The apartment on Vysoka St.</p>
+        <p style="margin: 6px 0 0; font-size: 11px; line-height: 1.4; font-weight: 300;">Lviv, 2014–2019</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="upper-right-distant" data-par="4" data-dx="10" data-dy="-10" style="position: absolute; left: 72%; top: 17%; transform-origin: center; transform: translate(-50%,-50%) rotate(-18deg) scaleX(-1); opacity: .5; z-index: 1; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -2s;">
+      <img src="public/assets/hero/shards-trimmed/shard-background-02.png" alt="" width="685" height="200" draggable="false" style="display: block; user-select: none; max-width: none; width: min(18vw, 345.6px); height: auto; filter: blur(4px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+
+    <div class="hero-shard" data-shard="small-central" data-par="8" data-dx="-20" data-dy="-20" style="position: absolute; left: 46%; top: 30%; transform-origin: center; transform: translate(-50%,-50%) rotate(8deg); opacity: .9; z-index: 6; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -11s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-01.png" alt="" width="1025" height="635" draggable="false" style="display: block; user-select: none; max-width: none; width: min(32vw, 614.4px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .6; --fb: 0px; position: absolute; left: 24%; top: 36%; width: 62%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">August 9, 2016</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="mid-right-support" data-par="7" data-dx="17.5" data-dy="17.5" style="position: absolute; left: 82%; top: 74%; transform-origin: center; transform: translate(-50%,-50%) rotate(-16deg); opacity: .9; z-index: 4; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -17s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-02.png" alt="" width="481" height="690" draggable="false" style="display: block; user-select: none; max-width: none; width: min(8vw, 153.6px); height: auto; filter: blur(1px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .6; --fb: .25px; position: absolute; left: 22%; top: 56%; width: 62%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">NOTE</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 300; font-style: italic; white-space: nowrap;">“call mum back”</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="upper-far-left-distant" data-par="4" data-dx="-10" data-dy="-10" style="position: absolute; left: 5%; top: 18%; transform-origin: center; transform: translate(-50%,-50%) rotate(24deg) scaleX(-1); opacity: .4; z-index: 1; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -7s;">
+      <img src="public/assets/hero/shards-trimmed/shard-foreground-01-blur.png" alt="" width="383" height="724" draggable="false" style="display: block; user-select: none; max-width: none; width: min(6vw, 115.2px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="mid-top-accent" data-par="8" data-dx="-20" data-dy="-20" style="position: absolute; left: 36%; top: 18%; transform-origin: center; transform: translate(-50%,-50%) rotate(-12deg); opacity: .85; z-index: 3; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -13s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-03.png" alt="" width="1279" height="665" draggable="false" style="display: block; user-select: none; max-width: none; width: min(7vw, 134.4px); height: auto; filter: blur(2px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .6; --fb: .5px; position: absolute; left: 24%; top: 26%; width: 55%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">PHOTO</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">June 21, 2015</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="right-upper-mass" data-par="5" data-dx="12.5" data-dy="-12.5" style="position: absolute; left: 88%; top: 30%; transform-origin: center; transform: translate(-50%,-50%) rotate(10deg); opacity: .55; z-index: 2; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -23s;">
+      <img src="public/assets/hero/shards-trimmed/shard-mid-02-blur.png" alt="" width="481" height="690" draggable="false" style="display: block; user-select: none; max-width: none; width: min(12vw, 230.4px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+      <div class="hero-frag" style="--fo: .55; --fb: 1.25px; position: absolute; left: 24%; top: 52%; width: 58%; color: rgba(214,221,229,.6); text-shadow: 0 0 6px rgba(0,0,0,.35); pointer-events: none; overflow: hidden;">
+        <p style="margin: 0; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .75; white-space: nowrap;">MESSAGE</p>
+        <p style="margin: 4px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .04em; white-space: nowrap;">May 2, 2021</p>
+      </div>
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="lower-center-distant" data-par="4" data-dx="10" data-dy="10" style="position: absolute; left: 49%; top: 73%; transform-origin: center; transform: translate(-50%,-50%) rotate(-24deg); opacity: .45; z-index: 1; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -16s;">
+      <img src="public/assets/hero/shards-trimmed/shard-foreground-02-blur.png" alt="" width="319" height="437" draggable="false" style="display: block; user-select: none; max-width: none; width: min(7vw, 134.4px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="mid-left-low" data-par="5" data-dx="-12.5" data-dy="12.5" style="position: absolute; left: 22%; top: 70%; transform-origin: center; transform: translate(-50%,-50%) rotate(26deg) scaleX(-1); opacity: .62; z-index: 2; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -29s;">
+      <img src="public/assets/hero/shards-trimmed/shard-background-01.png" alt="" width="420" height="540" draggable="false" style="display: block; user-select: none; max-width: none; width: min(10vw, 192px); height: auto; filter: blur(3px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+
+    <div class="hero-shard hero-hide-mobile" data-shard="center-veil" data-par="4" data-dx="10" data-dy="10" style="position: absolute; left: 60%; top: 72%; transform-origin: center; transform: translate(-50%,-50%) rotate(-40deg) scaleX(-1); opacity: .6; z-index: 2; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -32s;">
+      <img src="public/assets/hero/shards-trimmed/shard-foreground-01.png" alt="" width="383" height="724" draggable="false" style="display: block; user-select: none; max-width: none; width: min(8vw, 153.6px); height: auto; filter: blur(3px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+  </div>
+
+  <div class="hero-copy" style="position: absolute; left: 7%; top: 31%; width: 38%; z-index: 20; transform: translateY(calc(var(--scroll-progress, 0) * -8px));">
+    <div aria-hidden="true" style="position: absolute; left: -14%; top: -22%; width: 128%; height: 150%; pointer-events: none; background: radial-gradient(60% 55% at 42% 50%, rgba(255,255,255,.92) 0%, rgba(255,255,255,.7) 48%, rgba(255,255,255,0) 100%);"></div>
+    <div style="position: relative;">
+    <h1 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: clamp(68px, 6.6vw, 96px); line-height: .98; letter-spacing: -0.02em; color: #0b0e14;">F*ck your routine.</h1>
+    <p style="margin: 24px 0 0; max-width: 24rem; font-size: 17px; line-height: 1.6; color: #5f6570;">A digital continuation of you, shaped by memory, style, and time.</p>
+    <div style="margin-top: 32px; display: flex; align-items: center; gap: 24px;">
+      <a href="#auth" style="white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding-inline: 24px; border-radius: 6px; border: 1px solid #d6d5d1; background: transparent; backdrop-filter: blur(6px); color: #0b0e14; font-size: 17px; font-weight: 500; transition: border-color 150ms cubic-bezier(.22,1,.36,1);" style-hover="border-color: #0b0e14;">Create your Altr</a>
+      <a href="#how-it-works" style="font-size: 17px; color: #5f6570; text-underline-offset: 4px; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #0b0e14; text-decoration: underline;">How it works</a>
+    </div>
+    </div>
+  </div>
+
+  <div aria-hidden="true">
+    <div class="hero-shard" data-shard="lower-left-foreground" data-par="10" data-dx="-25" data-dy="25" style="position: absolute; left: 7%; top: 94%; transform-origin: center; transform: translate(-50%,-50%) rotate(-8deg); opacity: .92; z-index: 15; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -6s;">
+      <img src="public/assets/hero/shards-trimmed/shard-foreground-01-blur.png" alt="" width="383" height="724" draggable="false" style="display: block; user-select: none; max-width: none; max-height: none; width: auto; height: min(31vh, 334.8px); opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+    <div class="hero-shard hero-hide-mobile" data-shard="lower-right-foreground" data-par="10" data-dx="25" data-dy="25" style="position: absolute; left: 92%; top: 94%; transform-origin: center; transform: translate(-50%,-50%) rotate(3deg); opacity: .8; z-index: 16; will-change: translate; animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate; animation-delay: -21s;">
+      <img src="public/assets/hero/shards-trimmed/shard-background-02-blur.png" alt="" width="685" height="200" draggable="false" style="display: block; user-select: none; max-width: none; width: min(36vw, 691.2px); height: auto; opacity: 0; animation: hero-shard-fade-in 150ms ease-out forwards;" />
+    </div>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 24; pointer-events: none; background: radial-gradient(118% 98% at 50% 44%, rgba(255,255,255,0) 52%, rgba(228,227,223,.35) 78%, rgba(214,213,209,.55) 100%);"></div>
+  <canvas data-hero-particles="1" aria-hidden="true" style="position: absolute; inset: 0; z-index: 20; pointer-events: none; width: 100%; height: 100%;"></canvas>
+  <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; z-index: 25; background: radial-gradient(65% 60% at 88% 8%, rgba(255,255,255,.6), rgba(255,255,255,0) 74%);"></div>
+</div>
+
+<main style="position: relative; background: #f4f3f1; color: #0b0e14;">
+  <div aria-hidden="true" style="position: absolute; inset-inline: 0; top: 0; height: 320px; background: linear-gradient(to bottom, #fff 0%, rgba(250,249,247,.92) 34%, rgba(244,243,241,0) 100%); pointer-events: none; z-index: 1;"></div>
+
+  <section id="product" style="position: relative; z-index: 2; padding: clamp(140px, 16vw, 220px) clamp(24px, 5vw, 64px) clamp(80px, 9vw, 130px); scroll-margin-top: 96px;">
+    <div class="l-split" style="max-width: 1200px; margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(40px, 6vw, 96px); align-items: center;">
+      <div data-reveal="1">
+        <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #6d57e0;">{{ t.product.eyebrow }}</p>
+        <h2 style="margin: 20px 0 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: clamp(34px, 4vw, 56px); line-height: 1.08; letter-spacing: -0.015em; color: #0b0e14; text-wrap: pretty; max-width: 18ch;">{{ t.product.title }}</h2>
+        <p style="margin: 28px 0 0; max-width: 52ch; font-size: 17px; line-height: 1.65; color: #5f6570;">{{ t.product.body }}</p>
+        <dl style="margin: 44px 0 0; max-width: 52ch; display: grid; gap: 0;">
+          <sc-for list="{{ beats }}" as="beat" hint-placeholder-count="3">
+            <div class="l-beat" data-reveal="1" data-reveal-delay="60" style="display: grid; grid-template-columns: 132px 1fr; gap: 24px; padding: 22px 0; border-top: 1px solid #e0dfdb;">
+              <dt style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97; padding-top: 3px;">{{ beat.label }}</dt>
+              <dd style="margin: 0; font-size: 16px; line-height: 1.6; color: #22262d;">{{ beat.body }}</dd>
+            </div>
+          </sc-for>
+        </dl>
+      </div>
+      <div data-reveal="1" data-reveal-delay="120" style="display: flex; flex-direction: column; align-items: center; gap: 28px;">
+        <div class="hero-shard l-glass" data-parallax="26" style="position: relative; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 340px;">
+        <div aria-hidden="true" style="position: absolute; width: 78%; aspect-ratio: 1; border-radius: 999px; background: radial-gradient(closest-side, rgba(146,129,247,.16), rgba(146,129,247,0) 78%);"></div>
+        <img src="public/assets/hero/shards-trimmed/shard-mid-02.png" alt="" width="481" height="690" style="position: relative; width: min(72%, 300px); height: auto; filter: drop-shadow(0 40px 70px rgba(11,14,20,.28)); animation: altr-drift 24s cubic-bezier(.22,1,.36,1) infinite alternate;" />
+        <div class="hero-frag" aria-hidden="true" style="--fo: .72; --fb: 0px; position: absolute; left: 50%; top: 60%; width: 40%; transform: translateX(-50%); text-align: center; color: rgb(214 221 229 / 82%); text-shadow: 0 0 6px rgb(0 0 0 / 55%); pointer-events: none;">
+          <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .8; white-space: nowrap;">{{ t.product.fragmentKicker }}</p>
+          <p style="margin: 6px 0 0; font-size: 11px; font-weight: 500; letter-spacing: .02em; line-height: 1.35;">{{ t.product.fragmentLine }}</p>
+          <p style="margin: 6px 0 0; font-size: 10px; font-weight: 300; font-style: italic; line-height: 1.4; opacity: .85;">{{ t.product.fragmentNote }}</p>
+        </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" style="position: relative; z-index: 2; background: #fff; color: #0b0e14; scroll-margin-top: 72px;">
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 60% at 78% 8%, rgba(11,14,20,.055), rgba(255,255,255,0) 62%);"></div>
+    <div style="position: relative; max-width: 1320px; margin-inline: auto; padding-inline: clamp(24px, 5vw, 64px);">
+      <div style="padding-top: clamp(72px, 8vw, 120px); max-width: 1320px;">
+        <div style="display: flex; align-items: baseline; gap: 14px;">
+          <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #0b0e14;">{{ t.how.eyebrow }}</span>
+          <span aria-hidden="true" style="flex: 1; height: 1px; background: linear-gradient(90deg, rgba(11,14,20,.35), rgba(11,14,20,0));"></span>
+        </div>
+        <h2 style="margin: 22px 0 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: clamp(34px, 3.8vw, 58px); line-height: 1.06; letter-spacing: -0.02em; color: #0b0e14; text-wrap: pretty; max-width: 22ch;">{{ t.how.title }}</h2>
+      </div>
+
+      <div class="hw-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: clamp(28px, 5vw, 88px); align-items: start;">
+
+        <div class="hw-stage-col" style="grid-column: 2; grid-row: 1; position: sticky; top: 0; height: 100vh; display: flex; align-items: center; justify-content: center;">
+          <div style="position: relative; width: 100%; aspect-ratio: 4 / 3.3; max-height: 76vh; border-radius: 22px; border: 1px solid #e6e5e1; background: linear-gradient(180deg, #fbfaf8, #f3f2ef); box-shadow: 0 50px 100px -60px rgba(11,14,20,.45), inset 0 1px 0 rgba(255,255,255,.9); overflow: hidden;">
+            <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(11,14,20,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(11,14,20,.045) 1px, transparent 1px); background-size: 48px 48px;"></div>
+            <div aria-hidden="true" style="position: absolute; left: -20%; top: -30%; width: 70%; height: 160%; pointer-events: none; background: radial-gradient(closest-side, rgba(11,14,20,.075), rgba(11,14,20,0) 70%); animation: hw-sweep 24s ease-in-out infinite;"></div>
+
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; height: 54px; border-bottom: 1px solid #e6e5e1;">
+              <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #8a8f97;">{{ hwStageLabel }}</span>
+              <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; color: #0b0e14;">{{ hwStageIndex }}</span>
+            </div>
+
+            <div style="position: absolute; inset: 54px 0 0; padding: clamp(20px, 3vw, 34px);">
+
+              <div style="position: absolute; inset: clamp(20px, 3vw, 34px); opacity: {{ hwP1 }}; transform: translateY({{ hwP1y }}); transition: opacity 620ms cubic-bezier(.22,1,.36,1), transform 620ms cubic-bezier(.22,1,.36,1); pointer-events: {{ hwPE1 }};">
+                <div aria-hidden="true" style="position: absolute; left: 0; right: 0; height: 120px; background: linear-gradient(180deg, rgba(11,14,20,0), rgba(11,14,20,.055), rgba(11,14,20,0)); animation: hw-scan 6.5s cubic-bezier(.5,0,.5,1) infinite;"></div>
+                <div style="display: grid; gap: 9px;">
+                  <sc-for list="{{ hwFiles }}" as="file" hint-placeholder-count="5">
+                    <button type="button" class="hw-tap" onClick="{{ file.toggle }}" aria-pressed="{{ file.pressed }}" style="appearance: none; text-align: left; width: 100%; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 10px; cursor: pointer; border: 1px solid {{ file.border }}; background: #fff; opacity: {{ file.dim }}; animation: hw-rise 900ms cubic-bezier(.22,1,.36,1) {{ file.delay }} both;" style-hover="border-color: #0b0e14; transform: translateX(4px);" style-active="transform: scale(.985);">
+                      <span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 4px; border: 1px solid {{ file.boxBorder }}; background: {{ file.boxBg }}; transition: background 260ms, border-color 260ms;"><span style="width: 6px; height: 6px; border-radius: 1px; background: {{ file.boxDot }}; transition: background 260ms;"></span></span>
+                      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #3d4249; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ file.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: {{ file.stateColor }};">{{ file.state }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <p style="margin: 18px 0 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .06em; color: #8a8f97;">↳ {{ t.how.panel.parsed }}<span style="display: inline-block; width: 7px; height: 13px; margin-left: 6px; background: #0b0e14; vertical-align: -2px; animation: altr-caret 1.1s steps(1) infinite;"></span></p>
+              </div>
+
+              <div style="position: absolute; inset: clamp(20px, 3vw, 34px); opacity: {{ hwP2 }}; transform: translateY({{ hwP2y }}); transition: opacity 620ms cubic-bezier(.22,1,.36,1), transform 620ms cubic-bezier(.22,1,.36,1); pointer-events: {{ hwPE2 }};">
+                <p style="margin: 0 0 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #8a8f97;">{{ t.how.panel.memoryList }}</p>
+                <div style="display: grid; gap: 10px;">
+                  <sc-for list="{{ hwMemories }}" as="m" hint-placeholder-count="3">
+                    <button type="button" class="hw-tap" onClick="{{ m.toggle }}" aria-pressed="{{ m.pressed }}" style="appearance: none; text-align: left; width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 12px; cursor: pointer; border: 1px solid {{ m.border }}; background: {{ m.bg }}; animation: hw-rise 900ms cubic-bezier(.22,1,.36,1) {{ m.delay }} both;" style-hover="border-color: #0b0e14;" style-active="transform: scale(.99);">
+                      <span style="display: grid; gap: 5px;">
+                        <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #8a8f97;">{{ m.category }}</span>
+                        <span style="font-size: 14px; color: #0b0e14;">{{ m.title }}</span>
+                      </span>
+                      <span aria-hidden="true" style="position: relative; width: 32px; height: 18px; border-radius: 999px; background: {{ m.track }}; transition: background 500ms;">
+                        <span style="position: absolute; top: 3px; left: {{ m.knob }}; width: 12px; height: 12px; border-radius: 50%; background: #0b0e14; transition: left 500ms cubic-bezier(.22,1,.36,1);"></span>
+                      </span>
+                    </button>
+                  </sc-for>
+                </div>
+                <p style="margin: 14px 0 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">{{ hwOnCount }}</p>
+              </div>
+
+              <div style="position: absolute; inset: clamp(20px, 3vw, 34px); display: flex; flex-direction: column; justify-content: center; gap: 18px; opacity: {{ hwP3 }}; transform: translateY({{ hwP3y }}); transition: opacity 620ms cubic-bezier(.22,1,.36,1), transform 620ms cubic-bezier(.22,1,.36,1); pointer-events: {{ hwPE3 }};">
+                <div>
+                  <p style="margin: 0 0 9px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #8a8f97;">{{ t.how.panel.incoming }}</p>
+                  <p style="margin: 0; max-width: 40ch; padding: 14px 17px; border-radius: 14px 14px 14px 4px; border: 1px solid #e6e5e1; background: #fff; font-size: 14px; line-height: 1.6; color: #3d4249;">{{ t.twin.incomingMessage }}</p>
+                </div>
+                <div style="align-self: flex-end; text-align: right; max-width: 42ch;">
+                  <p style="margin: 0 0 9px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #0b0e14;">{{ t.how.panel.draft }}</p>
+                  <p style="margin: 0; padding: 14px 17px; border-radius: 14px 14px 4px 14px; border: 1px solid #cfcdc7; background: linear-gradient(180deg, #f4f3f0, #ebeae6); font-size: 14px; line-height: 1.6; color: #0b0e14; text-align: left;">{{ t.twin.draftMessage }}<span style="display: inline-block; width: 7px; height: 14px; margin-left: 5px; background: #0b0e14; vertical-align: -2px; animation: altr-caret 1.1s steps(1) infinite;"></span></p>
+                </div>
+                <div style="display: flex; gap: 10px; align-self: flex-end;">
+                  <button type="button" class="hw-tap" onClick="{{ hwApprove }}" style="appearance: none; display: inline-flex; align-items: center; min-height: 40px; padding-inline: 20px; border-radius: 8px; border: 1px solid #0b0e14; background: #0b0e14; color: #f7f6f3; font-size: 13px; cursor: pointer;" style-hover="background: #23272f; border-color: #23272f;" style-active="transform: scale(.97);">{{ hwReviewLabel }}</button>
+                  <button type="button" class="hw-tap" onClick="{{ hwDiscard }}" style="appearance: none; display: inline-flex; align-items: center; min-height: 40px; padding-inline: 20px; border-radius: 8px; border: 1px solid #d6d5d0; background: #fff; color: #5f6570; font-size: 13px; cursor: pointer;" style-hover="border-color: #0b0e14; color: #0b0e14;" style-active="transform: scale(.97);">{{ hwDiscardLabel }}</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="hw-copy-col" style="grid-column: 1; grid-row: 1; padding-block: clamp(40px, 5vw, 64px) clamp(72px, 8vw, 120px);">
+          <div style=" display: grid; grid-template-columns: 34px 1fr; gap: clamp(18px, 3vw, 34px);">
+            <div style="position: relative;">
+              <div style="position: sticky; top: 42vh; display: grid; gap: 14px; justify-items: center;">
+                <sc-for list="{{ hwDots }}" as="dot" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ dot.go }}" aria-label="{{ dot.label }}" style="appearance: none; padding: 0; border: 0; cursor: pointer; background: transparent; display: grid; gap: 14px; justify-items: center; transition: transform 320ms cubic-bezier(.22,1,.36,1);" style-hover="transform: scale(1.35);" style-active="transform: scale(.9);">
+                    <span style="display: block; width: 9px; height: 9px; border-radius: 50%; background: {{ dot.bg }}; box-shadow: {{ dot.glow }}; transition: background 500ms cubic-bezier(.22,1,.36,1), box-shadow 500ms;"></span>
+                    <span aria-hidden="true" style="display: {{ dot.lineDisplay }}; width: 1px; height: 46px; background: linear-gradient(180deg, {{ dot.lineTop }}, rgba(11,14,20,.1));"></span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <div>
+              <sc-for list="{{ hwActs }}" as="act" hint-placeholder-count="3">
+                <div data-act="{{ act.index }}" style="min-height: 74vh; display: flex; flex-direction: column; justify-content: center; padding-block: clamp(24px, 4vw, 48px); opacity: {{ act.opacity }}; transform: translateY({{ act.shift }}); transition: opacity 700ms cubic-bezier(.22,1,.36,1), transform 700ms cubic-bezier(.22,1,.36,1);">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <span aria-hidden="true" style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(44px, 5vw, 68px); line-height: 1; color: transparent; -webkit-text-stroke: 1px {{ act.strokeColor }}; font-variant-numeric: tabular-nums; transition: -webkit-text-stroke-color 600ms;">{{ act.number }}</span>
+                    <span aria-hidden="true" style="width: 40px; height: 1px; background: {{ act.strokeColor }};"></span>
+                  </div>
+                  <h3 style="margin: 18px 0 0; font-size: clamp(24px, 2.4vw, 34px); font-weight: 400; letter-spacing: -0.015em; color: #0b0e14; max-width: 22ch;">{{ act.title }}</h3>
+                  <p style="margin: 18px 0 0; max-width: 46ch; font-size: 16px; line-height: 1.7; color: #5f6570;">{{ act.body }}</p>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="memory" style="position: relative; overflow: hidden; z-index: 2; border-top: 1px solid #e6e5e1; background: linear-gradient(180deg, #ffffff 0%, #fbfaf9 40%, #f2f1ef 100%); padding: clamp(72px, 9vw, 120px) clamp(20px, 4vw, 56px) clamp(72px, 9vw, 120px); scroll-margin-top: 72px;">
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; opacity: .3; mix-blend-mode: multiply; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22180%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22/></filter><rect width=%22180%22 height=%22180%22 filter=%22url(%23n)%22 opacity=%220.42%22/></svg>'); background-size: 180px 180px; animation: mem-grain 2s steps(3) infinite;"></div>
+    <div aria-hidden="true" data-parallax="34" style="position: absolute; right: -8%; top: 4%; width: min(48vw, 560px); aspect-ratio: 1; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,14,20,.06), rgba(11,14,20,0) 72%); animation: mem-float 26s ease-in-out infinite;"></div>
+    <div aria-hidden="true" data-parallax="-24" style="position: absolute; left: -10%; bottom: -8%; width: min(42vw, 480px); aspect-ratio: 1; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(11,14,20,.05), rgba(11,14,20,0) 72%); animation: mem-float 32s ease-in-out 5s infinite reverse;"></div>
+
+    <div class="mem-stage" style="position: relative; max-width: 1360px; margin-inline: auto; min-height: clamp(720px, 92vh, 1000px);">
+
+      <svg class="mem-svg" aria-hidden="true" viewBox="0 0 1000 1000" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;">
+        <g fill="none" stroke="rgba(11,14,20,.2)" stroke-width="1" stroke-dasharray="4 7" style="animation: mem-flow 9s linear infinite;">
+          <path d="M180 190 L500 470" />
+          <path d="M150 540 L500 500" />
+          <path d="M235 810 L500 540" />
+          <path d="M840 205 L520 470" />
+          <path d="M865 575 L520 505" />
+          <path d="M760 830 L520 545" />
+        </g>
+        <g fill="rgba(11,14,20,.35)">
+          <circle cx="180" cy="190" r="3" style="animation: mem-pulse 4.5s ease-in-out infinite;" />
+          <circle cx="150" cy="540" r="3" style="animation: mem-pulse 4.5s ease-in-out .9s infinite;" />
+          <circle cx="235" cy="810" r="3" style="animation: mem-pulse 4.5s ease-in-out 1.8s infinite;" />
+          <circle cx="840" cy="205" r="3" style="animation: mem-pulse 4.5s ease-in-out 2.4s infinite;" />
+          <circle cx="865" cy="575" r="3" style="animation: mem-pulse 4.5s ease-in-out 3.1s infinite;" />
+          <circle cx="760" cy="830" r="3" style="animation: mem-pulse 4.5s ease-in-out 3.9s infinite;" />
+        </g>
+      </svg>
+
+      <div class="mem-center" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(680px, 92%); text-align: center; z-index: 5;">
+        <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 150%; height: 190%; transform: translate(-50%, -50%); pointer-events: none; background: radial-gradient(closest-side, rgba(255,255,255,.96) 40%, rgba(255,255,255,0) 100%);"></div>
+        <div style="position: relative;">
+          <p data-reveal="1" style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: #8a8f97;">{{ t.memory.eyebrow }}</p>
+          <h2 data-reveal="1" data-reveal-delay="90" style="margin: 26px 0 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: clamp(40px, 6vw, 88px); line-height: 1.02; letter-spacing: -0.028em; color: #0b0e14; text-wrap: balance;">{{ t.memory.title }}</h2>
+          <p data-reveal="1" data-reveal-delay="160" style="margin: 26px auto 0; max-width: 48ch; font-size: 17px; line-height: 1.7; color: #5f6570;">{{ t.memory.body }}</p>
+          <p data-reveal="1" data-reveal-delay="220" style="margin: 26px auto 0; min-height: 2.6em; max-width: 42ch; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; line-height: 1.7; letter-spacing: .04em; color: #0b0e14;"><span style="color: #a1a4a5;">{{ memTypeLabel }}</span> {{ memTyped }}<span style="display: inline-block; width: 7px; height: 13px; margin-left: 4px; background: #0b0e14; vertical-align: -2px; animation: altr-caret 1.1s steps(1) infinite;"></span></p>
+        </div>
+      </div>
+
+        <div class="mem-frag" data-parallax="30" style="position: absolute; left: 1%; top: 10%; width: min(23vw, 280px);  animation: mem-drift 19s ease-in-out 0s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="0" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Telegram export</span><span>09:42</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">Short, direct replies</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Communication style</p>
+          </div>
+        </div>
+        <div class="mem-frag" data-parallax="46" style="position: absolute; left: -1%; top: 45%; width: min(21vw, 250px); filter: blur(.4px); opacity: .92; animation: mem-drift 23s ease-in-out 1.5s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="120" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Telegram export</span><span>Mar 2026</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">&ldquo;sounds good, let&rsquo;s go with that&rdquo;</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Frequent phrase</p>
+          </div>
+        </div>
+        <div class="mem-frag" data-parallax="22" style="position: absolute; left: 6%; top: 76%; width: min(20vw, 240px); opacity: .78; animation: mem-drift 27s ease-in-out 3s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="200" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Manual entry</span><span>—</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">Verify before confirming</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Typical decision</p>
+          </div>
+        </div>
+        <div class="mem-frag" data-parallax="38" style="position: absolute; right: 1%; top: 12%; width: min(22vw, 265px);  animation: mem-drift 21s ease-in-out 0.8s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="90" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Email export</span><span>Feb 2026</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">Client tone — measured, clear</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Relationship</p>
+          </div>
+        </div>
+        <div class="mem-frag" data-parallax="50" style="position: absolute; right: -1%; top: 50%; width: min(21vw, 250px); filter: blur(.5px); opacity: .88; animation: mem-drift 25s ease-in-out 2.2s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="170" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Instagram export</span><span>2025—2026</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">&ldquo;I&rsquo;ll confirm once I&rsquo;ve checked&rdquo;</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Evidence · 3 threads</p>
+          </div>
+        </div>
+        <div class="mem-frag" data-parallax="26" style="position: absolute; right: 8%; top: 79%; width: min(19vw, 225px); opacity: .74; animation: mem-drift 29s ease-in-out 4s infinite;">
+          <div class="mem-card" data-reveal="1" data-reveal-delay="250" style="border: 1px solid #e6e5e1; border-radius: 14px; background: rgba(255,255,255,.86); backdrop-filter: blur(6px); box-shadow: 0 30px 60px -46px rgba(11,14,20,.55); padding: 16px 18px;">
+            <p style="margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: #a1a4a5;"><span>Messenger export</span><span>2024</span></p>
+            <p style="margin: 12px 0 0; font-size: 15px; line-height: 1.5; color: #0b0e14;">Keeps promises small and specific</p>
+            <p style="margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #eeede9; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #8a8f97;">Pattern</p>
+          </div>
+        </div>
+
+      <div class="mem-frag" data-parallax="16" style="position: absolute; left: 50%; top: 2%; transform: translateX(-50%); width: min(320px, 80%);">
+        <div data-reveal="1" style="display: flex; align-items: center; gap: 12px; padding: 11px 16px; border: 1px solid #e6e5e1; border-radius: 999px; background: rgba(255,255,255,.9); backdrop-filter: blur(6px); box-shadow: 0 22px 44px -40px rgba(11,14,20,.6);">
+          <span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #0b0e14; animation: mem-pulse 2.4s ease-in-out infinite;"></span>
+          <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #5f6570; white-space: nowrap;">{{ memStatus }}</span>
+          <span aria-hidden="true" style="flex: 1; height: 2px; border-radius: 2px; background: #eeede9; overflow: hidden;"><span style="display: block; height: 100%; width: 40%; background: #0b0e14; animation: mem-progress 6.5s cubic-bezier(.5,0,.3,1) infinite;"></span></span>
+        </div>
+      </div>
+
+      <div class="mem-fallback" style="display: none; margin-top: 32px;">
+        <sc-for list="{{ memRows }}" as="row" hint-placeholder-count="4">
+          <div data-reveal="1" data-reveal-delay="{{ row.delay }}" style="margin-top: 12px; padding: 18px 20px; border: 1px solid #e6e5e1; border-radius: 14px; background: #fff;">
+            <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #a1a4a5;">{{ row.provenance }}</p>
+            <p style="margin: 10px 0 0; font-size: 16px; line-height: 1.45; color: #0b0e14;">{{ row.title }}</p>
+            <p style="margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: #5f6570;">{{ row.description }}</p>
+          </div>
+        </sc-for>
+      </div>
+
+    </div>
+
+      <div class="mem-strip" style="position: relative; z-index: 6; margin: clamp(28px, 4vw, 48px) auto 0; width: min(760px, 94%);">
+        <div data-reveal="1" data-reveal-delay="120" style="position: relative; padding-top: 20px;">
+          <span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 1px; background: linear-gradient(90deg, rgba(11,14,20,0), rgba(11,14,20,.28) 20%, rgba(11,14,20,.28) 80%, rgba(11,14,20,0)); transform-origin: left; animation: mem-drawx 1600ms cubic-bezier(.22,1,.36,1) both;"></span>
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <sc-for list="{{ memTicks }}" as="tick" hint-placeholder-count="6">
+              <span style="display: grid; justify-items: center; gap: 9px; animation: mem-soft 700ms cubic-bezier(.22,1,.36,1) {{ tick.delay }} both;">
+                <span aria-hidden="true" style="width: 1px; height: {{ tick.h }}; background: rgba(11,14,20,.28);"></span>
+                <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: {{ tick.color }}; white-space: nowrap;">{{ tick.label }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+  </section>
+
+  <section id="twin" style="position: relative; z-index: 2; background: #fff; border-top: 1px solid #e6e5e1; padding: clamp(80px, 9vw, 130px) clamp(24px, 5vw, 64px) clamp(100px, 11vw, 150px); scroll-margin-top: 96px;">
+    <div data-twin="1" style="max-width: 760px; margin-inline: auto;">
+      <div data-reveal="1">
+        <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #6d57e0;">{{ t.twin.eyebrow }}</p>
+        <h2 style="margin: 20px 0 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: clamp(32px, 3.4vw, 48px); line-height: 1.1; letter-spacing: -0.015em; color: #0b0e14; text-wrap: pretty;">{{ t.twin.title }}</h2>
+      </div>
+      <figure data-reveal="1" data-reveal-delay="100" style="margin: clamp(36px, 5vw, 56px) 0 0; display: flex; flex-direction: column; gap: 18px;">
+        <div style="align-self: flex-start; max-width: 78%; padding: 18px 22px; border-radius: 16px 16px 16px 4px; background: #f2f1ee; border: 1px solid #e6e5e1;">
+          <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .06em; color: #9aa0a8;">{{ t.twin.incomingLabel }}</p>
+          <p style="margin: 8px 0 0; font-size: 16px; line-height: 1.55; color: #22262d;">{{ t.twin.incomingMessage }}</p>
+        </div>
+        <div class="l-draft" style="align-self: flex-end; max-width: 92%; width: 100%; padding: clamp(20px, 3vw, 28px); border-radius: 20px 20px 4px 20px; background: #000; box-shadow: 0 30px 70px -40px rgba(11,14,20,.7), 0 0 0 1px #292d30;">
+          <p style="margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .04em; color: #9281f7;">{{ t.twin.draftLabel }}</p>
+          <p style="margin: 12px 0 0; min-height: 3.2em; font-size: 17px; line-height: 1.6; color: #f0f0f0;">{{ draft }}<span style="display: inline-block; width: 8px; margin-left: 2px; border-bottom: 2px solid #9281f7; animation: altr-caret 1s step-end infinite; vertical-align: baseline;"></span></p>
+        </div>
+        <div style="align-self: flex-end; display: flex; align-items: center; gap: 18px;">
+          <figcaption style="font-size: 12px; font-style: italic; color: #9aa0a8;">{{ t.twin.provenance }}</figcaption>
+          <button type="button" onClick="{{ replay }}" style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6d57e0; background: none; border: none; padding: 6px 0; cursor: pointer;" style-hover="color: #0b0e14;">{{ t.twin.replay }}</button>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+</main>
+
+<footer style="border-top: 1px solid #292d30; background-color: #0b0e14; color: #f0f0f0; box-shadow: 0 0 0 1px #292d30; padding: 64px clamp(24px, 4vw, 40px) 40px;">
+  <div class="l-foot" style="display: grid; gap: 32px; max-width: 1200px; margin-inline: auto; grid-template-columns: 1.4fr repeat(4, 1fr);">
+    <div>
+      <a href="#top" aria-label="Altr home" style="display: inline-flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; color: #f0f0f0;">
+        <svg aria-hidden="true" width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 0L1 18H9V0Z" fill="currentColor"></path>
+          <path d="M9 0L17 18H9V0Z" fill="currentColor" opacity="0.55"></path>
+        </svg>
+        <span>Altr</span>
+      </a>
+      <p style="margin-top: 20px; font-size: 17px; color: #a1a4a5;">{{ t.footer.copyright }}</p>
+    </div>
+    <nav style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+      <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #a1a4a5;">{{ t.nav.product }}</p>
+      <a href="#product" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.nav.product }}</a>
+      <a href="#how-it-works" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.nav.howItWorks }}</a>
+      <a href="#pricing" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.nav.pricing }}</a>
+    </nav>
+    <nav style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+      <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #a1a4a5;">{{ t.footer.legalHeading }}</p>
+      <a href="#privacy-policy" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.footer.privacyLink }}</a>
+      <a href="#terms" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.footer.termsLink }}</a>
+      <a href="#cookies" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.footer.cookiesLink }}</a>
+      <button type="button" style="font-size: 17px; color: #a1a4a5; background: none; border: none; padding: 0; cursor: pointer; text-align: left; font-family: inherit;" style-hover="color: #f0f0f0;">{{ t.footer.cookiePreferences }}</button>
+    </nav>
+    <nav style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+      <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #a1a4a5;">{{ t.footer.accountHeading }}</p>
+      <a href="#auth" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.nav.login }}</a>
+      <a href="#auth" style="font-size: 17px; color: #a1a4a5; transition: color 150ms cubic-bezier(.22,1,.36,1);" style-hover="color: #f0f0f0;">{{ t.nav.createAltr }}</a>
+    </nav>
+    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px;">
+      <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #a1a4a5;">{{ t.nav.language }}</p>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onClick="{{ setEn }}" style="font-size: 12px; text-transform: uppercase; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; color: {{ enColor }};">EN</button>
+        <button type="button" onClick="{{ setUa }}" style="font-size: 12px; text-transform: uppercase; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; color: {{ uaColor }};">UA</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;EN&quot;,&quot;UA&quot;],&quot;default&quot;:&quot;EN&quot;,&quot;tsType&quot;:&quot;\&quot;EN\&quot; | \&quot;UA\&quot;&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+const COPY = {
+  EN: {
+    nav: { product: "Product", howItWorks: "How it works", pricing: "Pricing", login: "Log in", createAltr: "Create your Altr", language: "Language" },
+    footer: { copyright: "© 2026 Altr", legalHeading: "Legal", accountHeading: "Account", privacyLink: "Privacy", termsLink: "Terms", cookiesLink: "Cookies", cookiePreferences: "Cookie preferences" },
+    product: {
+      eyebrow: "01 — Product",
+      title: "Your history becomes memory. Memory becomes your voice.",
+      body: "Import the conversations you already have — exported chats, messages, decisions — and Altr turns them into a private memory layer: who you talk to, how you actually write, what you've already decided. When a reply is needed, your Twin drafts one in your own voice, grounded in that memory, for you to review before anything is sent.",
+      beats: [
+        { label: "Import", body: "Bring your own exported conversation history." },
+        { label: "Memory", body: "Altr connects people, decisions, and phrasing into context that stays with you." },
+        { label: "Drafts", body: "Your Twin proposes a reply in your voice — you approve before it's sent." },
+      ],
+      fragmentKicker: "Memory · 0412",
+      fragmentLine: "The way you actually write",
+      fragmentDetail: "Learned from your own exported conversations — phrasing, pace, the things you never spell out.",
+      fragmentNote: "a continuation, not a chatbot",    },
+    how: {
+      eyebrow: "02 — How it works",
+      title: "Three movements, always in your control.",
+      panel: { sources: "Sources", parsed: "Parsed in your browser", memoryList: "Memory list", on: "On", incoming: "Incoming · 09:42", draft: "Draft — you review", review: "Review", discard: "Discard", reviewed: "Approved", discarded: "Discarded", included: "included", skip: "skipped", parsedShort: "parsed", enabled: "enabled", hint: "Select a movement" },
+      steps: [
+        { number: "01", title: "Bring your conversations", body: "Import exported chats from WhatsApp, Telegram, Instagram, Messenger, and more. Everything is parsed locally in your browser — the raw file is never uploaded, only the structured result is." },
+        { number: "02", title: "Shape your memory", body: "What Altr learns becomes a plain, editable memory list. Edit any memory, disable it, or delete it outright — nothing stays that you don't want kept." },
+        { number: "03", title: "Meet your continuation", body: "Your Twin drafts replies in your voice, grounded in that memory. Every draft is yours to review — nothing sends itself." },
+      ],
+    },
+    memory: {
+      eyebrow: "03 — Memory",
+      title: "What Altr remembers, plainly.",
+      body: "A preview of the real memory list — not a mockup, the same fields the actual product stores: a category, a short title, a description, and where it came from.",
+      editingLabel: "Editing",
+      ui: { status: "Altr is reading your history", learning: "learning:", ticks: ["2023", "2024", "Jan 2026", "Feb 2026", "Mar 2026", "Now"], lines: ["how you close a conversation", "the phrases you actually use", "who you write to differently", "what you promise, and when", "the decisions you already made"] },
+      memories: [
+        { category: "Communication style", title: "Short, direct replies", strength: 92, excerpt: "yep — doing it now, will confirm when it's out", description: "Keeps replies concise and avoids unnecessary wording, especially with the team.", provenance: "Telegram export · Mar 2026" },
+        { category: "Frequent phrase", title: "“Sounds good”", strength: 78, excerpt: "sounds good, let's go with that", description: "A short confirmation used when a proposed direction is acceptable.", provenance: "Telegram export · Mar 2026", editing: true },
+        { category: "Relationship", title: "Client tone", strength: 85, excerpt: "Confirming the revised timeline below — happy to walk through it.", description: "Formal enough, clear, and reliable — more measured than the team channel.", provenance: "Email export · Feb 2026" },
+        { category: "Typical decision", title: "Verify before confirming", strength: 71, excerpt: "let me check the last dependency before I promise a date", description: "Confirms only after checking final details and dependencies.", provenance: "Manual entry" },
+      ],
+    },
+    twin: {
+      eyebrow: "04 — Your Twin",
+      title: "A draft, in your voice — never sent without you.",
+      incomingLabel: "Incoming · 09:42",
+      incomingMessage: "Can you confirm the final price and delivery date today?",
+      draftLabel: "Draft — you decide what sends",
+      draftMessage: "Yes — I'll confirm the final price and delivery date today. I'm checking the last details now and will follow up shortly.",
+      provenance: "Drawing on 3 memories",
+      replay: "Draft again",
+    },
+    privacy: {
+      eyebrow: "05 — Privacy",
+      title: "Specific guarantees, not vague promises.",
+      guarantees: [
+        { title: "Parsed in your browser", body: "Raw conversation exports are parsed locally in a background worker — the file itself is never uploaded, only the structured result is." },
+        { title: "Scoped to you", body: "Every read and write is scoped to your authenticated account, enforced at the database level." },
+        { title: "Never sent without you", body: "Altr's Twin produces drafts only. Nothing is sent, scheduled, or acted on without you reviewing it first." },
+        { title: "Yours to export or delete", body: "Export your data or delete your account at any time — deletion requires explicit confirmation, never a single accidental click." },
+      ],
+      privacyLink: "Read the full privacy policy",
+    },
+  },
+  UA: {
+    nav: { product: "Продукт", howItWorks: "Як працює", pricing: "Тарифи", login: "Увійти", createAltr: "Створити свій Altr", language: "Мова" },
+    footer: { copyright: "© 2026 Altr", legalHeading: "Правові", accountHeading: "Акаунт", privacyLink: "Приватність", termsLink: "Умови", cookiesLink: "Cookie", cookiePreferences: "Налаштування cookie" },
+    product: {
+      eyebrow: "01 — Продукт",
+      title: "Твоя історія стає памʼяттю. Памʼять стає твоїм голосом.",
+      body: "Імпортуй розмови, які в тебе вже є, — експортовані чати, повідомлення, рішення, — і Altr перетворює їх на приватний шар памʼяті: з ким ти спілкуєшся, як насправді пишеш, що вже вирішив. Коли потрібна відповідь, твій Twin пропонує чернетку твоїм голосом на основі цієї памʼяті — ти переглядаєш її, перш ніж щось надсилається.",
+      beats: [
+        { label: "Імпорт", body: "Завантаж власну експортовану історію переписок." },
+        { label: "Памʼять", body: "Altr повʼязує людей, рішення й манеру спілкування в контекст, який залишається з тобою." },
+        { label: "Чернетки", body: "Twin пропонує відповідь твоїм голосом — ти підтверджуєш, перш ніж її надсилають." },
+      ],
+      fragmentKicker: "ПАМ'ЯТЬ · 0412",
+      fragmentLine: "Те, як ти насправді пишеш",
+      fragmentDetail: "Вивчено з твоїх власних експортованих розмов — формулювання, ритм, те, що ти ніколи не проговорюєш.",
+      fragmentNote: "продовження, а не чат-бот",
+    },
+    how: {
+      eyebrow: "02 — Як це працює",
+      title: "Три кроки, які завжди під твоїм контролем.",
+      panel: { sources: "Джерела", parsed: "Обробка у твоєму браузері", memoryList: "Список памʼяті", on: "Увімк.", incoming: "Вхідне · 09:42", draft: "Чернетка — ти переглядаєш", review: "Переглянути", discard: "Відхилити", reviewed: "Підтверджено", discarded: "Відхилено", included: "додано", skip: "пропущено", parsedShort: "оброблено", enabled: "увімкнено", hint: "Обери крок" },
+      steps: [
+        { number: "01", title: "Принеси свої розмови", body: "Імпортуй експортовані чати з WhatsApp, Telegram, Instagram, Messenger та інших. Усе обробляється локально у твоєму браузері — необроблений файл ніколи не завантажується, лише структурований результат." },
+        { number: "02", title: "Сформуй свою памʼять", body: "Те, що вивчає Altr, стає простим, редагованим списком памʼяті. Редагуй будь-яку памʼять, вимикай її або видаляй повністю — нічого не залишається без твоєї згоди." },
+        { number: "03", title: "Познайомся зі своїм продовженням", body: "Twin пропонує відповіді твоїм голосом на основі цієї памʼяті. Кожну чернетку ти переглядаєш сам — нічого не надсилається автоматично." },
+      ],
+    },
+    memory: {
+      eyebrow: "03 — Памʼять",
+      title: "Що памʼятає Altr, без прикрас.",
+      body: "Попередній перегляд реального списку памʼяті — не макет, а ті самі поля, які насправді зберігає продукт: категорія, короткий заголовок, опис і джерело.",
+      editingLabel: "Редагування",
+      ui: { status: "Altr читає твою історію", learning: "вивчає:", ticks: ["2023", "2024", "січ 2026", "лют 2026", "бер 2026", "Зараз"], lines: ["як ти завершуєш розмову", "фрази, якими ти справді говориш", "з ким ти пишеш інакше", "що ти обіцяєш і коли", "рішення, які ти вже ухвалив"] },
+      memories: [
+        { category: "Стиль спілкування", title: "Короткі, прямі відповіді", strength: 92, excerpt: "ага — вже роблю, підтверджу, коли буде готово", description: "Тримає відповіді лаконічними й уникає зайвих слів, особливо з командою.", provenance: "Експорт з Telegram · березень 2026" },
+        { category: "Часта фраза", title: "«Sounds good»", strength: 78, excerpt: "sounds good, давай так і зробимо", description: "Коротке підтвердження, коли запропонований напрямок прийнятний.", provenance: "Експорт з Telegram · березень 2026", editing: true },
+        { category: "Стосунки", title: "Тон із клієнтами", strength: 85, excerpt: "Підтверджую оновлений графік нижче — готовий пройтися по деталях.", description: "Достатньо формальний, чіткий і надійний — стриманіший, ніж у командному каналі.", provenance: "Експорт з Email · лютий 2026" },
+        { category: "Типове рішення", title: "Перевірити перед підтвердженням", strength: 71, excerpt: "дай перевірю останню залежність, перш ніж обіцяти дату", description: "Підтверджує лише після перевірки фінальних деталей і залежностей.", provenance: "Введено вручну" },
+      ],
+    },
+    twin: {
+      eyebrow: "04 — Твій Twin",
+      title: "Чернетка твоїм голосом — ніколи не надсилається без тебе.",
+      incomingLabel: "Вхідне · 09:42",
+      incomingMessage: "Можеш сьогодні підтвердити фінальну ціну і дату доставки?",
+      draftLabel: "Чернетка — ти вирішуєш, що надсилати",
+      draftMessage: "Так — сьогодні підтверджу фінальну ціну і дату доставки. Зараз перевіряю останні деталі й скоро повернусь з відповіддю.",
+      provenance: "На основі 3 спогадів",
+      replay: "Створити знову",
+    },
+    privacy: {
+      eyebrow: "05 — Приватність",
+      title: "Конкретні гарантії, а не розпливчасті обіцянки.",
+      guarantees: [
+        { title: "Обробка у твоєму браузері", body: "Необроблені експорти розмов парсяться локально у фоновому воркері — сам файл ніколи не завантажується, лише структурований результат." },
+        { title: "Лише для тебе", body: "Кожен запит на читання чи запис прив'язаний до твого автентифікованого акаунта на рівні бази даних." },
+        { title: "Ніколи не надсилається без тебе", body: "Twin створює лише чернетки. Нічого не надсилається, не планується і не виконується без твого перегляду." },
+        { title: "Твоє право експортувати чи видалити", body: "Експортуй дані або видали акаунт у будь-який момент — видалення потребує явного підтвердження, ніколи не одним випадковим кліком." },
+      ],
+      privacyLink: "Читати повну політику приватності",
+    },
+  },
+};
+
+class Component extends DCLogic {
+  state = { lang: "EN", draft: "", activeStep: 0, memTyped: "", memLine: 0, hwFiles: [true, true, true, false], hwMem: [true, true, false], hwVerdict: null };
+
+  renderVals() {
+    if (!this.langInit && (this.props.lang === "UA" || this.props.lang === "EN")) {
+      this.langInit = true;
+      if (this.props.lang !== this.state.lang) this.state.lang = this.props.lang;
+    }
+    const lang = this.state.lang;
+    const act = this.state.activeStep || 0;
+    const t = COPY[lang];
+    return {
+      t,
+      lang,
+      beats: t.product.beats,
+      panel: t.how.panel,
+      hwStageLabel: t.how.steps[act] ? t.how.steps[act].title : "",
+      hwStageIndex: "0" + (act + 1) + " / 03",
+      hwActs: t.how.steps.map((s, i) => ({ ...s, index: i, opacity: act === i ? 1 : 0.45, shift: act === i ? "0px" : "10px", strokeColor: act === i ? "#0b0e14" : "#c9c7c1" })),
+      hwDots: t.how.steps.map((s, i) => ({
+        label: s.title, go: () => this.goAct(i),
+        bg: act === i ? "#0b0e14" : "#c9c7c1",
+        glow: act === i ? "0 0 0 5px rgba(11,14,20,.09)" : "none",
+        lineDisplay: i === 2 ? "none" : "block",
+        lineTop: act === i ? "rgba(11,14,20,.4)" : "rgba(11,14,20,.14)",
+      })),
+      hwFiles: ["whatsapp_export_2026.txt", "telegram_chat_history.json", "instagram_messages.json", "messenger_inbox.html"].map((name, i) => {
+        const on = !!this.state.hwFiles[i];
+        return {
+          name, delay: i * 120 + "ms", pressed: on ? "true" : "false",
+          toggle: () => this.toggleAt("hwFiles", i),
+          state: on ? t.how.panel.parsedShort : t.how.panel.skip,
+          stateColor: on ? "#0b0e14" : "#a1a4a5",
+          border: on ? "#d6d5d0" : "#eeede9",
+          dim: on ? 1 : 0.55,
+          boxBorder: on ? "#0b0e14" : "#c9c7c1",
+          boxBg: on ? "#0b0e14" : "#fff",
+          boxDot: on ? "#fff" : "transparent",
+        };
+      }),
+      hwMemories: t.memory.memories.slice(0, 3).map((m, i) => {
+        const on = !!this.state.hwMem[i];
+        return {
+          category: m.category, title: m.title, delay: i * 120 + "ms",
+          pressed: on ? "true" : "false",
+          toggle: () => this.toggleAt("hwMem", i),
+          border: on ? "#cfcdc7" : "#eeede9",
+          bg: on ? "#fff" : "#faf9f7",
+          track: on ? "#0b0e14" : "#d6d5d0",
+          knob: on ? "17px" : "3px",
+        };
+      }),
+      memRows: t.memory.memories.map((m, i) => ({ title: m.title, description: m.description, provenance: m.provenance, delay: i * 110 })),
+      memStatus: t.memory.ui.status,
+      memTypeLabel: t.memory.ui.learning,
+      memTyped: this.state.memTyped,
+      memTicks: t.memory.ui.ticks.map((label, i) => ({
+        label, delay: i * 110 + "ms",
+        h: i === t.memory.ui.ticks.length - 1 ? "18px" : "10px",
+        color: i === t.memory.ui.ticks.length - 1 ? "#0b0e14" : "#a1a4a5",
+      })),
+      hwOnCount: this.state.hwMem.filter(Boolean).length + "/3 " + t.how.panel.enabled,
+      hwReviewLabel: this.state.hwVerdict === "approved" ? t.how.panel.reviewed : t.how.panel.review,
+      hwDiscardLabel: this.state.hwVerdict === "discarded" ? t.how.panel.discarded : t.how.panel.discard,
+      hwApprove: () => this.setState({ hwVerdict: this.state.hwVerdict === "approved" ? null : "approved" }),
+      hwDiscard: () => this.setState({ hwVerdict: this.state.hwVerdict === "discarded" ? null : "discarded" }),
+      hwPE1: act === 0 ? "auto" : "none",
+      hwPE2: act === 1 ? "auto" : "none",
+      hwPE3: act === 2 ? "auto" : "none",
+      hwP1: act === 0 ? 1 : 0, hwP1y: act === 0 ? "0px" : "16px",
+      hwP2: act === 1 ? 1 : 0, hwP2y: act === 1 ? "0px" : "16px",
+      hwP3: act === 2 ? 1 : 0, hwP3y: act === 2 ? "0px" : "16px",
+      sources: ["WhatsApp", "Telegram", "Instagram", "Messenger"],
+      guarantees: t.privacy.guarantees.map((g, i) => ({ ...g, num: "0" + (i + 1) })),
+      draft: this.state.draft,
+      enColor: lang === "EN" ? "#f0f0f0" : "#a1a4a5",
+      uaColor: lang === "UA" ? "#f0f0f0" : "#a1a4a5",
+      enColorLight: lang === "EN" ? "#0b0e14" : "#6a7078",
+      uaColorLight: lang === "UA" ? "#0b0e14" : "#6a7078",
+      setEn: () => this.setLang("EN"),
+      setUa: () => this.setLang("UA"),
+      replay: () => this.typeDraft(true),
+    };
+  }
+
+  setLang(lang) {
+    this.memErase = false; this.memHold = 0;
+    this.setState({ memTyped: "", memLine: 0 });
+    this.setState({ lang, draft: "" }, () => this.typeDraft(true));
+  }
+
+  componentDidMount() {
+    this.reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.initReveal();
+    this.initParallax();
+    this.initHero();
+    this.initParticles();
+    this.initTwin();
+    this.initHow();
+    this.startMemType();
+  }
+
+  componentWillUnmount() {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (this.pRaf) cancelAnimationFrame(this.pRaf);
+    if (this.typeTimer) clearInterval(this.typeTimer);
+    if (this.memTimer) clearInterval(this.memTimer);
+    if (this.onSweep) window.removeEventListener("scroll", this.onSweep);
+    if (this.onScroll) window.removeEventListener("scroll", this.onScroll);
+    if (this.onParallax) { window.removeEventListener("scroll", this.onParallax); window.removeEventListener("resize", this.onParallax); }
+    if (this.onPointer) window.removeEventListener("pointermove", this.onPointer);
+    if (this.io) this.io.disconnect();
+    if (this.twinIo) this.twinIo.disconnect();
+    if (this.howRaf) cancelAnimationFrame(this.howRaf);
+    if (this.onHow) { window.removeEventListener("scroll", this.onHow); window.removeEventListener("resize", this.onHow); }
+  }
+
+  initHow() {
+    const nodes = Array.from(document.querySelectorAll("[data-act]"));
+    if (!nodes.length) return;
+    const pick = () => {
+      this.howRaf = 0;
+      const mid = window.innerHeight / 2;
+      let best = 0, bestD = Infinity;
+      nodes.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.top + r.height / 2 - mid);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (best !== this.state.activeStep) this.setState({ activeStep: best });
+    };
+    this.onHow = () => { if (!this.howRaf) this.howRaf = requestAnimationFrame(pick); };
+    window.addEventListener("scroll", this.onHow, { passive: true });
+    window.addEventListener("resize", this.onHow);
+    pick();
+  }
+
+  toggleAt(key, i) {
+    const next = this.state[key].slice();
+    next[i] = !next[i];
+    this.setState({ [key]: next });
+  }
+
+  startMemType() {
+    if (this.memTimer) clearInterval(this.memTimer);
+    const step = () => {
+      const t = COPY[this.state.lang];
+      const lines = t.memory.ui.lines;
+      const full = lines[this.state.memLine % lines.length];
+      const cur = this.state.memTyped;
+      if (this.memErase) {
+        if (cur.length === 0) { this.memErase = false; this.setState({ memLine: this.state.memLine + 1 }); return; }
+        this.setState({ memTyped: cur.slice(0, -1) });
+        return;
+      }
+      if (cur.length >= full.length) {
+        this.memHold = (this.memHold || 0) + 1;
+        if (this.memHold > 22) { this.memHold = 0; this.memErase = true; }
+        return;
+      }
+      this.setState({ memTyped: full.slice(0, cur.length + 1) });
+    };
+    if (this.reduced) { const t = COPY[this.state.lang]; this.setState({ memTyped: t.memory.ui.lines[0] }); return; }
+    this.memTimer = setInterval(step, 58);
+  }
+
+  goAct(i) {
+    const el = document.querySelectorAll("[data-act]")[i];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    window.scrollTo({ top: window.scrollY + rect.top - (window.innerHeight - rect.height) / 2, behavior: "smooth" });
+  }
+
+  initReveal() {
+    if (this.io) this.io.disconnect();
+    const nodes = Array.from(document.querySelectorAll("[data-reveal]"));
+    const show = (el, extra) => {
+      if (el.getAttribute("data-revealed") === "1") return;
+      el.style.transitionDelay = (parseInt(el.getAttribute("data-reveal-delay") || "0", 10) + (extra || 0)) + "ms";
+      el.setAttribute("data-revealed", "1");
+    };
+    if (this.reduced) { nodes.forEach((el) => show(el, 0)); return; }
+    const sweep = () => {
+      const vh = window.innerHeight;
+      nodes.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < vh - 40 && rect.bottom > 0) show(el, 0);
+      });
+    };
+    this.io = new IntersectionObserver((entries) => {
+      entries.filter((e) => e.isIntersecting).forEach((entry, i) => {
+        show(entry.target, i * 90);
+        this.io.unobserve(entry.target);
+      });
+    }, { rootMargin: "-60px 0px" });
+    nodes.forEach((el) => this.io.observe(el));
+    sweep();
+    requestAnimationFrame(sweep);
+    this.onSweep = sweep;
+    window.addEventListener("scroll", sweep, { passive: true });
+    setTimeout(sweep, 600);
+    setTimeout(() => nodes.forEach((el) => show(el, 0)), 3000);
+  }
+
+  initParallax() {
+    if (this.reduced) return;
+    const nodes = Array.from(document.querySelectorAll("[data-parallax]")).map((el) => ({
+      el, amt: parseFloat(el.getAttribute("data-parallax")) || 20,
+    }));
+    if (!nodes.length) return;
+    let queued = false;
+    const apply = () => {
+      queued = false;
+      const vh = window.innerHeight;
+      nodes.forEach((n) => {
+        const rect = n.el.getBoundingClientRect();
+        if (rect.bottom < -200 || rect.top > vh + 200) return;
+        const p = (rect.top + rect.height / 2 - vh / 2) / vh;
+        n.el.style.translate = "0 " + (p * -n.amt).toFixed(2) + "px";
+      });
+    };
+    this.onParallax = () => { if (!queued) { queued = true; requestAnimationFrame(apply); } };
+    apply();
+    window.addEventListener("scroll", this.onParallax, { passive: true });
+    window.addEventListener("resize", this.onParallax);
+  }
+
+  initHero() {
+    const hero = document.querySelector("[data-hero]");
+    const backdrop = document.querySelector("[data-header-backdrop]");
+    if (!hero) return;
+    const shards = Array.from(hero.querySelectorAll("[data-shard]")).map((el) => ({
+      el,
+      par: parseFloat(el.getAttribute("data-par")) || 4,
+      dx: parseFloat(el.getAttribute("data-dx")) || 0,
+      dy: parseFloat(el.getAttribute("data-dy")) || 0,
+    }));
+    const target = { x: 0, y: 0 };
+    const current = { x: 0, y: 0 };
+    let progress = 0;
+
+    this.onScroll = () => {
+      if (backdrop) backdrop.style.opacity = window.scrollY > 24 ? "1" : "0";
+      const rect = hero.getBoundingClientRect();
+      const p = Math.min(Math.max(-rect.top / (window.innerHeight * 0.8), 0), 1);
+      progress = p;
+      hero.style.setProperty("--scroll-progress", p.toFixed(3));
+    };
+    this.onScroll();
+    window.addEventListener("scroll", this.onScroll, { passive: true });
+    if (this.reduced) return;
+
+    this.onPointer = (e) => {
+      const rect = hero.getBoundingClientRect();
+      target.x = (e.clientX - rect.left) / rect.width - 0.5;
+      target.y = (e.clientY - rect.top) / rect.height - 0.5;
+    };
+    window.addEventListener("pointermove", this.onPointer, { passive: true });
+
+    const tick = () => {
+      current.x += (target.x - current.x) * 0.06;
+      current.y += (target.y - current.y) * 0.06;
+      shards.forEach((s) => {
+        const px = current.x * s.par * 2;
+        const py = current.y * s.par * 2;
+        s.el.style.translate = (px + s.dx * progress).toFixed(2) + "px " + (py + s.dy * progress).toFixed(2) + "px";
+      });
+      this.raf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  initParticles() {
+    const canvas = document.querySelector("[data-hero-particles]");
+    const ctx = canvas && canvas.getContext("2d");
+    if (!canvas || !ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let width = 0, height = 0, particles = [];
+    const reduced = this.reduced;
+    const make = () => {
+      particles = Array.from({ length: 36 }, () => ({
+        x: Math.random() * width, y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.06, vy: (Math.random() - 0.5) * 0.06,
+        r: Math.random() * 1.4 + 0.4, o: Math.random() * 0.35 + 0.08,
+      }));
+    };
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      width = rect.width; height = rect.height;
+      canvas.width = width * dpr; canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      make();
+    };
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach((p) => {
+        if (!reduced) { p.x = (p.x + p.vx + width) % width; p.y = (p.y + p.vy + height) % height; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(11,14,20," + (p.o * 0.55).toFixed(3) + ")";
+        ctx.fill();
+      });
+      if (!reduced) this.pRaf = requestAnimationFrame(draw);
+    };
+    resize();
+    draw();
+    this.ro = new ResizeObserver(resize);
+    this.ro.observe(canvas);
+  }
+
+  initTwin() {
+    const stage = document.querySelector("[data-twin]");
+    if (!stage) return;
+    this.twinIo = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) { this.typeDraft(); this.twinIo.unobserve(entry.target); }
+      });
+    }, { rootMargin: "-80px 0px" });
+    this.twinIo.observe(stage);
+  }
+
+  typeDraft(force) {
+    const full = COPY[this.state.lang].twin.draftMessage;
+    if (this.typeTimer) clearInterval(this.typeTimer);
+    if (this.memTimer) clearInterval(this.memTimer);
+    if (this.reduced) { this.setState({ draft: full }); return; }
+    if (!force && this.state.draft) return;
+    let i = 0;
+    this.setState({ draft: "" });
+    this.typeTimer = setInterval(() => {
+      i += 1;
+      this.setState({ draft: full.slice(0, i) });
+      if (i >= full.length) clearInterval(this.typeTimer);
+    }, 22);
+  }
+}
+</script>
+</body>
+</html>
