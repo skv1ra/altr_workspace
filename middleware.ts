@@ -57,12 +57,18 @@ function buildContentSecurityPolicy(nonce: string, pathname: string) {
 export async function middleware(request: NextRequest) {
   const nonce = createNonce();
   const requestId = request.headers.get("x-request-id")?.slice(0, 128) || crypto.randomUUID();
+  const contentSecurityPolicy = buildContentSecurityPolicy(nonce, request.nextUrl.pathname);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("x-request-id", requestId);
+  // Next.js reads the request CSP to discover the nonce and applies it to
+  // framework, hydration, and inline flight-data scripts. Setting the policy
+  // only on the response leaves those scripts unnonced and the rendered page
+  // visible but non-interactive in production.
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
 
   const response = await updateSession(request, requestHeaders);
-  response.headers.set("Content-Security-Policy", buildContentSecurityPolicy(nonce, request.nextUrl.pathname));
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), browsing-topics=()");
