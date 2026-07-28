@@ -42,7 +42,17 @@ function readBundle(): string {
  */
 export function renderHomepageBundle(nonce: string): string {
   const html = readBundle();
-  const withNonce = html.replace("<script>", `<script nonce="${nonce}">`);
+  const withAuthLinks = html.replace(
+    /<a\b[^>]*href=\\"#auth\\"[^>]*>.*?<\\u002Fa>/g,
+    (anchor) =>
+      anchor.replace(
+        'href=\\"#auth\\"',
+        anchor.includes("t.nav.login")
+          ? 'href=\\"/auth?mode=login\\"'
+          : 'href=\\"/auth?mode=register\\"',
+      ),
+  );
+  const withNonce = withAuthLinks.replace("<script>", `<script nonce="${nonce}">`);
   const titleFix = `<script nonce="${nonce}">(function(){function setTitle(){if(document.title!=="Altr")document.title="Altr";}setTitle();new MutationObserver(setTitle).observe(document.documentElement,{childList:true,subtree:true});var n=0;var t=setInterval(function(){setTitle();if(++n>20)clearInterval(t);},250);})();</script>`;
   return withNonce.replace("</body>", `${titleFix}</body>`);
 }
