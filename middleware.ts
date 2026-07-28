@@ -7,11 +7,22 @@ function createNonce() {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function buildContentSecurityPolicy(nonce: string) {
+function buildContentSecurityPolicy(nonce: string, pathname: string) {
   const isProduction = process.env.NODE_ENV === "production";
   // Keep self-hosted Next.js chunks executable on statically rendered pages.
   // `strict-dynamic` would make browsers ignore `self` when those chunks do not carry a runtime nonce.
-  const scriptSrc = ["'self'", `'nonce-${nonce}'`, ...(!isProduction ? ["'unsafe-eval'"] : [])];
+  // The homepage is the one exception: it renders a design export whose
+  // bootstrap script (nonced) creates further <script> elements at runtime
+  // to unpack itself, and those dynamically-created scripts don't carry
+  // their own nonce. `strict-dynamic` extends the bootstrap script's own
+  // trust to scripts *it* creates — scoped to `/` only, everywhere else
+  // keeps the plain nonce-only policy.
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    ...(pathname === "/" ? ["'strict-dynamic'"] : []),
+    ...(!isProduction ? ["'unsafe-eval'"] : []),
+  ];
   const connectSrc = [
     "'self'",
     "https://*.supabase.co",
@@ -46,7 +57,7 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-request-id", requestId);
 
   const response = await updateSession(request, requestHeaders);
-  response.headers.set("Content-Security-Policy", buildContentSecurityPolicy(nonce));
+  response.headers.set("Content-Security-Policy", buildContentSecurityPolicy(nonce, request.nextUrl.pathname));
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), browsing-topics=()");
