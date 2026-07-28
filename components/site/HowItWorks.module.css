@@ -10,14 +10,29 @@
   }
 }
 
-.intro,
-.steps {
+.intro {
   max-width: 800px;
   margin-inline: auto;
 }
 
-.steps {
+.layout {
   margin-top: var(--space-12);
+  max-width: 1320px;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: var(--space-16);
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.steps {
+  max-width: 640px;
 }
 
 .step {
@@ -26,11 +41,15 @@
   gap: var(--space-8);
   align-items: baseline;
   padding-block: var(--space-10);
+  cursor: pointer;
+  transition: opacity var(--motion-slow) var(--ease-altr);
+  opacity: 0.55;
 }
 
-/* Very narrow screens (320px, this prompt's own edge case): the numeral
- * column shrinks its minmax() floor rather than forcing an overflow or a
- * cramped wrap — numeral and heading stay balanced instead of colliding. */
+.stepActive {
+  opacity: 1;
+}
+
 @media (max-width: 400px) {
   .step {
     grid-template-columns: minmax(40px, auto) 1fr;
@@ -44,4 +63,310 @@
   line-height: 1;
   color: rgb(var(--altr-graphite-rgb) / 35%);
   font-variant-numeric: tabular-nums;
+  transition: color var(--motion-fast) var(--ease-altr);
+}
+
+.stepActive .numeral {
+  color: var(--color-iris-violet);
+}
+
+.stageCol {
+  position: sticky;
+  top: 96px;
+}
+
+@media (max-width: 980px) {
+  .stageCol {
+    position: static;
+    margin-top: var(--space-10);
+  }
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3.3;
+  max-height: 76vh;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--edge-hairline);
+  background: linear-gradient(180deg, var(--color-white), var(--color-paper));
+  box-shadow: 0 50px 100px -60px rgb(var(--altr-black-rgb) / 45%);
+  overflow: hidden;
+}
+
+.stageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  height: 54px;
+  border-bottom: 1px solid var(--edge-hairline);
+}
+
+.stageLabel {
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stageIndex {
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--text-heading);
+}
+
+.stageBody {
+  position: relative;
+  height: calc(100% - 54px);
+  padding: clamp(20px, 3vw, 34px);
+}
+
+.panel {
+  position: absolute;
+  inset: clamp(20px, 3vw, 34px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 620ms var(--ease-altr), transform 620ms var(--ease-altr);
+}
+
+.panelActive {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.panelLabel {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.panelLabelDark {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-iris-violet-bright);
+}
+
+.fileList,
+.memList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.fileRow {
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge-hairline);
+  background: var(--color-white);
+  font: inherit;
+  color: inherit;
+  transition: border-color var(--motion-fast) var(--ease-altr), transform var(--motion-fast) var(--ease-altr);
+}
+
+.fileRow:hover {
+  border-color: var(--text-heading);
+  transform: translateX(4px);
+}
+
+.fileCheckbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--edge-hairline);
+  background: transparent;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+
+.fileCheckbox[data-checked="true"] {
+  border-color: var(--color-iris-violet);
+  background: rgb(var(--iris-violet-rgb) / 12%);
+}
+
+.fileCheckbox span {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: transparent;
+}
+
+.fileCheckbox[data-checked="true"] span {
+  background: var(--color-iris-violet);
+}
+
+.fileName {
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileState {
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.memRow {
+  appearance: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge-hairline);
+  background: var(--color-white);
+  font: inherit;
+  color: inherit;
+  transition: border-color var(--motion-fast) var(--ease-altr);
+}
+
+.memRow:hover {
+  border-color: var(--text-heading);
+}
+
+.memText {
+  display: grid;
+  gap: 4px;
+}
+
+.memCategory {
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.memTitle {
+  font-size: 14px;
+  color: var(--text-heading);
+}
+
+.switchTrack {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: rgb(var(--altr-silver-rgb) / 60%);
+  transition: background var(--motion-slow);
+  flex: none;
+}
+
+.switchTrack[data-checked="true"] {
+  background: var(--color-iris-violet);
+}
+
+.switchKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-white);
+  transition: left var(--motion-slow) var(--ease-altr);
+}
+
+.switchTrack[data-checked="true"] .switchKnob {
+  left: 17px;
+}
+
+.incomingBubble {
+  margin: 0;
+  max-width: 40ch;
+  padding: var(--space-4) var(--space-5);
+  border-radius: 14px 14px 14px 4px;
+  border: 1px solid var(--edge-hairline);
+  background: var(--color-white);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.draftWrap {
+  align-self: flex-end;
+  text-align: right;
+  max-width: 42ch;
+  margin-top: var(--space-6);
+}
+
+.draftBubble {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: 14px 14px 4px 14px;
+  background: var(--color-obsidian);
+  color: var(--altr-white);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.verdictRow {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  justify-content: flex-end;
+}
+
+.approveBtn,
+.discardBtn {
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast);
+}
+
+.approveBtn {
+  border: 1px solid var(--color-obsidian);
+  background: var(--color-obsidian);
+  color: var(--color-white);
+}
+
+.approveBtn:hover {
+  background: var(--color-graphite);
+}
+
+.discardBtn {
+  border: 1px solid var(--edge-hairline);
+  background: var(--color-white);
+  color: var(--text-muted);
+}
+
+.discardBtn:hover {
+  border-color: var(--text-heading);
+  color: var(--text-heading);
 }
