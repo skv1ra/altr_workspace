@@ -5,12 +5,12 @@
   min-height: 92vh;
   overflow: hidden;
   /*
-   * Void-black canvas (user-approved): the hero sits on the same pure
-   * black as the rest of the site. The smoky depth from the dark scene
-   * reference survives only as a restrained cool glow in .fogBase — the
-   * ground itself never lifts off #000.
+   * Silver-fog chamber. The base is a cool mid-silver, not the page's
+   * near-white — .fogBase then paints the bright core back on top of it.
+   * That order is what makes the ground read as lit atmosphere with real
+   * depth rather than flat white with a gradient laid over it.
    */
-  background-color: #000000;
+  background-color: #dfe3e8;
   /*
    * Prompt 017: the mobile/desktop shard composition below is driven by
    * this element's own inline size, not the viewport — a plain `@media
@@ -30,12 +30,12 @@
 }
 
 /*
- * Smoky blue-gray volume, matched to the dark reference still: the
- * brightest haze sits center-frame — directly behind the main shard, the
- * way the reference's key light blooms through the smoke there — with a
- * cooler secondary haze upper-left and a dimmer floor wash below. The
- * headline block (left 7%) sits over the darker left slope of that glow,
- * keeping white copy comfortably readable.
+ * Volumetric silver fog. Tuned against a pixel sample of the scene
+ * reference rather than by eye: its ground runs roughly luminance 199-237,
+ * i.e. bright silver throughout with a ~38-level falloff, the haze
+ * thickening toward the lower left rather than the corners. Two white
+ * blooms (one behind the headline, one upper right) sit over a silver base,
+ * with steel layers deepening the floor.
  */
 .fogBase {
   position: absolute;
@@ -43,9 +43,10 @@
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(52% 62% at 52% 42%, rgba(163, 177, 192, 0.2), rgba(163, 177, 192, 0) 70%),
-    radial-gradient(72% 66% at 34% 26%, rgba(122, 136, 152, 0.12), rgba(122, 136, 152, 0) 75%),
-    radial-gradient(90% 72% at 60% 80%, rgba(96, 108, 122, 0.09), rgba(96, 108, 122, 0) 82%);
+    radial-gradient(40% 46% at 26% 34%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(40% 40% at 82% 18%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(55% 50% at 56% 78%, rgba(176, 186, 198, 0.45), rgba(176, 186, 198, 0) 76%),
+    radial-gradient(62% 58% at 8% 96%, rgba(146, 158, 172, 0.8), rgba(146, 158, 172, 0) 76%);
   filter: blur(18px);
   /*
    * Prompt 016 scroll choreography: "fog opacity eases down" over the
@@ -77,7 +78,7 @@
   inset: 0;
   pointer-events: none;
   z-index: 25;
-  background: radial-gradient(65% 60% at 88% 8%, rgba(180, 192, 205, 0.12), rgba(180, 192, 205, 0) 74%);
+  background: radial-gradient(65% 60% at 88% 8%, rgba(198, 206, 214, 0.5), rgba(198, 206, 214, 0) 74%);
 }
 
 .particles {
@@ -90,23 +91,19 @@
 }
 
 /*
- * Edge vignette, matched to the reference still's darkened corners: the
- * frame falls off into deep slate-black all around while the center keeps
- * the smoky glow. Sits above the shard field (24) and below the fog veil
- * (25) so the falloff darkens glass and haze together, exactly like the
- * reference's in-camera vignette.
+ * No corner vignette on the silver theme: the reference's corners sample
+ * as bright as its centre (~232-237), so darkening them would read as a
+ * photographic filter laid over the scene rather than as atmosphere. All
+ * that remains is the bottom blend into the page colour, so the hero meets
+ * the section below it without a seam. Sits above the shard field (24) and
+ * below the fog veil (25).
  */
 .vignette {
   position: absolute;
   inset: 0;
   z-index: 24;
   pointer-events: none;
-  background: radial-gradient(
-    118% 98% at 50% 44%,
-    rgba(0, 0, 0, 0) 52%,
-    rgba(10, 13, 18, 0.32) 78%,
-    rgba(6, 8, 12, 0.6) 100%
-  );
+  background: linear-gradient(to bottom, rgba(244, 246, 247, 0) 80%, rgba(244, 246, 247, 0.5) 100%);
 }
 
 .shard {

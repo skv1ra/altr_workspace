@@ -70,7 +70,10 @@ export function HeroParticles({ className, reducedMotion, maxParticles = 48 }: H
         }
         ctx!.beginPath();
         ctx!.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(255, 255, 255, ${particle.opacity})`;
+        // Steel-grey motes, not white: on the silver fog a white speck is
+        // invisible in the bright core, while a cool mid-grey reads across
+        // the whole range of the ground and over the dark glass alike.
+        ctx!.fillStyle = `rgba(108, 118, 130, ${particle.opacity})`;
         ctx!.fill();
       }
       if (!reducedMotion) frame = requestAnimationFrame(draw);

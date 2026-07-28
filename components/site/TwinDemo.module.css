@@ -32,7 +32,8 @@
   max-width: 85%;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-md);
-  background: rgb(var(--altr-white-rgb) / 6%);
+  border: 1px solid var(--edge-hairline);
+  background: var(--color-white);
 }
 
 .incomingLabel {
@@ -71,21 +72,75 @@
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.04em;
-  color: var(--color-iris-violet);
+  /* --accent-code, not the raw token: `.surface-inverse` re-scopes it to
+     the bright violet, which is what this card's dark ground needs. */
+  color: var(--accent-code);
 }
 
 .draftMessage {
   margin: 10px 0 0;
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--color-bone-white);
+  color: var(--altr-white);
+}
+
+.footerRow {
+  align-self: flex-end;
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
 }
 
 .provenance {
-  align-self: flex-end;
-  margin-top: var(--space-2);
+  margin: 0;
   font-size: 0.75rem;
   font-style: italic;
   color: var(--text-muted);
   opacity: 0.75;
+}
+
+.replayBtn {
+  appearance: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  font-family: var(--font-commit-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-iris-violet);
+  transition: color var(--motion-fast) var(--ease-altr);
+}
+
+.replayBtn:hover {
+  color: var(--text-heading);
+}
+
+.caret {
+  display: inline-block;
+  width: 8px;
+  margin-left: 2px;
+  border-bottom: 2px solid var(--color-iris-violet-bright);
+  animation: twin-caret 1s step-end infinite;
+  vertical-align: baseline;
+}
+
+@keyframes twin-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none !important;
+    opacity: 0 !important;
+  }
 }

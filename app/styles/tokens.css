@@ -1,87 +1,95 @@
 /*
  * Altr design tokens — single source of truth (ADR-009).
- * Theme: "black velvet with violet neon" (Resend-style reference).
- * Pure #000000 canvas, hairline #292d30 borders, white-on-black type,
- * a single violet brand accent reserved for code/identifiers, and
- * status hues reserved for data indicators.
+ * Theme: "silver fog" — a light, atmospheric canvas (never flat white)
+ * with dark glass shards floating in it, graphite reading text, and
+ * hairline silver borders. Dark surfaces still exist as a deliberate
+ * inversion (footer, twin demo, dialogs), not as the default ground.
  * Consumed by tailwind.config.ts via var(...) references; do not duplicate
  * raw values elsewhere.
  */
 
 :root {
-  /* Palette — void black canvas, graphite hairlines, tiered whites. */
-  --color-void-black: #000000;
-  --color-graphite-hairline: #292d30;
+  /* Palette — white / silver / mist / steel / graphite / obsidian. */
   --color-white: #ffffff;
-  --color-bone-white: #f0f0f0;
-  --color-ash-gray: #a1a4a5;
-  --color-smoke-gray: #abafb4;
+  --color-paper: #f4f6f7;
+  --color-silver: #d9dde1;
+  --color-mist: #b9c0c7;
+  --color-steel: #8b939c;
   --color-iron: #6e727a;
   --color-charcoal: #464a4d;
-
-  /* Brand accent — Iris Violet. Belongs to code strings, identifiers and
-     small emphasized phrases; never to buttons or large decorative type. */
-  --color-iris-violet: #9281f7;
-  --color-iris-violet-glow: #baa7ff;
-  --gradient-iris-violet: linear-gradient(
-    to right bottom in oklab,
-    rgb(146, 129, 247) 0%,
-    rgb(154, 84, 220) 100%
-  );
-
-  /* Status / data-indicator hues — never UI chrome. */
-  --color-signal-blue: #3b9eff;
-  --color-sky-blue: #70b8ff;
-  --color-pulse-green: #3ad389;
-  --color-alarm-red: #ff9592;
-  --color-crimson: #ff6465;
-  --color-amber: #ffca16;
-  --color-amber-glow: #ffd60a;
-
-  /* Surfaces */
-  --surface-void: #000000;
-  --surface-lift: #0b0e14;
-  --surface-backdrop-blur: rgb(0 0 0 / 95%);
-  --gradient-surface: linear-gradient(rgb(27, 27, 27), rgb(3, 3, 3));
+  --color-graphite: #3a3f45;
+  --color-obsidian: #15171a;
+  --color-void-black: #0a0b0c;
 
   /*
-   * Legacy role aliases (--altr-*). The original light theme named these
-   * after literal colors; on the black canvas they are kept as *roles* so
-   * every existing consumer retains a correct contrast pairing:
-   *   --altr-white    → primary text / brightest ink (bone white)
-   *   --altr-silver   → hairline borders (graphite hairline)
-   *   --altr-mist     → muted text (ash gray)
-   *   --altr-graphite → primary reading color (bone white)
-   *   --altr-obsidian → lifted panel surface
-   *   --altr-black    → the void canvas
+   * Brand accent — Iris Violet. Reserved for identifiers and short
+   * emphasized strings, never buttons or large display type. Two values:
+   * the bright original for dark surfaces, a deepened one that clears
+   * WCAG AA as text on the light canvas (see contrast.test.ts).
    */
-  --altr-white: #f0f0f0;
-  --altr-silver: #292d30;
-  --altr-mist: #a1a4a5;
-  --altr-graphite: #f0f0f0;
-  --altr-obsidian: #0b0e14;
-  --altr-black: #000000;
+  --color-iris-violet: #5b4bc4;
+  --color-iris-violet-bright: #9281f7;
+  --color-iris-violet-glow: #baa7ff;
+
+  /*
+   * Status / data-indicator hues — never UI chrome. Tuned for legibility
+   * as text on the light canvas; the -bright variants pair with the dark
+   * inverse surfaces.
+   */
+  --color-signal-blue: #1668c4;
+  --color-sky-blue: #2f7fd0;
+  --color-pulse-green: #1a7f4b;
+  --color-alarm-red: #b3261e;
+  --color-alarm-red-bright: #ff9592;
+  --color-crimson: #c0342f;
+  --color-amber: #8a6200;
+
+  /* Surfaces */
+  --surface-paper: var(--color-paper);
+  --surface-lift: var(--color-white);
+  --surface-backdrop-blur: rgb(244 246 247 / 82%);
+
+  /*
+   * Role aliases (--altr-*), the names the component layer consumes:
+   *   --altr-white    → the page's brightest ground
+   *   --altr-silver   → hairline borders
+   *   --altr-mist     → atmospheric haze / muted ink on dark surfaces
+   *   --altr-graphite → primary reading color
+   *   --altr-obsidian → inverted (dark) surfaces
+   *   --altr-black    → deepest ink
+   */
+  --altr-white: #f4f6f7;
+  --altr-silver: #d9dde1;
+  --altr-mist: #b9c0c7;
+  --altr-graphite: #3a3f45;
+  --altr-obsidian: #15171a;
+  --altr-black: #0a0b0c;
 
   /* RGB triplets for opacity composition (Tailwind rgb(var(...) / <alpha>) pattern). */
-  --altr-white-rgb: 240 240 240;
-  --altr-silver-rgb: 41 45 48;
-  --altr-mist-rgb: 161 164 165;
-  --altr-graphite-rgb: 240 240 240;
-  --altr-obsidian-rgb: 11 14 20;
-  --altr-black-rgb: 0 0 0;
-  --iris-violet-rgb: 146 129 247;
+  --altr-white-rgb: 244 246 247;
+  --altr-silver-rgb: 217 221 225;
+  --altr-mist-rgb: 185 192 199;
+  --altr-graphite-rgb: 58 63 69;
+  --altr-obsidian-rgb: 21 23 26;
+  --altr-black-rgb: 10 11 12;
+  --iris-violet-rgb: 91 75 196;
 
   /* Semantic aliases */
-  --surface-page: var(--color-void-black);
-  --surface-inverse: var(--surface-lift);
-  --text-heading: var(--color-white);
-  --text-primary: var(--color-bone-white);
-  /* Ash gray on black measures ~7.0:1 — comfortably above WCAG AA body
-     text (4.5:1); see tests/components/contrast.test.ts. */
-  --text-muted: var(--color-ash-gray);
-  --text-link: var(--color-smoke-gray);
+  --surface-page: var(--color-paper);
+  --surface-inverse: var(--color-obsidian);
+  --text-heading: var(--color-obsidian);
+  --text-primary: var(--color-graphite);
+  /*
+   * --altr-mist on the paper ground measures ~1.7:1 — far below the 4.5:1
+   * WCAG AA needs for body text — so muted text is graphite at 78%, which
+   * composites to ~#63676c over the page (~5.3:1). `.surface-inverse`
+   * (materials.css) overrides this back to plain --altr-mist, which reads
+   * ~9.8:1 against obsidian. See tests/components/contrast.test.ts.
+   */
+  --text-muted: rgb(var(--altr-graphite-rgb) / 78%);
+  --text-link: var(--color-graphite);
   --accent-code: var(--color-iris-violet);
-  --edge-hairline: var(--color-graphite-hairline);
+  --edge-hairline: var(--color-silver);
 
   /* Fluid type scale (clamp: min, fluid, max). Display tops out at the
      96px editorial-serif hero size; headings at the 56px compressed sans. */
@@ -121,22 +129,25 @@
   --space-20: 5rem;
   --space-24: 6rem;
 
-  /* Radii — a two-value scale: 6px for buttons/badges/inputs, 16px for
-     cards and code windows; 24px only for large panels. */
+  /* Radii — 6px for buttons/badges/inputs, 16px for cards and panels. */
   --radius-sm: 6px;
   --radius-md: 6px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Elevation — 1px hairline rings against the void, never drop shadows. */
+  /*
+   * Elevation — soft, large-radius, low-opacity shadows. On a light ground
+   * a hairline ring alone reads as a hard outline, so depth comes back to
+   * diffuse shadow, with hairlines used for structural dividers.
+   */
   --shadow-hairline: 0 1px 0 0 rgb(var(--altr-silver-rgb) / 100%);
-  --shadow-soft: 0 0 0 1px rgb(var(--altr-silver-rgb) / 100%);
-  --shadow-elevated: 0 0 0 1px rgb(var(--altr-silver-rgb) / 100%);
-  --shadow-ring-subtle: rgba(176, 199, 217, 0.145) 0px 0px 0px 1px;
+  --shadow-soft: 0 24px 80px rgb(var(--altr-black-rgb) / 8%);
+  --shadow-elevated: 0 12px 40px rgb(var(--altr-black-rgb) / 12%);
+  --shadow-ring-subtle: rgba(58, 63, 69, 0.12) 0px 0px 0px 1px;
 
   /* Motion — restrained: short ease-out transitions. */
-  --motion-fast: 150ms;
+  --motion-fast: 180ms;
   --motion-slow: 600ms;
   --motion-drift: 24s;
   --ease-altr: cubic-bezier(0.22, 1, 0.36, 1);

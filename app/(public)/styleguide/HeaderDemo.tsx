@@ -30,7 +30,7 @@ export function HeaderDemo() {
   return (
     <div className="space-y-6">
       <div
-        className="relative h-72 overflow-hidden rounded-lg hairline-top hairline-bottom bg-altr-black"
+        className="relative h-72 overflow-hidden rounded-lg hairline-top hairline-bottom bg-altr-white"
         style={{ transform: "translateZ(0)" }}
       >
         <Header />
