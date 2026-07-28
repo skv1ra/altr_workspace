@@ -48,9 +48,22 @@ describe("AppNav", () => {
     expect(within(sheet).getByText("max@example.com")).toBeInTheDocument();
   });
 
-  it("home wordmark links to /", () => {
+  it("signed-in wordmark stays inside the app", () => {
     render(<AppNav name="Max" email="max@example.com" plan="free" />);
-    expect(screen.getAllByRole("link", { name: "Altr" })[0]).toHaveAttribute("href", "/");
+    expect(screen.getAllByRole("link", { name: "Altr" })[0]).toHaveAttribute("href", "/dashboard");
+  });
+
+  it("links every shipped account area from both desktop and mobile navigation", async () => {
+    render(<AppNav name="Max" email="max@example.com" plan="free" />);
+    const rail = screen.getByRole("navigation", { name: "Product navigation" });
+    for (const [name, href] of [
+      ["Assistants", "/assistants"],
+      ["Imports", "/import-conversations"],
+      ["Billing", "/billing"],
+      ["Privacy", "/privacy-center"],
+    ]) {
+      expect(within(rail).getByRole("link", { name })).toHaveAttribute("href", href);
+    }
   });
 
   it("030 — Settings is now a real destination, active only on its own route", () => {

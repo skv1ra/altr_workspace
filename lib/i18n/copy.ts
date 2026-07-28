@@ -6,7 +6,7 @@ export const sharedCopy = {
     // product/pricing/menu/closeMenu/language were already correct for the
     // header's own needs and are reused as-is; the signed-in state reuses
     // common.backDashboard ("Dashboard") rather than adding a duplicate key.
-    nav: { product: "Product", memory: "Memory", assistants: "Assistants", pricing: "Pricing", profile: "Profile", menu: "Open menu", closeMenu: "Close menu", language: "Language", howItWorks: "How it works", login: "Log in", createAltr: "Create your Altr", menuTitle: "Menu" },
+    nav: { product: "Product", memory: "Memory", assistants: "Assistants", imports: "Imports", billing: "Billing", privacy: "Privacy", pricing: "Pricing", profile: "Profile", menu: "Open menu", closeMenu: "Close menu", language: "Language", howItWorks: "How it works", login: "Log in", createAltr: "Create your Altr", menuTitle: "Menu" },
     common: { loading: "Loading", save: "Save", cancel: "Cancel", close: "Close", error: "Something went wrong.", backDashboard: "Dashboard" },
     cookie: {
       bannerTitle: "Your privacy controls",
@@ -857,7 +857,7 @@ export const sharedCopy = {
     },
   },
   UA: {
-    nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
+    nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", imports: "Імпорти", billing: "Оплата", privacy: "Приватність", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
     common: { loading: "Завантаження", save: "Зберегти", cancel: "Скасувати", close: "Закрити", error: "Сталася помилка.", backDashboard: "Кабінет" },
     cookie: {
       bannerTitle: "Твої налаштування приватності",

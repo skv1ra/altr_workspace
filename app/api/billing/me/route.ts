@@ -56,6 +56,6 @@ export async function GET() {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "BILLING_ME_FAILED";
-    return NextResponse.json({ error: message }, { status: message === "UNAUTHORIZED" ? 401 : 500 });
+    return NextResponse.json({ error: message }, { status: message === "AUTH_REQUIRED" ? 401 : 500 });
   }
 }

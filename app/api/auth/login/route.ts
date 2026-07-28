@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
     const input = loginSchema.parse(await request.json());
     await assertAuthRateLimit("login", getRequestIdentity(request, input.email));
 
-    const supabase = createSupabaseServerClient();
+    const response = NextResponse.json({ ok: true, next: "/dashboard" });
+    const supabase = createSupabaseServerClient(response);
     const { data, error } = await supabase.auth.signInWithPassword({ email: input.email, password: input.password });
     if (error || !data.user) return NextResponse.json({ error: GENERIC_ERROR }, { status: 401 });
 
@@ -21,14 +22,6 @@ export async function POST(request: NextRequest) {
       metadata: { provider: "password" },
     });
 
-    const response = NextResponse.json({ ok: true, next: "/legacy-migration" });
-    response.cookies.set("altr_legacy_review", "pending", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
     return response;
   } catch (error) {
     const status = error instanceof Error && error.message === "RATE_LIMITED" ? 429 : 400;

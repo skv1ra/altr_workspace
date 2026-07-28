@@ -1,6 +1,6 @@
 "use client";
 
-import { BrainCircuit, LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon } from "lucide-react";
+import { BrainCircuit, Bot, CreditCard, LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon, ShieldCheck, Upload } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -37,6 +37,10 @@ function useDestinations(): Destination[] {
   return [
     { href: "/dashboard", label: t.common.backDashboard, icon: LayoutDashboard },
     { href: "/memory", label: t.nav.memory, icon: BrainCircuit },
+    { href: "/assistants", label: t.nav.assistants, icon: Bot },
+    { href: "/import-conversations", label: t.nav.imports, icon: Upload },
+    { href: "/billing", label: t.nav.billing, icon: CreditCard },
+    { href: "/privacy-center", label: t.nav.privacy, icon: ShieldCheck },
     { href: "/settings", label: t.settings.heading, icon: SettingsIcon },
   ];
 }
@@ -85,7 +89,7 @@ export function AppNav({ name, email, plan }: AppNavProps) {
   return (
     <>
       <aside className={styles.rail}>
-        <Link href="/" className={styles.wordmark}>
+        <Link href="/dashboard" className={styles.wordmark}>
           Altr
         </Link>
         <nav aria-label="Product navigation">
@@ -95,7 +99,7 @@ export function AppNav({ name, email, plan }: AppNavProps) {
       </aside>
 
       <div className={styles.mobileBar}>
-        <Link href="/" className={styles.wordmark}>
+        <Link href="/dashboard" className={styles.wordmark}>
           Altr
         </Link>
         <button

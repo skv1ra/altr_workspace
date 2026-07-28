@@ -5,10 +5,11 @@ import { safeRedirectPath } from "@/lib/supabase/middleware";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  const next = safeRedirectPath(request.nextUrl.searchParams.get("next"), "/legacy-migration");
+  const next = safeRedirectPath(request.nextUrl.searchParams.get("next"), "/dashboard");
   if (!code) return NextResponse.redirect(new URL("/auth?mode=login&error=callback", request.url));
 
-  const supabase = createSupabaseServerClient();
+  const response = NextResponse.redirect(new URL(next, request.url));
+  const supabase = createSupabaseServerClient(response);
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) return NextResponse.redirect(new URL("/auth?mode=login&error=callback", request.url));
 
@@ -19,13 +20,5 @@ export async function GET(request: NextRequest) {
     updated_at: new Date().toISOString(),
   });
 
-  const response = NextResponse.redirect(new URL(next, request.url));
-  response.cookies.set("altr_legacy_review", "pending", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
   return response;
 }

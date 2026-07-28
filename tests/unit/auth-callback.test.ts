@@ -47,19 +47,19 @@ describe("auth callback route", () => {
     expect(response.headers.get("location")).toBe("https://altr.example/auth?mode=login&error=callback");
   });
 
-  it("email-confirm / OAuth shape: on a valid code, upserts the profile, sets the legacy-review cookie, and redirects to /legacy-migration", async () => {
+  it("email-confirm / OAuth shape: on a valid code, upserts the profile and redirects into the app", async () => {
     exchangeCodeForSession.mockResolvedValue({
       data: { user: { id: "u1", email: "real@example.com", user_metadata: { full_name: "Real User" } } },
       error: null,
     });
 
-    const response = await GET(requestFor("/auth/callback?code=good&next=/legacy-migration"));
+    const response = await GET(requestFor("/auth/callback?code=good&next=/dashboard"));
 
-    expect(response.headers.get("location")).toBe("https://altr.example/legacy-migration");
+    expect(response.headers.get("location")).toBe("https://altr.example/dashboard");
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: "u1", email: "real@example.com", name: "Real User" }),
     );
-    expect(response.cookies.get("altr_legacy_review")?.value).toBe("pending");
+    expect(response.cookies.get("altr_legacy_review")).toBeUndefined();
   });
 
   it("recovery shape: on a valid code, redirects to the caller-supplied /auth/reset-password next path", async () => {
@@ -73,7 +73,7 @@ describe("auth callback route", () => {
     expect(response.headers.get("location")).toBe("https://altr.example/auth/reset-password");
   });
 
-  it("rejects an off-origin next param, falling back to /legacy-migration instead of trusting it", async () => {
+  it("rejects an off-origin next param, falling back to /dashboard instead of trusting it", async () => {
     exchangeCodeForSession.mockResolvedValue({
       data: { user: { id: "u1", email: "real@example.com", user_metadata: {} } },
       error: null,
@@ -81,6 +81,6 @@ describe("auth callback route", () => {
 
     const response = await GET(requestFor("/auth/callback?code=good&next=https://evil.example/phish"));
 
-    expect(response.headers.get("location")).toBe("https://altr.example/legacy-migration");
+    expect(response.headers.get("location")).toBe("https://altr.example/dashboard");
   });
 });

@@ -41,7 +41,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "yarn start -p 3000",
+    command: "npm start -- -p 3000",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
