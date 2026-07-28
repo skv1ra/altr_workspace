@@ -10,4 +10,5 @@ end;
 $$;
 
 create index if not exists altr_consents_user_id_idx on public.altr_consents(user_id);
-create index if not exists altr_conversation_imports_user_id_idx on public.altr_conversation
+create index if not exists altr_conversation_imports_user_id_idx
+  on public.altr_conversation_imports(user_id);
