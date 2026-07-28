@@ -13,7 +13,12 @@ describe("phase 9 security hardening", () => {
     expect(middleware).toContain("Referrer-Policy");
     expect(middleware).toContain("Permissions-Policy");
     expect(middleware).toContain("'nonce-${nonce}'");
-    expect(middleware).toContain("!isProduction ? [\"'unsafe-eval'\"] : []");
+    // 'unsafe-eval' is scoped to the homepage route only (its Claude
+    // Design bundle compiles its own logic via `new Function(...)`), not
+    // a blanket production allowance — everywhere else keeps the plain
+    // nonce-only policy.
+    expect(middleware).toContain('pathname === "/" ? ["\'strict-dynamic\'", "\'unsafe-eval\'"] : []');
+    expect(middleware).toContain("!isProduction && pathname !== \"/\" ? [\"'unsafe-eval'\"] : []");
   });
 
   it("uses an atomic persistent limiter", () => {

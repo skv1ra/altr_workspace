@@ -16,12 +16,17 @@ function buildContentSecurityPolicy(nonce: string, pathname: string) {
   // to unpack itself, and those dynamically-created scripts don't carry
   // their own nonce. `strict-dynamic` extends the bootstrap script's own
   // trust to scripts *it* creates — scoped to `/` only, everywhere else
-  // keeps the plain nonce-only policy.
+  // keeps the plain nonce-only policy. That runtime also compiles its own
+  // component logic from a string via `new Function(...)` (its own
+  // interpreter, not user input — the string comes from the same static,
+  // build-time bundle file, never from a request), which needs
+  // `'unsafe-eval'` too; scoped to `/` in production for the same reason,
+  // matching what non-production already had unconditionally.
   const scriptSrc = [
     "'self'",
     `'nonce-${nonce}'`,
-    ...(pathname === "/" ? ["'strict-dynamic'"] : []),
-    ...(!isProduction ? ["'unsafe-eval'"] : []),
+    ...(pathname === "/" ? ["'strict-dynamic'", "'unsafe-eval'"] : []),
+    ...(!isProduction && pathname !== "/" ? ["'unsafe-eval'"] : []),
   ];
   const connectSrc = [
     "'self'",
