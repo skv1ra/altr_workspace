@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse,type NextRequest } from "next/server";
 import { e2eMocksEnabled,getE2EIdentity } from "@/lib/testing/e2e-auth";
+import { normalizeSupabaseProjectUrl } from "@/lib/supabase/url";
 const pages=["/dashboard","/memory","/assistants","/import-conversations","/billing","/payment/success","/legacy-migration"];
 const publicApi=["/api/auth/","/api/webhooks/","/api/version","/api/health","/api/dev/"];
 const protectedPath=(p:string)=>pages.some(x=>p===x||p.startsWith(`${x}/`))||(p.startsWith("/api/")&&!publicApi.some(x=>p.startsWith(x)));
@@ -9,7 +10,8 @@ function redirect(request:NextRequest,p:string){if(p.startsWith("/api/"))return 
 export async function updateSession(request:NextRequest,requestHeaders=new Headers(request.headers)){
  let response=NextResponse.next({request:{headers:requestHeaders}});const p=request.nextUrl.pathname;
  if(e2eMocksEnabled()){if(getE2EIdentity(request.headers)){response.headers.set("Cache-Control","private, no-store");return response;}return protectedPath(p)?redirect(request,p):response;}
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!url||!key)return protectedPath(p)?redirect(request,p):response;
+ const rawUrl=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;if(!rawUrl||!key)return protectedPath(p)?redirect(request,p):response;
+ const url=normalizeSupabaseProjectUrl(rawUrl);
  const supabase=createServerClient(url,key,{cookies:{getAll:()=>request.cookies.getAll(),setAll(values){values.forEach(({name,value})=>request.cookies.set(name,value));response=NextResponse.next({request:{headers:requestHeaders}});values.forEach(({name,value,options})=>response.cookies.set(name,value,options));}}});
  const {data}=await supabase.auth.getUser();if(!data.user&&protectedPath(p))return redirect(request,p);
  if(data.user&&request.cookies.get("altr_legacy_review")?.value==="pending"&&protectedPath(p)&&p!=="/legacy-migration")return NextResponse.redirect(new URL("/legacy-migration",request.url));

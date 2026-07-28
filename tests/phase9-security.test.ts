@@ -27,6 +27,13 @@ describe("phase 9 security hardening", () => {
     expect(middleware).toContain("!isProduction && pathname !== \"/\" ? [\"'unsafe-eval'\"] : []");
   });
 
+  it("normalizes copied Supabase endpoint URLs before creating clients", () => {
+    const env = read("lib/env.ts");
+    const middleware = read("lib/supabase/middleware.ts");
+    expect(env).toContain("normalizeSupabaseProjectUrl");
+    expect(middleware).toContain("normalizeSupabaseProjectUrl(rawUrl)");
+  });
+
   it("uses an atomic persistent limiter", () => {
     const limiter = read("lib/auth/rate-limit.ts");
     const migration = read("supabase/migrations/20260715150000_phase_9_atomic_rate_limiting.sql");

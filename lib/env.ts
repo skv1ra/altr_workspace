@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { normalizeSupabaseProjectUrl } from "@/lib/supabase/url";
+
+const supabaseUrl = z.string().url().transform(normalizeSupabaseProjectUrl);
 
 const serverSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   LEMONSQUEEZY_API_KEY: z.string().min(20),
@@ -19,7 +22,7 @@ const serverSchema = z.object({
 
 const publicSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
 });
 
