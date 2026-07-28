@@ -9,6 +9,11 @@ import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
 import styles from "./page.module.css";
 
+// This page is entirely client-interactive. Rendering it per request lets
+// Next.js apply the request CSP nonce to its hydration scripts; a prerendered
+// copy is visible in production but its buttons cannot hydrate.
+export const dynamic = "force-dynamic";
+
 const DONE_KEY = "altr_legacy_migration_completed_v1";
 const LEGACY_PATTERN = /^(altr|altr_|altr-)/i;
 type LegacyEntry = { key: string; value: unknown; raw: string };
