@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     let refreshToken = token.refresh_token;
     if (!refreshToken && oldMetadata.oauth) {
       try {
-        refreshToken = decryptGmailTokens(oldMetadata.oauth).refreshToken;
+        refreshToken = (await decryptGmailTokens(oldMetadata.oauth)).refreshToken;
       } catch {
         refreshToken = undefined;
       }
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
       scopes,
       metadata: {
         ...oldMetadata,
-        oauth: encryptGmailTokens(bundle),
+        oauth: await encryptGmailTokens(bundle),
         gmail: { historyId: profile.historyId ?? null },
       },
       connected_at: now,

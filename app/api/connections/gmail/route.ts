@@ -26,7 +26,7 @@ export async function DELETE(request: NextRequest) {
     const metadata = record(connection.data.metadata);
     if (metadata.oauth) {
       try {
-        const tokens = decryptGmailTokens(metadata.oauth);
+        const tokens = await decryptGmailTokens(metadata.oauth);
         await revokeGmailToken(tokens.refreshToken || tokens.accessToken);
       } catch {
         // The local connection is still revoked even if Google already invalidated the token.

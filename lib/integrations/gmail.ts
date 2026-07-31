@@ -2,6 +2,7 @@ import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { getAppUrl } from "@/lib/env";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const configSchema = z.object({
   clientId: z.string().min(20),
@@ -39,25 +40,40 @@ export type EncryptedGmailTokens = {
   ciphertext: string;
 };
 
-export function getGmailConfig() {
-  return configSchema.parse({
+type GmailConfig = z.infer<typeof configSchema>;
+let configPromise: Promise<GmailConfig> | null = null;
+
+async function loadGmailConfig(): Promise<GmailConfig> {
+  const fromEnvironment = configSchema.safeParse({
     clientId: process.env.GMAIL_OAUTH_CLIENT_ID,
     clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET,
     redirectUri: process.env.GMAIL_OAUTH_REDIRECT_URI ?? `${getAppUrl()}/api/connections/gmail/callback`,
     encryptionKey: process.env.GMAIL_TOKEN_ENCRYPTION_KEY,
   });
+  if (fromEnvironment.success) return fromEnvironment.data;
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("altr_gmail_oauth_config");
+  if (error) throw new Error("GMAIL_CONFIG_UNAVAILABLE");
+  return configSchema.parse(data);
 }
 
-function encryptionKey() {
-  const raw = getGmailConfig().encryptionKey;
+export function getGmailConfig() {
+  configPromise ??= loadGmailConfig();
+  return configPromise;
+}
+
+function encryptionKey(config: GmailConfig) {
+  const raw = config.encryptionKey;
   const key = /^[a-f0-9]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
   if (key.length !== 32) throw new Error("GMAIL_ENCRYPTION_KEY_INVALID");
   return key;
 }
 
-export function encryptGmailTokens(tokens: GmailTokenBundle): EncryptedGmailTokens {
+export async function encryptGmailTokens(tokens: GmailTokenBundle): Promise<EncryptedGmailTokens> {
+  const config = await getGmailConfig();
   const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(config), iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(tokens), "utf8"), cipher.final()]);
   return {
     version: 1,
@@ -67,14 +83,15 @@ export function encryptGmailTokens(tokens: GmailTokenBundle): EncryptedGmailToke
   };
 }
 
-export function decryptGmailTokens(value: unknown): GmailTokenBundle {
+export async function decryptGmailTokens(value: unknown): Promise<GmailTokenBundle> {
+  const config = await getGmailConfig();
   const encrypted = z.object({
     version: z.literal(1),
     iv: z.string().min(1),
     tag: z.string().min(1),
     ciphertext: z.string().min(1),
   }).parse(value);
-  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(encrypted.iv, "base64url"));
+  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(config), Buffer.from(encrypted.iv, "base64url"));
   decipher.setAuthTag(Buffer.from(encrypted.tag, "base64url"));
   const plaintext = Buffer.concat([
     decipher.update(Buffer.from(encrypted.ciphertext, "base64url")),
@@ -107,8 +124,8 @@ export function gmailStateMatches(expected: string | undefined, received: string
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-export function gmailAuthorizationUrl(state: string, challenge: string) {
-  const config = getGmailConfig();
+export async function gmailAuthorizationUrl(state: string, challenge: string) {
+  const config = await getGmailConfig();
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.search = new URLSearchParams({
     client_id: config.clientId,
@@ -143,7 +160,7 @@ async function requestTokens(parameters: URLSearchParams) {
 }
 
 export async function exchangeGmailCode(code: string, verifier: string) {
-  const config = getGmailConfig();
+  const config = await getGmailConfig();
   const token = await requestTokens(new URLSearchParams({
     code,
     code_verifier: verifier,
@@ -156,7 +173,7 @@ export async function exchangeGmailCode(code: string, verifier: string) {
 }
 
 export async function refreshGmailTokens(tokens: GmailTokenBundle): Promise<GmailTokenBundle> {
-  const config = getGmailConfig();
+  const config = await getGmailConfig();
   const token = await requestTokens(new URLSearchParams({
     refresh_token: tokens.refreshToken,
     client_id: config.clientId,
@@ -172,9 +189,9 @@ export async function refreshGmailTokens(tokens: GmailTokenBundle): Promise<Gmai
 }
 
 export async function gmailAccessToken(encrypted: unknown) {
-  let tokens = decryptGmailTokens(encrypted);
+  let tokens = await decryptGmailTokens(encrypted);
   if (tokens.expiresAt <= Date.now() + 60_000) tokens = await refreshGmailTokens(tokens);
-  return { accessToken: tokens.accessToken, tokens, encrypted: encryptGmailTokens(tokens) };
+  return { accessToken: tokens.accessToken, tokens, encrypted: await encryptGmailTokens(tokens) };
 }
 
 export async function getGmailProfile(accessToken: string) {

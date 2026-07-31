@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     await assertAuthRateLimit("connection_write", getRequestIdentity(request, user.id));
     const state = createGmailState();
     const pkce = createGmailPkce();
-    const response = NextResponse.redirect(gmailAuthorizationUrl(state, pkce.challenge));
+    const response = NextResponse.redirect(await gmailAuthorizationUrl(state, pkce.challenge));
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

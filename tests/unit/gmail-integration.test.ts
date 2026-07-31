@@ -21,9 +21,9 @@ beforeEach(() => {
 });
 
 describe("Gmail OAuth security", () => {
-  it("requests read-only Gmail access with offline refresh and PKCE", () => {
+  it("requests read-only Gmail access with offline refresh and PKCE", async () => {
     const pkce = createGmailPkce();
-    const url = gmailAuthorizationUrl("state-123", pkce.challenge);
+    const url = await gmailAuthorizationUrl("state-123", pkce.challenge);
 
     expect(url.origin).toBe("https://accounts.google.com");
     expect(url.searchParams.get("access_type")).toBe("offline");
@@ -33,17 +33,17 @@ describe("Gmail OAuth security", () => {
     expect(url.searchParams.get("redirect_uri")).toBe("https://altr.example/api/connections/gmail/callback");
   });
 
-  it("encrypts provider tokens with authenticated encryption before persistence", () => {
+  it("encrypts provider tokens with authenticated encryption before persistence", async () => {
     const value = {
       accessToken: "access-token",
       refreshToken: "refresh-token",
       expiresAt: 123456789,
       scope: ["gmail.readonly"],
     };
-    const encrypted = encryptGmailTokens(value);
+    const encrypted = await encryptGmailTokens(value);
 
     expect(encrypted.ciphertext).not.toContain("refresh-token");
-    expect(decryptGmailTokens(encrypted)).toEqual(value);
+    expect(await decryptGmailTokens(encrypted)).toEqual(value);
     expect(gmailStateMatches("same-state", "same-state")).toBe(true);
     expect(gmailStateMatches("same-state", "other-state")).toBe(false);
   });
