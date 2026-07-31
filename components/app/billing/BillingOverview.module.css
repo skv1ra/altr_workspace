@@ -37,6 +37,7 @@
   margin-top: var(--space-2);
   padding: 2px var(--space-2);
   border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-full);
   font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
@@ -56,6 +57,7 @@
   margin-top: var(--space-6);
   padding: var(--space-5);
   border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-lg);
 }
 
 .alertHeading {

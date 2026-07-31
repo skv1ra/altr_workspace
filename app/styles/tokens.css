@@ -77,6 +77,10 @@
   /* Semantic aliases */
   --surface-page: var(--color-paper);
   --surface-inverse: var(--color-obsidian);
+  /* Re-scoped inside `.surface-inverse` (materials.css) so a nested
+     `position: sticky` element (e.g. a settings save bar) can match
+     whichever ground it's actually sitting on instead of hardcoding one. */
+  --surface-current-bg: var(--surface-page);
   --text-heading: var(--color-obsidian);
   --text-primary: var(--color-graphite);
   /*

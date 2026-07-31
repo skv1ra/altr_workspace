@@ -54,7 +54,7 @@
   margin-top: var(--space-10);
   padding-block: var(--space-6);
   border-top: 1px solid var(--edge-hairline);
-  background: var(--surface-inverse);
+  background: var(--surface-current-bg);
 }
 
 .langSwitch {

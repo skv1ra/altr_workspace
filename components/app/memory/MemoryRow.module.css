@@ -1,10 +1,19 @@
+/* Card treatment (Altr App v3) — each memory in its own hairline-bordered,
+   rounded panel instead of a plain divided row, matching DashboardHome's
+   own `.statCard`/`.hero` card language. */
 .row {
   display: grid;
   grid-template-columns: minmax(120px, 200px) 1fr;
   gap: var(--space-8);
-  padding-block: var(--space-8);
-  border-top: 1px solid var(--edge-hairline);
-  transition: opacity var(--motion-fast) var(--ease-altr);
+  padding: var(--space-6);
+  margin-top: var(--space-4);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-lg);
+  transition: opacity var(--motion-fast) var(--ease-altr), border-color var(--motion-fast) var(--ease-altr);
+}
+
+.row:first-child {
+  margin-top: 0;
 }
 
 @media (max-width: 640px) {
