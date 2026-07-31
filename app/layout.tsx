@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { Bricolage_Grotesque, Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { LocaleHtmlSync } from "@/components/LocaleHtmlSync";
 import { CookieConsent } from "@/components/legal/CookieConsent";
@@ -24,6 +24,19 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   weight: ["400"],
   variable: "--font-commit-mono",
+  display: "swap",
+});
+
+// Altr App v3 (Claude Design export) headings — scoped to the (app)
+// section only via --v3-serif in materials.css; every other page keeps
+// using --font-domaine (Playfair) untouched.
+// No Cyrillic glyphs in this family on Google Fonts — the `--v3-serif`
+// fallback stack (ui-sans-serif, system-ui, sans-serif) covers Ukrainian
+// headings automatically where this font has no coverage.
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -64,7 +77,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable} ${bricolage.variable}`}
     >
       <body>
         <LocaleHtmlSync />

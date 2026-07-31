@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
-import { Surface } from "@/components/ui/Surface";
 import { TextField } from "@/components/ui/TextField";
 import { toast } from "@/components/ui/Toast";
 import { getSharedCopy } from "@/lib/i18n/copy";
@@ -215,10 +214,13 @@ export function TwinDraftWorkspace() {
 
   return (
     <div className={styles.wrap}>
-      <h2 className={styles.heading}>{t.composeHeading}</h2>
-      <p className={styles.intro}>{t.composeIntro}</p>
+      <div className={`v3-panel ${styles.composePanel}`}>
+        <div className={styles.headRow}>
+          <h2 className="v3-h2">{t.composeHeading}</h2>
+        </div>
+        <p className={styles.intro}>{t.composeIntro}</p>
 
-      <div className={styles.composeFields}>
+        <div className={styles.composeFields}>
         <Field label={t.incomingMessageLabel} help={`${incomingMessage.length}/${INCOMING_MAX_LENGTH}`} error={incomingError}>
           {({ id, describedBy }) => (
             <textarea
@@ -319,7 +321,7 @@ export function TwinDraftWorkspace() {
       )}
 
       {status.kind === "ready" && (
-        <Surface variant="inverse" className={styles.reviewPanel}>
+        <div className={styles.reviewPanel}>
           <span className={styles.draftBadge}>{t.draftBadge}</span>
 
           <div className={styles.draftCard}>
@@ -387,8 +389,9 @@ export function TwinDraftWorkspace() {
               </>
             )}
           </div>
-        </Surface>
+        </div>
       )}
+      </div>
 
       <TwinDraftHistory lang={lang} refreshToken={historyRefreshToken} />
     </div>

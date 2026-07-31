@@ -56,12 +56,12 @@ describe("SettingsView", () => {
     expect(screen.getByLabelText("Tone")).toHaveValue("balanced");
   });
 
-  it("renders preference checkboxes reflecting the server profile's own values", () => {
+  it("renders preference switches reflecting the server profile's own values", () => {
     render(<SettingsView profile={profile} />);
 
-    expect(screen.getByRole("checkbox", { name: /learn from imported conversations/i })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /generate draft replies automatically/i })).not.toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /privacy mode/i })).toBeChecked();
+    expect(screen.getByRole("switch", { name: /learn from imported conversations/i })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("switch", { name: /generate draft replies automatically/i })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("switch", { name: /privacy mode/i })).toHaveAttribute("aria-checked", "true");
   });
 
   it("disables Save until something is actually dirty", async () => {
@@ -92,7 +92,7 @@ describe("SettingsView", () => {
     });
     render(<SettingsView profile={profile} />);
 
-    await userEvent.click(screen.getByRole("checkbox", { name: /generate draft replies automatically/i }));
+    await userEvent.click(screen.getByRole("switch", { name: /generate draft replies automatically/i }));
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(mockedUpdateCurrentProfile).toHaveBeenCalledTimes(1));

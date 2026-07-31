@@ -43,10 +43,10 @@ describe("MemoryRow", () => {
     expect(screen.getByText(/Manual entry · Mar 2026/)).toBeInTheDocument();
   });
 
-  it("renders confidence as a hairline meter, not a percent badge — the real number stays accessible via aria-valuenow", () => {
+  it("renders confidence as a raw 2-decimal number, not a percent badge — matches the design's own exact markup", () => {
     render(<MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />);
     expect(screen.queryByText("82%")).not.toBeInTheDocument();
-    expect(screen.getByRole("meter", { name: "Confidence" })).toHaveAttribute("aria-valuenow", "82");
+    expect(screen.getByText("0.82")).toBeInTheDocument();
   });
 
   it("clamps long descriptions and expands in place on 'Show more'", async () => {
@@ -61,11 +61,11 @@ describe("MemoryRow", () => {
     expect(screen.getByText(longDescription)).toBeInTheDocument();
   });
 
-  it("shows the Active pill for an active memory and Disabled for an inactive one — status survives without color alone (icon + text)", () => {
+  it("shows no status pill for an active memory (the design's own default state) and a Disabled pill for an inactive one", () => {
     const { rerender } = render(
       <MemoryRow memory={base} lang="EN" onEdit={noop} onOpenProvenance={noop} onToggleActive={noop} onDeleted={noop} togglingActive={false} />,
     );
-    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.queryByText("Disabled")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Disable" })).toBeInTheDocument();
     expect(screen.queryByText(/never used by your Twin/)).not.toBeInTheDocument();
 

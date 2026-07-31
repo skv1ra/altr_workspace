@@ -1,9 +1,6 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
 import { useState } from "react";
-import { QuotaMeter } from "@/components/app/QuotaMeter";
-import { Button } from "@/components/ui/Button";
 import { updateCurrentProfile, type AltrProfile } from "@/lib/auth";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import type { Lang } from "@/lib/i18n/lang-store";
@@ -21,25 +18,18 @@ export interface MemoryStatusHeaderProps {
 const CONNECTION_KEYS: Array<keyof AltrProfile["connections"]> = ["messages", "email", "calendar", "workspace"];
 
 /**
- * Real replacements for LEGACY's two dead `components/memory/` prototype
- * panels (never wired into the live LEGACY page — see `MemoryOverview.tsx`'s
- * own module comment for the full finding), backed by actual fields
- * `getProfileForUser` (`lib/profileServer.ts`, must-not-change) already
- * computes, not fabricated ones:
- * - "Learning Status" was a fake local toggle with no backing field.
- *   `preferences.learning` is real (`altr_user_preferences
- *   .memory_learning_enabled`) — this toggle calls the same
- *   `updateCurrentProfile` helper `SettingsView.tsx` (030) already uses
- *   for the same field via its own save form. Two surfaces writing the
- *   same real field isn't a conflict (an instant quick-toggle here, a
- *   fuller settings form there), so both are kept, deliberately.
- * - "DataSourcesPanel" hardcoded "Telegram / Email / Calendar — Not
- *   connected" for every user, always. `profile.connections` is real
- *   (`{email, calendar, messages, workspace}`, each backed by
- *   `altr_data_connections`) — shown read-only here since no connect/
- *   disconnect flow exists yet anywhere in this workspace (verified: no
- *   OAuth/connection-management route exists) — an honest status list,
- *   not an interactive control that would do nothing (ADR-013).
+ * Two cards — "In use" quota and the learning toggle — matching the Altr
+ * App v3 Memory screen's own 2-column grid exactly (verified against the
+ * live design bundle's rendered DOM, not guessed). The connections list is
+ * real, tested functionality this design screen doesn't show at all — kept
+ * as a third card below rather than dropped, so real information isn't
+ * lost, but it doesn't try to fake a spot in the 2-column layout the
+ * design never gave it. Backing fields: `preferences.learning` is real
+ * (`altr_user_preferences.memory_learning_enabled`, same field
+ * `SettingsView.tsx` already writes via `updateCurrentProfile`) and
+ * `profile.connections` is real (`{email, calendar, messages, workspace}`,
+ * each backed by `altr_data_connections`) — shown read-only since no
+ * connect/disconnect flow exists anywhere in this workspace (ADR-013).
  */
 export function MemoryStatusHeader({ lang, activeMemoryCount, memoryLimit, learningEnabled, connections, preferences }: MemoryStatusHeaderProps) {
   const t = getSharedCopy(lang).memory;
@@ -47,6 +37,7 @@ export function MemoryStatusHeader({ lang, activeMemoryCount, memoryLimit, learn
   const [toggling, setToggling] = useState(false);
 
   async function toggleLearning() {
+    if (toggling) return;
     setToggling(true);
     try {
       const updated = await updateCurrentProfile({ preferences: { ...preferences, learning: !learning } });
@@ -58,27 +49,43 @@ export function MemoryStatusHeader({ lang, activeMemoryCount, memoryLimit, learn
     }
   }
 
-  return (
-    <div className={styles.wrap}>
-      <div className={styles.quotaBlock}>
-        <QuotaMeter label={t.activeMemoriesLabel} used={activeMemoryCount} limit={memoryLimit} lang={lang} />
-      </div>
+  const pct = memoryLimit > 0 ? Math.max(2, Math.min(100, (activeMemoryCount / memoryLimit) * 100)) : 2;
 
-      <div className={styles.learningBlock}>
-        <div className={styles.learningMain}>
-          <span className={learning ? styles.learningDotActive : styles.learningDot} aria-hidden="true" />
-          <div>
-            <p className="text-body font-medium text-text-primary">{learning ? t.learningActiveLabel : t.learningPausedLabel}</p>
-            <p className="mt-1 max-w-sm text-label normal-case text-text-muted">{learning ? t.learningActiveHint : t.learningPausedHint}</p>
+  return (
+    <>
+      <div className={styles.grid}>
+        <div className={`v3-panel ${styles.quotaCard}`}>
+          <p className={styles.label}>{t.activeMemoriesLabel}</p>
+          <p className={styles.numeralRow}>
+            <span className="v3-stat-numeral">{activeMemoryCount}</span>
+            <span className={styles.of}>{lang === "UA" ? "з" : "of"} {memoryLimit} {t.activeMemoriesLabel.toLowerCase()}</span>
+          </p>
+          <div className={`v3-bar-track ${styles.barTrack}`}>
+            <div className="v3-bar-fill" style={{ width: `${pct}%` }} />
           </div>
         </div>
-        <Button variant="ghost" onClick={() => void toggleLearning()} loading={toggling}>
-          {learning ? <Pause aria-hidden="true" width={14} height={14} strokeWidth={1.6} /> : <Play aria-hidden="true" width={14} height={14} strokeWidth={1.6} />}
-          {learning ? t.pauseLearning : t.resumeLearning}
-        </Button>
+
+        <div className={`v3-panel ${styles.learningCard}`}>
+          <div>
+            <p className={styles.learningTitle}>{learning ? t.learningActiveLabel : t.learningPausedLabel}</p>
+            <p className={styles.learningHint}>{learning ? t.learningActiveHint : t.learningPausedHint}</p>
+          </div>
+          <button
+            type="button"
+            className="v3-switch"
+            data-on={learning}
+            role="switch"
+            aria-checked={learning}
+            aria-label={learning ? t.pauseLearning : t.resumeLearning}
+            disabled={toggling}
+            onClick={() => void toggleLearning()}
+          >
+            <span className="v3-switch-knob" />
+          </button>
+        </div>
       </div>
 
-      <div className={styles.connectionsBlock}>
+      <div className={`v3-panel ${styles.connectionsBlock}`}>
         <p className={styles.connectionsHeading}>{t.connectedSourcesLabel}</p>
         <ul className={styles.connectionsList}>
           {CONNECTION_KEYS.map((key) => {
@@ -95,6 +102,6 @@ export function MemoryStatusHeader({ lang, activeMemoryCount, memoryLimit, learn
           })}
         </ul>
       </div>
-    </div>
+    </>
   );
 }

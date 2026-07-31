@@ -1,82 +1,49 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--edge-hairline);
-}
-
-.identity {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.avatar {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--edge-hairline);
-  font-size: var(--text-label);
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.text {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 1px;
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .name {
+  margin: 0;
   overflow: hidden;
-  font-size: var(--text-body);
-  font-weight: 500;
-  color: var(--text-primary);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.email {
-  overflow: hidden;
-  font-size: var(--text-label);
-  color: var(--text-muted);
+  max-width: 100%;
+  font-size: 13px;
+  color: var(--v3-heading);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .plan {
-  margin-left: 44px;
-  font-size: var(--text-label);
-  color: var(--text-muted);
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--v3-faint);
 }
 
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 7px;
 }
 
 /* Overrides shared `.btn`'s centered, pill-shaped layout (controls.css) —
-   these rows need to read as a plain left-aligned list, not buttons. */
+   these rows need to read as the design's own plain quiet text list. */
 .row {
-  display: flex !important;
-  width: 100%;
-  justify-content: flex-start !important;
-  gap: var(--space-3) !important;
-  padding: var(--space-2) var(--space-1) !important;
+  display: inline-flex !important;
+  width: auto !important;
   min-height: 0 !important;
-  font-size: var(--text-label);
-  color: var(--text-muted) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 13px;
+  color: var(--v3-faint) !important;
+  transition: color 180ms var(--v3-ease) !important;
 }
 
 .row:hover:not(:disabled) {
-  color: var(--text-primary) !important;
+  color: var(--v3-heading) !important;
 }

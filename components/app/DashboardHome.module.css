@@ -1,7 +1,3 @@
-.wrap {
-  max-width: 880px;
-}
-
 .greetingRow {
   display: flex;
   flex-wrap: wrap;
@@ -9,85 +5,49 @@
   gap: var(--space-4);
 }
 
-/* Same rounded-card language as `.hero` — a quiet, data-free version of
-   it, since there are no real numbers yet to headline. */
 .empty {
-  margin-top: var(--space-10);
-  padding: var(--space-8);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--edge-hairline);
-}
-
-.emptyCta {
-  margin-top: var(--space-6);
+  margin-top: 44px;
+  padding: 44px 48px;
 }
 
 /* Hero card — "Your Twin is drawing on N memories…" */
 .hero {
-  margin-top: var(--space-10);
-  padding: var(--space-8);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--edge-hairline);
-  background-color: var(--surface-hover);
+  margin-top: 44px;
+  padding: 44px 48px;
 }
 
 .heroText {
-  max-width: 48ch;
-  font-size: var(--text-h4);
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--v3-serif);
+  font-size: 34px;
   font-weight: 400;
-  line-height: 1.35;
-  color: var(--text-primary);
+  line-height: 1.2;
+  color: var(--v3-heading);
 }
 
 .heroNumeral {
-  font-weight: 500;
-  color: var(--accent-code);
+  color: var(--v3-accent);
 }
 
 .heroActions {
+  margin-top: 32px;
   display: flex;
+  align-items: center;
+  gap: 28px;
   flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: var(--space-6);
 }
 
-/* Same obsidian-on-light / paper-on-dark flip as the shared `Button`
-   primary variant (controls.css's own `--button-primary-*`), reused here
-   directly since `Button` itself doesn't support rendering as a `Link`. */
-.heroPrimary {
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-6);
-  font-size: var(--text-body);
-  font-weight: 500;
-  color: var(--button-primary-fg);
-  background-color: var(--button-primary-bg);
-  transition: opacity var(--motion-fast) var(--ease-altr);
-}
-
-.heroPrimary:hover {
-  opacity: 0.88;
-}
-
-.heroSecondary {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--text-body);
-  color: var(--text-muted);
-  transition: color var(--motion-fast) var(--ease-altr);
-}
-
-.heroSecondary:hover {
-  color: var(--text-primary);
+.emptyCta {
+  margin-top: 26px;
 }
 
 /* Three quota tiles. */
 .statGrid {
+  margin-top: 14px;
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-4);
-  margin-top: var(--space-6);
+  gap: 14px;
 }
 
 @media (min-width: 640px) {
@@ -97,110 +57,107 @@
 }
 
 .statCard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--edge-hairline);
-  transition: border-color var(--motion-fast) var(--ease-altr);
-}
-
-a.statCard:hover {
-  border-color: var(--text-muted);
+  display: block;
+  padding: 30px 32px 32px;
 }
 
 .statLabel {
-  font-size: var(--text-label);
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-muted);
+  color: var(--v3-faint);
 }
 
-.statNumeral {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 300;
-  line-height: 1;
-  color: var(--text-primary);
+.statNumeralRow {
+  margin: 22px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .statOf {
-  font-size: var(--text-label);
-  font-weight: 400;
-  color: var(--text-muted);
+  font-size: 14px;
+  color: var(--v3-faint);
 }
 
 .statUnknown {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 300;
-  line-height: 1;
-  color: var(--text-muted);
+  font-family: var(--v3-serif);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--v3-muted);
 }
 
 .statMeta {
-  font-size: var(--text-label);
-  color: var(--text-muted);
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--v3-faint);
+}
+
+.statBarTrack {
+  margin-top: 24px;
 }
 
 /* Recently learned list. */
 .recent {
-  margin-top: var(--space-10);
+  margin-top: 14px;
+  padding: 34px 36px;
 }
 
 .recentHead {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--edge-hairline);
-}
-
-.recentAllLink {
-  font-size: var(--text-label);
-  color: var(--text-muted);
-  transition: color var(--motion-fast) var(--ease-altr);
-}
-
-.recentAllLink:hover {
-  color: var(--text-primary);
+  gap: 24px;
 }
 
 .recentEmpty {
-  padding-top: var(--space-6);
-  font-size: var(--text-body);
-  color: var(--text-muted);
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--v3-muted);
 }
 
 .recentList {
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
 }
 
 .recentRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: baseline;
-  gap: var(--space-4);
-  padding-block: var(--space-4);
-  border-bottom: 1px solid var(--edge-hairline);
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--v3-divide);
 }
 
-.recentCategory {
-  font-size: var(--text-label);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-muted);
+.recentRow:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .recentTitle {
-  font-size: var(--text-body);
-  color: var(--text-primary);
+  margin: 0;
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--v3-heading);
+}
+
+.recentCategory {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--v3-accent);
 }
 
 .recentConfidence {
-  flex: none;
-  font-size: var(--text-label);
-  color: var(--text-muted);
-  white-space: nowrap;
+  font-family: var(--v3-serif);
+  font-size: 19px;
+  color: var(--v3-faint);
+  font-variant-numeric: tabular-nums;
 }

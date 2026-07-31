@@ -1,26 +1,36 @@
 .wrap {
-  max-width: 760px;
+  max-width: 1080px;
 }
 
-/* Card panel (Altr App v3) — same treatment TwinConfigView/SettingsView
-   apply to their own `.section`. */
+/* Exact Altr App v3 panel — matches the design's own "Current plan"/
+   "Usage" sections precisely. */
 .section {
-  margin-top: var(--space-6);
-  padding: var(--space-6) var(--space-8);
-  border: 1px solid var(--edge-hairline);
-  border-radius: var(--radius-lg);
+  margin-top: 14px;
+  padding: 40px 44px;
 }
 
 .sectionHeading {
-  font-size: var(--text-h4);
-  font-weight: 500;
-  color: var(--text-primary);
+  margin: 0;
+  font-family: var(--v3-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--v3-heading);
 }
 
 .sectionBody {
   margin-top: var(--space-2);
   max-width: 60ch;
-  color: var(--text-muted);
+  font-size: 14px;
+  color: var(--v3-muted);
+}
+
+.planName {
+  margin: 20px 0 0;
+  font-family: var(--v3-serif);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--v3-heading);
 }
 
 .planRow {
@@ -32,26 +42,28 @@
 
 .statusLine {
   margin-top: var(--space-3);
-  color: var(--text-muted);
+  font-size: 15px;
+  color: var(--v3-muted);
 }
 
 .testModeNotice {
   display: inline-block;
   margin-top: var(--space-2);
   padding: 2px var(--space-2);
-  border: 1px solid var(--edge-hairline);
-  border-radius: var(--radius-full);
+  border: 1px solid var(--v3-edge);
+  border-radius: 999px;
   font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
-  color: var(--text-muted);
+  color: var(--v3-muted);
 }
 
 .actionsRow {
-  margin-top: var(--space-6);
+  margin-top: 30px;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: 24px;
 }
 
 /* No color-coded chips (visual requirement) — a hairline-bordered note,
@@ -59,25 +71,48 @@
 .alertPanel {
   margin-top: var(--space-6);
   padding: var(--space-5);
-  border: 1px solid var(--edge-hairline);
+  border: 1px solid var(--v3-edge);
   border-radius: var(--radius-lg);
 }
 
 .alertHeading {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--v3-heading);
 }
 
 .alertBody {
   margin-top: var(--space-2);
-  color: var(--text-muted);
+  color: var(--v3-muted);
 }
 
 .quotaRows {
-  margin-top: var(--space-6);
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 24px;
+}
+
+.quotaRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.quotaLabel {
+  font-size: 14px;
+  color: var(--v3-primary);
+}
+
+.quotaValue {
+  font-family: var(--v3-serif);
+  font-size: 19px;
+  color: var(--v3-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.quotaBarTrack {
+  margin-top: 12px;
 }
 
 .loadError {
@@ -86,5 +121,5 @@
 
 .manageError {
   margin-top: var(--space-3);
-  color: var(--text-muted);
+  color: var(--v3-muted);
 }

@@ -45,7 +45,10 @@ describe("AppNav", () => {
 
     const sheet = screen.getByRole("dialog");
     expect(within(sheet).getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
-    expect(within(sheet).getByText("max@example.com")).toBeInTheDocument();
+    // UserMenu shows name + plan, not a separate email line (matches the
+    // Altr App v3 design's own markup) — email is kept in the name's
+    // `title` attribute instead.
+    expect(within(sheet).getByText("Max")).toHaveAttribute("title", "max@example.com");
   });
 
   it("signed-in wordmark stays inside the app", () => {

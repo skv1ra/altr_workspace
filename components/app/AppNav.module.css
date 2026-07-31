@@ -8,54 +8,57 @@
     top: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-9);
-    width: 260px;
+    width: 236px;
     flex: none;
-    height: 100svh;
-    padding: var(--space-9) var(--space-6);
-    border-right: 1px solid var(--edge-hairline);
+    height: 100vh;
+    padding: 36px 24px;
+    border-right: 1px solid var(--v3-hair);
   }
 }
 
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-body);
+  gap: 10px;
+  font-size: 16px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--v3-heading);
+  transition: opacity 200ms var(--v3-ease);
+}
+
+.wordmark:hover {
+  opacity: 0.75;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-}
-
-/* Quiet text-weight contrast, not a filled pill or edge — Altr App v3's
-   own nav treatment (active = full text-primary, rest = text-muted). */
-.item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  color: var(--text-muted);
-  transition: color var(--motion-fast) var(--ease-altr), background-color var(--motion-fast) var(--ease-altr);
-}
-
-.item:hover {
-  color: var(--text-primary);
-  background-color: var(--surface-hover);
-}
-
-.itemActive {
-  color: var(--text-primary);
+  gap: 1px;
 }
 
 .rail nav {
   flex: 1;
+  margin-top: 44px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-left: 2px solid transparent;
+  font-size: 15px;
+  color: var(--v3-muted);
+  transition: color 180ms var(--v3-ease), border-color 180ms var(--v3-ease);
+}
+
+.item:hover {
+  color: var(--v3-heading);
+}
+
+.itemActive {
+  border-left-color: var(--v3-silver);
+  color: var(--v3-heading);
 }
 
 .mobileBar {
@@ -63,7 +66,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-5) var(--space-6);
-  border-bottom: 1px solid var(--edge-hairline);
+  border-bottom: 1px solid var(--v3-hair);
 }
 
 @media (min-width: 1024px) {
@@ -78,7 +81,7 @@
   min-height: 44px;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
+  color: var(--v3-heading);
 }
 
 /*
@@ -96,10 +99,12 @@
   width: 100%;
   max-width: 100%;
   max-height: 80svh;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
+  background: var(--v3-ground);
+  color: var(--v3-primary);
 }
 
 @media (min-width: 1024px) {

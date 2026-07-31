@@ -4,6 +4,7 @@
 @import "./styles/controls.css";
 @import "./styles/overlays.css";
 @import "./styles/motion.css";
+@import "./styles/app-v3.css";
 
 @tailwind base;
 @tailwind components;

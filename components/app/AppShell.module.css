@@ -7,17 +7,67 @@
 @media (min-width: 1024px) {
   .shell {
     flex-direction: row;
+    height: 100vh;
+    overflow-x: auto;
   }
 }
 
 .content {
+  position: relative;
   flex: 1;
   min-width: 0;
-  padding: var(--space-8) var(--space-6);
+}
+
+@media (min-width: 1024px) {
+  .content {
+    min-width: 880px;
+    overflow-y: auto;
+  }
+}
+
+/* Ambient radial glow drifting behind the page content — decorative,
+   `pointer-events: none` so it never intercepts clicks. */
+.ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(58% 42% at 24% 0%, var(--v3-ambient), transparent 72%);
+  animation: ambientDrift 22s var(--v3-ease) infinite alternate;
+}
+
+@keyframes ambientDrift {
+  from {
+    opacity: 0.6;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(3%, 2%, 0) scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient {
+    animation: none;
+  }
+}
+
+.contentInner {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  padding: var(--space-8) var(--space-6) var(--space-16);
 }
 
 @media (min-width: 640px) {
-  .content {
-    padding: var(--space-12);
+  .contentInner {
+    padding: var(--space-12) var(--space-8) var(--space-16);
+  }
+}
+
+@media (min-width: 1024px) {
+  .contentInner {
+    padding: 76px 64px 112px;
   }
 }

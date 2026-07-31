@@ -19,11 +19,12 @@ afterEach(() => {
 });
 
 describe("MemoryStatusHeader", () => {
-  it("shows the real active-memories QuotaMeter, not a fabricated number", () => {
+  it("shows the real active-memories count, not a fabricated number", () => {
     render(
       <MemoryStatusHeader lang="EN" activeMemoryCount={12} memoryLimit={250} learningEnabled connections={connections} preferences={preferences} />,
     );
-    expect(screen.getByRole("progressbar", { name: "Active memories" })).toHaveAttribute("aria-valuenow", "5");
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText(/250/)).toBeInTheDocument();
   });
 
   it("shows only the real connected sources — messages connected, everything else not, no fabricated 'Not connected' for all", () => {
@@ -43,11 +44,11 @@ describe("MemoryStatusHeader", () => {
     );
     expect(screen.getByText("Learning active")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /Pause learning/ }));
+    await userEvent.click(screen.getByRole("switch", { name: /Pause learning/ }));
 
     expect(mockedUpdateCurrentProfile).toHaveBeenCalledWith({ preferences: { ...preferences, learning: false } });
     expect(await screen.findByText("Learning paused")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Resume learning/ })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /Resume learning/ })).toBeInTheDocument();
   });
 
   it("leaves the displayed state unchanged if the write fails — no misleading optimistic flip", async () => {
@@ -55,7 +56,7 @@ describe("MemoryStatusHeader", () => {
     render(
       <MemoryStatusHeader lang="EN" activeMemoryCount={12} memoryLimit={250} learningEnabled connections={connections} preferences={preferences} />,
     );
-    await userEvent.click(screen.getByRole("button", { name: /Pause learning/ }));
+    await userEvent.click(screen.getByRole("switch", { name: /Pause learning/ }));
     expect(await screen.findByText("Learning active")).toBeInTheDocument();
   });
 });

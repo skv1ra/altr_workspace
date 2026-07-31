@@ -1,0 +1,308 @@
+/*
+ * Altr App v3 (Claude Design export) — exact tokens, extracted directly
+ * from the design bundle's own :root/[data-theme="dark"] rules (not
+ * approximated from the marketing site's "silver fog" palette, which uses
+ * different values under similar names). Scoped to `.app-v3` — applied
+ * only by `AppThemeSurface` around the `(app)` route group — so nothing
+ * here can affect the marketing site or homepage.
+ */
+
+.app-v3 {
+  --v3-ground: #f2f4f5;
+  --v3-ambient: rgba(91, 75, 196, 0.05);
+  --v3-panel: rgba(21, 23, 26, 0.035);
+  --v3-panel-deep: rgba(21, 23, 26, 0.06);
+  --v3-panel-hover: rgba(21, 23, 26, 0.05);
+  --v3-edge: rgba(21, 23, 26, 0.07);
+  --v3-edge-lit: rgba(255, 255, 255, 0.7);
+  --v3-divide: rgba(21, 23, 26, 0.07);
+  --v3-heading: #15171a;
+  --v3-primary: #3a3f45;
+  --v3-muted: #63676c;
+  --v3-faint: #8b939c;
+  --v3-silver: #d9dde1;
+  --v3-hair: rgba(217, 221, 225, 0.9);
+  --v3-accent: #5b4bc4;
+  --v3-accent-wash: rgba(91, 75, 196, 0.07);
+  --v3-red: #b3261e;
+  --v3-edge-hover: rgba(21, 23, 26, 0.16);
+  --v3-sans: "Instrument Sans", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --v3-serif: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --v3-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-v3[data-v3-theme="dark"] {
+  --v3-ground: #16181b;
+  --v3-ambient: rgba(146, 129, 247, 0.07);
+  --v3-panel: rgba(0, 0, 0, 0.24);
+  --v3-panel-deep: rgba(0, 0, 0, 0.36);
+  --v3-panel-hover: rgba(0, 0, 0, 0.3);
+  --v3-edge: rgba(255, 255, 255, 0.07);
+  --v3-edge-lit: rgba(255, 255, 255, 0.1);
+  --v3-divide: rgba(255, 255, 255, 0.07);
+  --v3-heading: #ffffff;
+  --v3-primary: #e8ebec;
+  --v3-muted: #b9c0c7;
+  --v3-faint: #8b939c;
+  --v3-silver: #2c3136;
+  --v3-hair: rgba(244, 246, 247, 0.12);
+  --v3-accent: #a99bff;
+  --v3-accent-wash: rgba(146, 129, 247, 0.12);
+  --v3-red: #ff9592;
+  --v3-edge-hover: rgba(255, 255, 255, 0.18);
+}
+
+.app-v3 {
+  background: var(--v3-ground);
+  color: var(--v3-primary);
+  font-family: var(--v3-sans);
+}
+
+/* Panel card — every section/card on every Altr App v3 screen (hero,
+   stat tiles, memory rows, form sections) uses exactly this recipe:
+   a faint tinted fill, no visible border, heavy background blur. */
+.v3-panel {
+  background: var(--v3-panel);
+  border-radius: 20px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.v3-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--v3-faint);
+}
+
+.v3-h1 {
+  margin: 20px 0 0;
+  font-family: var(--v3-serif);
+  font-size: 56px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  color: var(--v3-heading);
+}
+
+.v3-h2 {
+  margin: 0;
+  font-family: var(--v3-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--v3-heading);
+}
+
+.v3-intro {
+  margin: 26px 0 0;
+  max-width: 58ch;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--v3-muted);
+}
+
+.v3-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--v3-faint);
+}
+
+.v3-input {
+  padding: 12px 15px;
+  background: var(--v3-panel-deep);
+  border: 1px solid var(--v3-edge);
+  border-radius: 12px;
+  outline: none;
+  font-size: 14px;
+  color: var(--v3-primary);
+  width: 100%;
+  font-family: inherit;
+}
+
+.v3-input::placeholder {
+  color: var(--v3-faint);
+}
+
+/* Pill chip — category tabs, tone selector, import-source picker. */
+.v3-chip {
+  padding: 8px 15px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: -0.005em;
+  background: var(--v3-panel-deep);
+  border: 1px solid transparent;
+  color: var(--v3-muted);
+  transition: color 200ms var(--v3-ease), background 200ms var(--v3-ease), border-color 200ms var(--v3-ease);
+}
+
+.v3-chip[data-active="true"] {
+  background: var(--v3-accent-wash);
+  border-color: var(--v3-accent);
+  color: var(--v3-heading);
+}
+
+/* Solid pill button — the one primary call to action per screen. */
+.v3-btn-solid {
+  padding: 12px 24px;
+  background: var(--v3-heading);
+  color: var(--v3-ground);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  transition: transform 240ms var(--v3-ease), box-shadow 240ms var(--v3-ease);
+  display: inline-flex;
+  align-items: center;
+}
+
+.v3-btn-solid:hover {
+  transform: translateY(-1px);
+}
+
+/* Quiet inline text action — "Review memory", "Copy", "Sign out", ... */
+.v3-btn-quiet {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--v3-muted);
+  transition: color 200ms var(--v3-ease);
+  display: inline-flex;
+  align-items: center;
+}
+
+.v3-btn-quiet:hover {
+  color: var(--v3-heading);
+}
+
+.v3-stat-numeral {
+  font-family: var(--v3-serif);
+  font-size: 52px;
+  font-weight: 400;
+  line-height: 0.9;
+  color: var(--v3-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.v3-stat-suffix {
+  font-size: 14px;
+  color: var(--v3-faint);
+}
+
+.v3-bar-track {
+  height: 2px;
+  background: var(--v3-divide);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v3-bar-fill {
+  height: 2px;
+  background: var(--v3-accent);
+  border-radius: 999px;
+}
+
+/* iOS-style toggle switch — used for every real on/off preference in the
+   design (learning, consents, preference switches). */
+.v3-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex: none;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid var(--v3-edge);
+  background: var(--v3-panel-deep);
+  transition: background 220ms var(--v3-ease), border-color 220ms var(--v3-ease);
+}
+
+.v3-switch[data-on="true"] {
+  border-color: var(--v3-accent);
+  background: var(--v3-accent-wash);
+}
+
+.v3-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--v3-faint);
+  transition: left 220ms var(--v3-ease), background 220ms var(--v3-ease);
+}
+
+.v3-switch[data-on="true"] .v3-switch-knob {
+  left: 23px;
+  background: var(--v3-accent);
+}
+
+/*
+ * Overrides for shared primitives (`Button`, `TextField`/`Select`/`Field`,
+ * `Checkbox`) used throughout `(app)` — scoped to `.app-v3` only, so
+ * nothing outside this route group (auth, onboarding uses the same
+ * components too) is affected. Reusing the exact bundle-extracted recipe
+ * means every existing usage of these components picks up the redesign
+ * automatically, without touching each page's own markup.
+ */
+.app-v3 .field-input,
+.app-v3 .field-select {
+  padding: 12px 15px;
+  min-height: 0;
+  background: var(--v3-panel-deep);
+  border: 1px solid var(--v3-edge);
+  border-radius: 12px;
+  color: var(--v3-primary);
+  font-size: 14px;
+}
+
+.app-v3 .field-input:hover,
+.app-v3 .field-select:hover {
+  border-color: var(--v3-edge-hover);
+}
+
+.app-v3 .field-input:focus-visible,
+.app-v3 .field-select:focus-visible {
+  border-color: var(--v3-accent);
+}
+
+.app-v3 .btn {
+  border-radius: 999px;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+}
+
+.app-v3 .btn-primary {
+  background-color: var(--v3-heading);
+  border-color: transparent;
+  color: var(--v3-ground);
+}
+
+.app-v3 .btn-primary:hover:not(:disabled) {
+  background-color: var(--v3-heading);
+  opacity: 0.88;
+}
+
+.app-v3 .btn-secondary {
+  background-color: var(--v3-panel-deep);
+  border-color: var(--v3-edge);
+  color: var(--v3-heading);
+}
+
+.app-v3 .btn-ghost {
+  background-color: transparent;
+  color: var(--v3-muted);
+}
+
+.app-v3 .btn-ghost:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--v3-heading);
+}

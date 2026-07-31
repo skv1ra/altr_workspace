@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
@@ -160,9 +159,10 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
 
   return (
     <div className={styles.wrap}>
-      <h1 className="text-h1 font-normal text-text-primary">{t.heading}</h1>
+      <p className="v3-eyebrow">{t.eyebrow}</p>
+      <h1 className="v3-h1">{t.heading}</h1>
 
-      <section className={styles.section} aria-labelledby="settings-identity">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="settings-identity">
         <h2 id="settings-identity" className={styles.sectionHeading}>
           {t.identityHeading}
         </h2>
@@ -213,36 +213,35 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="settings-preferences">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="settings-preferences">
         <h2 id="settings-preferences" className={styles.sectionHeading}>
           {t.preferencesHeading}
         </h2>
-        <p className={styles.sectionBody}>{t.preferencesBody}</p>
-        <div className={styles.checkboxList}>
-          <Checkbox
+        <div className={styles.switchList}>
+          <SwitchRow
             label={t.learningLabel}
             checked={preferences.learning}
-            onChange={(event) => setPreferences((current) => ({ ...current, learning: event.target.checked }))}
+            onChange={(checked) => setPreferences((current) => ({ ...current, learning: checked }))}
           />
-          <Checkbox
+          <SwitchRow
             label={t.autoDraftsLabel}
             checked={preferences.autoDrafts}
-            onChange={(event) => setPreferences((current) => ({ ...current, autoDrafts: event.target.checked }))}
+            onChange={(checked) => setPreferences((current) => ({ ...current, autoDrafts: checked }))}
           />
-          <Checkbox
+          <SwitchRow
             label={t.weeklyDigestLabel}
             checked={preferences.weeklyDigest}
-            onChange={(event) => setPreferences((current) => ({ ...current, weeklyDigest: event.target.checked }))}
+            onChange={(checked) => setPreferences((current) => ({ ...current, weeklyDigest: checked }))}
           />
-          <Checkbox
+          <SwitchRow
             label={t.privacyModeLabel}
             checked={preferences.privacyMode}
-            onChange={(event) => setPreferences((current) => ({ ...current, privacyMode: event.target.checked }))}
+            onChange={(checked) => setPreferences((current) => ({ ...current, privacyMode: checked }))}
           />
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="settings-language">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="settings-language">
         <h2 id="settings-language" className={styles.sectionHeading}>
           {t.languageHeading}
         </h2>
@@ -250,7 +249,7 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
         <LanguagePicker />
       </section>
 
-      <section className={`${styles.section} ${styles.danger}`} aria-labelledby="settings-danger">
+      <section className={`v3-panel ${styles.section} ${styles.danger}`} aria-labelledby="settings-danger">
         <h2 id="settings-danger" className={styles.sectionHeading}>
           {t.dangerHeading}
         </h2>
@@ -275,6 +274,25 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
         confirmLabel={t.unsavedConfirm}
         cancelLabel={getSharedCopy(lang).common.cancel}
       />
+    </div>
+  );
+}
+
+function SwitchRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <div className={styles.switchRow}>
+      <span className={styles.switchLabel}>{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        className="v3-switch"
+        data-on={checked}
+        onClick={() => onChange(!checked)}
+      >
+        <span className="v3-switch-knob" />
+      </button>
     </div>
   );
 }

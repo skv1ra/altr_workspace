@@ -1,37 +1,37 @@
 .wrap {
-  max-width: 760px;
+  max-width: 1080px;
 }
 
-/* Card panel (Altr App v3) — same treatment TwinConfigView/BillingOverview
-   apply to their own `.section`. */
+/* Exact Altr App v3 panel. */
 .section {
-  margin-top: var(--space-6);
-  padding: var(--space-6) var(--space-8);
-  border: 1px solid var(--edge-hairline);
-  border-radius: var(--radius-lg);
+  margin-top: 14px;
+  padding: 34px 36px;
 }
 
 .sectionHeading {
-  font-size: var(--text-h4);
-  font-weight: 500;
-  color: var(--text-primary);
+  margin: 0;
+  font-family: var(--v3-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--v3-heading);
 }
 
 .sectionBody {
-  margin-top: var(--space-2);
+  margin-top: 10px;
   max-width: 60ch;
-  color: var(--text-muted);
+  font-size: 13px;
+  color: var(--v3-muted);
 }
 
 .grid {
-  margin-top: var(--space-6);
+  margin-top: 26px;
   display: grid;
-  gap: var(--space-5);
+  gap: 20px;
 }
 
 @media (min-width: 640px) {
   .grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.15fr 1fr;
   }
 }
 
@@ -39,16 +39,35 @@
   grid-column: 1 / -1;
 }
 
-.checkboxList {
-  margin-top: var(--space-5);
+.switchList {
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
 }
 
-/* Distinct but not alarmist — a quiet hairline tint, not a filled red panel. */
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--v3-divide);
+}
+
+.switchRow:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.switchLabel {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--v3-primary);
+}
+
+/* Distinct but not alarmist — a quiet accent-red tint, not a filled panel. */
 .danger {
-  border-color: rgb(255 149 146 / 25%);
+  background: rgb(255 149 146 / 4%);
 }
 
 .saveBar {
@@ -56,8 +75,8 @@
   bottom: 0;
   margin-top: var(--space-10);
   padding-block: var(--space-6);
-  border-top: 1px solid var(--edge-hairline);
-  background: var(--surface-current-bg);
+  border-top: 1px solid var(--v3-hair);
+  background: var(--v3-ground);
 }
 
 .langSwitch {
@@ -70,14 +89,14 @@
   font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
-  color: var(--text-muted);
+  color: var(--v3-muted);
   transition: color var(--motion-fast) var(--ease-altr);
 }
 
 .langButton:hover {
-  color: var(--text-primary);
+  color: var(--v3-heading);
 }
 
 .langButton[aria-pressed="true"] {
-  color: var(--text-primary);
+  color: var(--v3-heading);
 }

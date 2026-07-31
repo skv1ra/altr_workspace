@@ -32,8 +32,8 @@ export function PrivacyCenter({ profile: initialProfile }: { profile: AltrProfil
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-1 py-2">
       <div>
-        <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
+        <p className="v3-eyebrow">{t.eyebrow}</p>
+        <h1 className="v3-h1">{t.title}</h1>
         <p className="mt-3 text-body text-text-muted">{t.subtitle}</p>
       </div>
 
@@ -63,7 +63,7 @@ export function PrivacyCenter({ profile: initialProfile }: { profile: AltrProfil
         </div>
       </section>
 
-      <section aria-labelledby="privacy-danger-heading" className="rounded-2xl border border-[var(--edge-hairline)] p-6 sm:p-8">
+      <section aria-labelledby="privacy-danger-heading" className="v3-panel" style={{ padding: "34px 36px" }}>
         <h2 id="privacy-danger-heading" className="text-h3 font-normal text-text-primary">
           {t.dangerHeading}
         </h2>

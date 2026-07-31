@@ -25,12 +25,15 @@
   margin-top: var(--space-2);
   height: 2px;
   width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
   background: var(--edge-hairline);
 }
 
 .fill {
   height: 100%;
-  background: var(--text-muted);
+  border-radius: 999px;
+  background: var(--accent-code);
   transition: width var(--motion-fast) var(--ease-altr);
 }
 

@@ -41,7 +41,9 @@ describe("TwinConfigView", () => {
 
     expect(await screen.findByRole("heading", { name: "My Altr" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Name/)).toHaveValue("My Altr");
-    expect(screen.getByLabelText(/Tone/)).toHaveValue("balanced");
+    // Tone is a chip group (Altr App v3), not a <select> — the active
+    // chip is the one whose real accessible state is pressed/active.
+    expect(screen.getByRole("button", { name: "Balanced" })).toHaveAttribute("data-active", "true");
     expect(screen.getByLabelText(/Style instructions/)).toHaveValue("Keep it short.");
   });
 

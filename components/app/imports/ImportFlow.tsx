@@ -330,8 +330,8 @@ export function ImportFlow() {
         </Link>
       </div>
 
-      <p className="mt-8 text-label uppercase text-text-muted">{t.eyebrow}</p>
-      <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
+      <p className="v3-eyebrow" style={{ marginTop: 32 }}>{t.eyebrow}</p>
+      <h1 className="v3-h1">{t.title}</h1>
       <p className="mt-4 max-w-[60ch] text-body text-text-muted">{t.intro}</p>
       <p className="mt-3 text-label normal-case text-text-muted">{t.privacyStatement}</p>
 

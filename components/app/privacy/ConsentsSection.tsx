@@ -110,7 +110,7 @@ function ConsentCard({
   lang: Lang;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--edge-hairline)] p-5 sm:p-6">
+    <div className="v3-panel" style={{ padding: "34px 36px" }}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-body font-medium text-text-primary">{title}</p>
         <span className="rounded-full border border-[var(--edge-hairline)] px-2.5 py-1 text-label uppercase text-text-muted" data-active={active}>

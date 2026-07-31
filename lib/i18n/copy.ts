@@ -172,6 +172,7 @@ export const sharedCopy = {
     // -is (same words, no duplicate keys) for the nav rail's Dashboard
     // link, mobile menu triggers, language switch, and plan badge text.
     dashboard: {
+      eyebrow: "Overview",
       greetingPrefix: "Hi,",
       thisMonth: "this month",
       importsLabel: "Imports",
@@ -200,6 +201,7 @@ export const sharedCopy = {
     // for the save button, the unsaved-changes dialog's cancel action, and
     // the danger-zone pointer's link label.
     settings: {
+      eyebrow: "Account",
       heading: "Settings",
       identityHeading: "Identity",
       identityBody: "How Altr and your drafts refer to you.",
@@ -762,7 +764,7 @@ export const sharedCopy = {
     // are ever written there, despite the column having no db-level check
     // constraint).
     billing: {
-      eyebrow: "Billing",
+      eyebrow: "Account",
       title: "Subscription and invoices.",
       loadFailed: "Couldn't load your billing information.",
       planHeading: "Plan",
@@ -1005,6 +1007,7 @@ export const sharedCopy = {
       failed: "Не вдалося вийти — спробуй ще раз.",
     },
     dashboard: {
+      eyebrow: "Огляд",
       greetingPrefix: "Привіт,",
       thisMonth: "цього місяця",
       importsLabel: "Імпорти",
@@ -1029,6 +1032,7 @@ export const sharedCopy = {
       noMemoriesYetShort: "Поки нічого не вивчено.",
     },
     settings: {
+      eyebrow: "Акаунт",
       heading: "Налаштування",
       identityHeading: "Особистість",
       identityBody: "Як Altr і твої чернетки звертаються до тебе.",
@@ -1551,7 +1555,7 @@ export const sharedCopy = {
       historyDraftLabel: "Чернетка",
     },
     billing: {
-      eyebrow: "Оплата",
+      eyebrow: "Акаунт",
       title: "Підписка та рахунки.",
       loadFailed: "Не вдалося завантажити дані про оплату.",
       planHeading: "План",

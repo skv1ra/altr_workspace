@@ -79,7 +79,9 @@ describe("DashboardHome", () => {
     );
     expect(screen.getByText("Prefers short replies")).toBeInTheDocument();
     expect(screen.getByText("preference")).toBeInTheDocument();
-    expect(screen.getByText(/88%/)).toBeInTheDocument();
+    // Raw 2-decimal confidence ("0.88"), matching the design's own exact
+    // markup — not a rounded percentage.
+    expect(screen.getByText("0.88")).toBeInTheDocument();
   });
 
   it("switches to Ukrainian copy for the greeting and empty state", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -318,9 +318,17 @@ export function MemoryOverview({
 
   return (
     <div className={styles.wrap}>
-      <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-      <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
-      <p className="mt-4 max-w-[60ch] text-body text-text-muted">{t.intro}</p>
+      <p className="v3-eyebrow">{t.eyebrow}</p>
+      <div className={styles.titleRow}>
+        <h1 className="v3-h1" style={{ margin: 0 }}>
+          {t.title}
+        </h1>
+        <button type="button" className="v3-btn-solid" onClick={() => setEditorState({ mode: "create" })}>
+          <Plus aria-hidden="true" width={14} height={14} strokeWidth={1.8} style={{ marginRight: 8 }} />
+          {t.newMemoryAction}
+        </button>
+      </div>
+      <p className="v3-intro">{t.intro}</p>
 
       <MemoryStatusHeader
         lang={lang}
@@ -331,18 +339,15 @@ export function MemoryOverview({
         preferences={preferences}
       />
 
-      <div className={styles.toolbar}>
-        <label className={styles.searchField}>
-          <span className="sr-only">{t.searchLabel}</span>
-          <Search aria-hidden="true" width={16} height={16} strokeWidth={1.6} />
-          <input
-            type="search"
-            value={queryInput}
-            onChange={(event) => setQueryInput(event.target.value)}
-            placeholder={t.searchPlaceholder}
-            className={styles.searchInput}
-          />
-        </label>
+      <div className={`v3-panel ${styles.toolbar}`}>
+        <input
+          type="search"
+          value={queryInput}
+          onChange={(event) => setQueryInput(event.target.value)}
+          placeholder={t.searchPlaceholder}
+          aria-label={t.searchLabel}
+          className={`v3-input ${styles.searchInput}`}
+        />
 
         {hasAnyMemories && (
           <div className={styles.tabs} role="tablist" aria-label={t.eyebrow}>
@@ -350,11 +355,12 @@ export function MemoryOverview({
               type="button"
               role="tab"
               aria-selected={category === ""}
+              data-active={category === ""}
               onClick={() => {
                 setCategory("");
                 setPage(1);
               }}
-              className={category === "" ? `${styles.tab} ${styles.tabActive}` : styles.tab}
+              className="v3-chip"
             >
               {t.allCategoriesLabel} <span className={styles.tabCount}>{remainingTotal}</span>
             </button>
@@ -364,11 +370,12 @@ export function MemoryOverview({
                 type="button"
                 role="tab"
                 aria-selected={category === value}
+                data-active={category === value}
                 onClick={() => {
                   setCategory(value);
                   setPage(1);
                 }}
-                className={category === value ? `${styles.tab} ${styles.tabActive}` : styles.tab}
+                className="v3-chip"
               >
                 {value} <span className={styles.tabCount}>{count}</span>
               </button>
@@ -376,15 +383,10 @@ export function MemoryOverview({
           </div>
         )}
 
-        <Button variant="ghost" onClick={() => setEditorState({ mode: "create" })}>
-          <Plus aria-hidden="true" width={14} height={14} strokeWidth={1.8} />
-          {t.newMemoryAction}
-        </Button>
-
         {hasAnyMemories && (
-          <Button variant="ghost" onClick={() => setConfirmingClearAll(true)}>
+          <button type="button" className={`v3-btn-quiet ${styles.clearAll}`} onClick={() => setConfirmingClearAll(true)}>
             {t.clearAllAction}
-          </Button>
+          </button>
         )}
       </div>
 
@@ -404,7 +406,7 @@ export function MemoryOverview({
         <div className={styles.empty}>
           <p className={styles.emptyHeading}>{t.emptyNoneHeading}</p>
           <p className={styles.emptyBody}>{t.emptyNoneBody}</p>
-          <Link href="/import-conversations" className={styles.emptyCta}>
+          <Link href="/import-conversations" className={`v3-btn-solid ${styles.emptyCta}`}>
             {t.emptyNoneCta}
           </Link>
         </div>
@@ -414,7 +416,7 @@ export function MemoryOverview({
         <div className={styles.empty}>
           <p className={styles.emptyHeading}>{t.emptyFilteredHeading}</p>
           <p className={styles.emptyBody}>{t.emptyFilteredBody}</p>
-          <button type="button" onClick={clearFilters} className={styles.emptyCta}>
+          <button type="button" onClick={clearFilters} className={`v3-btn-solid ${styles.emptyCta}`}>
             {t.clearFiltersAction}
           </button>
         </div>

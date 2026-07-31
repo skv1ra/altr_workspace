@@ -119,7 +119,7 @@ describe("MemoryOverview", () => {
     render(<MemoryOverview {...defaultProps} initialPage={9} />);
 
     await waitFor(() => expect(screen.getByText("2")).toBeInTheDocument());
-    expect(screen.getByText(/of/)).toBeInTheDocument();
+    expect(screen.getByText("1 of 3")).toBeInTheDocument();
   });
 
   it("editing a memory saves via the real PATCH endpoint and refreshes the list", async () => {
@@ -273,7 +273,8 @@ describe("MemoryOverview", () => {
     render(<MemoryOverview {...defaultProps} activeMemoryCount={1} memoryLimit={2} />);
     await screen.findByText("Short, direct replies");
 
-    expect(screen.getByRole("progressbar", { name: "Active memories" })).toHaveAttribute("aria-valuenow", "50");
+    expect(document.querySelector(".v3-stat-numeral")).toHaveTextContent("1");
+    expect(screen.getByText(/of 2 active memories/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /New memory/ }));
     await userEvent.type(screen.getByLabelText(/Title/), "Second memory");
@@ -282,7 +283,8 @@ describe("MemoryOverview", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await screen.findByText("Second memory");
 
-    expect(screen.getByRole("progressbar", { name: "Active memories" })).toHaveAttribute("aria-valuenow", "100");
+    expect(document.querySelector(".v3-stat-numeral")).toHaveTextContent("2");
+    expect(screen.getByText(/of 2 active memories/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /New memory/ }));
     expect(await screen.findByText("You've reached your active memory limit.")).toBeInTheDocument();

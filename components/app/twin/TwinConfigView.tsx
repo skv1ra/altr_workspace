@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { Select } from "@/components/ui/Select";
 import { Surface } from "@/components/ui/Surface";
 import { TextField } from "@/components/ui/TextField";
 import { toast } from "@/components/ui/Toast";
@@ -172,7 +171,7 @@ export function TwinConfigView({ activeMemoryCount }: TwinConfigViewProps) {
 
       {!loading && !loadError && baseline && (
         <>
-          <section className={styles.section} aria-labelledby="twin-identity-heading">
+          <section className={`v3-panel ${styles.section}`} aria-labelledby="twin-identity-heading">
             <h2 id="twin-identity-heading" className={styles.sectionHeading}>
               {t.identityHeading}
             </h2>
@@ -192,18 +191,28 @@ export function TwinConfigView({ activeMemoryCount }: TwinConfigViewProps) {
             </div>
           </section>
 
-          <section className={styles.section} aria-labelledby="twin-voice-heading">
+          <section className={`v3-panel ${styles.section}`} aria-labelledby="twin-voice-heading">
             <h2 id="twin-voice-heading" className={styles.sectionHeading}>
               {t.voiceHeading}
             </h2>
             <p className={styles.sectionBody}>{t.voiceBody}</p>
             <div className={styles.fields}>
-              <Select
-                label={t.toneLabel}
-                value={tone}
-                onChange={(event) => setTone(event.target.value as Tone)}
-                options={TONE_VALUES.map((value) => ({ value, label: t.toneOptions[value] }))}
-              />
+              <div>
+                <span className="v3-field-label">{t.toneLabel}</span>
+                <div className={styles.chipRow}>
+                  {TONE_VALUES.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className="v3-chip"
+                      data-active={tone === value}
+                      onClick={() => setTone(value)}
+                    >
+                      {t.toneOptions[value]}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Field label={t.instructionsLabel} help={`${instructions.length}/${INSTRUCTIONS_MAX_LENGTH} · ${t.instructionsHint}`}>
                 {({ id, describedBy }) => (
                   <textarea
@@ -220,7 +229,7 @@ export function TwinConfigView({ activeMemoryCount }: TwinConfigViewProps) {
             </div>
           </section>
 
-          <section className={styles.section} aria-labelledby="twin-status-heading">
+          <section className={`v3-panel ${styles.section}`} aria-labelledby="twin-status-heading">
             <h2 id="twin-status-heading" className={styles.sectionHeading}>
               {t.statusHeading}
             </h2>

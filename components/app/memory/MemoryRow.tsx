@@ -1,8 +1,7 @@
 "use client";
 
-import { CheckCircle2, History, Pencil, PauseCircle, Trash2 } from "lucide-react";
+import { PauseCircle } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/components/ui/Toast";
 import { getSharedCopy } from "@/lib/i18n/copy";
@@ -71,19 +70,18 @@ export function MemoryRow({ memory, lang, onEdit, onOpenProvenance, onToggleActi
 
   return (
     <li className={memory.is_active ? styles.row : `${styles.row} ${styles.rowInactive}`}>
-      <span className={`text-label uppercase text-text-muted ${styles.category}`}>{memory.category}</span>
-      <div className={styles.content}>
+      <article className={`v3-panel ${styles.card}`}>
         <div className={styles.headRow}>
-          <p className="text-body font-medium text-text-primary">{memory.title}</p>
-          <span className={styles.statusPill} data-state={memory.is_active ? "active" : "disabled"}>
-            {memory.is_active ? (
-              <CheckCircle2 aria-hidden="true" width={13} height={13} strokeWidth={1.8} />
-            ) : (
-              <PauseCircle aria-hidden="true" width={13} height={13} strokeWidth={1.8} />
-            )}
-            {memory.is_active ? t.activeState : t.disabledState}
-          </span>
+          <h3 className={styles.title}>{memory.title}</h3>
+          <span className={styles.confidence}>{memory.confidence.toFixed(2)}</span>
         </div>
+
+        {!memory.is_active && (
+          <span className={styles.statusPill} data-state="disabled">
+            <PauseCircle aria-hidden="true" width={13} height={13} strokeWidth={1.8} />
+            {t.disabledState}
+          </span>
+        )}
 
         {/* This prompt's own "clear semantics copy" instruction, verified
          * against the real retrieval RPC (`supabase/migrations/
@@ -94,7 +92,7 @@ export function MemoryRow({ memory, lang, onEdit, onOpenProvenance, onToggleActi
          * Twin draft's retrieval, not just visually greyed out. */}
         {!memory.is_active && <p className={styles.disabledHint}>{t.disabledHint}</p>}
 
-        <p className="mt-2 text-body text-text-muted">
+        <p className={styles.description}>
           {description}{" "}
           {needsClamp && (
             <button type="button" className={styles.clampToggle} onClick={() => setExpanded((value) => !value)}>
@@ -103,40 +101,26 @@ export function MemoryRow({ memory, lang, onEdit, onOpenProvenance, onToggleActi
           )}
         </p>
 
-        <p className={styles.provenance}>{provenanceText(memory, lang)}</p>
-
-        <div className={styles.confidenceRow}>
-          <span className={styles.confidenceLabel}>{t.confidenceLabel}</span>
-          <div
-            className={styles.confidenceTrack}
-            role="meter"
-            aria-label={t.confidenceLabel}
-            aria-valuenow={confidencePercent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span className={styles.confidenceFill} style={{ width: `${confidencePercent}%` }} />
-          </div>
+        <div className={styles.metaRow}>
+          <span className={styles.category}>{memory.category}</span>
+          <span className={styles.provenance}>{provenanceText(memory, lang)}</span>
         </div>
 
         <div className={styles.actions}>
-          <Button variant="ghost" onClick={onEdit}>
-            <Pencil aria-hidden="true" width={14} height={14} strokeWidth={1.6} />
+          <button type="button" className="v3-btn-quiet" onClick={onEdit}>
             {t.editAction}
-          </Button>
-          <Button variant="ghost" onClick={onToggleActive} loading={togglingActive}>
+          </button>
+          <button type="button" className="v3-btn-quiet" onClick={onToggleActive} disabled={togglingActive}>
             {memory.is_active ? t.disableAction : t.enableAction}
-          </Button>
-          <Button variant="ghost" onClick={onOpenProvenance}>
-            <History aria-hidden="true" width={14} height={14} strokeWidth={1.6} />
+          </button>
+          <button type="button" className="v3-btn-quiet" onClick={onOpenProvenance}>
             {t.provenanceAction}
-          </Button>
-          <Button variant="ghost" onClick={() => setConfirmingDelete(true)}>
-            <Trash2 aria-hidden="true" width={14} height={14} strokeWidth={1.6} />
+          </button>
+          <button type="button" className="v3-btn-quiet" onClick={() => setConfirmingDelete(true)}>
             {t.deleteAction}
-          </Button>
+          </button>
         </div>
-      </div>
+      </article>
 
       <ConfirmDialog
         open={confirmingDelete}

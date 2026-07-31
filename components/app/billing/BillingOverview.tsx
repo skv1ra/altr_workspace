@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PlanBadge } from "@/components/app/PlanBadge";
 import { QuotaMeter } from "@/components/app/QuotaMeter";
 import { Button } from "@/components/ui/Button";
 import { getPlanLimits } from "@/lib/billing/limits";
@@ -125,8 +124,8 @@ export function BillingOverview({ activeMemoriesUsed, draftsUsedThisMonth, impor
   if (loading) {
     return (
       <div className={styles.wrap}>
-        <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
+        <p className="v3-eyebrow">{t.eyebrow}</p>
+        <h1 className="v3-h1">{t.title}</h1>
         <p className={styles.statusLine}>{common.loading}</p>
       </div>
     );
@@ -135,8 +134,8 @@ export function BillingOverview({ activeMemoriesUsed, draftsUsedThisMonth, impor
   if (loadError || !data) {
     return (
       <div className={styles.wrap}>
-        <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-        <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
+        <p className="v3-eyebrow">{t.eyebrow}</p>
+        <h1 className="v3-h1">{t.title}</h1>
         <p className={styles.loadError} role="alert">
           {t.loadFailed}
         </p>
@@ -153,17 +152,14 @@ export function BillingOverview({ activeMemoriesUsed, draftsUsedThisMonth, impor
 
   return (
     <div className={styles.wrap}>
-      <p className="text-label uppercase text-text-muted">{t.eyebrow}</p>
-      <h1 className="mt-4 text-h1 font-normal text-text-primary">{t.title}</h1>
+      <p className="v3-eyebrow">{t.eyebrow}</p>
+      <h1 className="v3-h1">{t.title}</h1>
 
-      <section className={styles.section} aria-labelledby="billing-plan-heading">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="billing-plan-heading">
         <h2 id="billing-plan-heading" className={styles.sectionHeading}>
           {t.planHeading}
         </h2>
-
-        <div className={styles.planRow}>
-          <PlanBadge plan={effectivePlan} lang={lang} />
-        </div>
+        <p className={styles.planName}>{getSharedCopy(lang).pricingPage.planNames[effectivePlan]}</p>
 
         {neverSubscribed && (
           <>
@@ -250,7 +246,7 @@ export function BillingOverview({ activeMemoriesUsed, draftsUsedThisMonth, impor
         )}
       </section>
 
-      <section className={styles.section} aria-labelledby="billing-quota-heading">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="billing-quota-heading">
         <h2 id="billing-quota-heading" className={styles.sectionHeading}>
           {t.quotaHeading}
         </h2>
@@ -261,7 +257,7 @@ export function BillingOverview({ activeMemoriesUsed, draftsUsedThisMonth, impor
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="billing-history-heading">
+      <section className={`v3-panel ${styles.section}`} aria-labelledby="billing-history-heading">
         <h2 id="billing-history-heading" className={styles.sectionHeading}>
           {t.historyHeading}
         </h2>
