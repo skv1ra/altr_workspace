@@ -19,12 +19,13 @@ describe("phase 9 security hardening", () => {
     expect(middleware).toContain(
       'response.headers.set("Content-Security-Policy", contentSecurityPolicy)',
     );
-    // 'unsafe-eval' is scoped to the homepage route only (its Claude
-    // Design bundle compiles its own logic via `new Function(...)`), not
-    // a blanket production allowance — everywhere else keeps the plain
+    // 'unsafe-eval' is scoped to the bundled-design routes only (their
+    // Claude Design bundles compile their own logic via `new Function(...)`),
+    // not a blanket production allowance — everywhere else keeps the plain
     // nonce-only policy.
-    expect(middleware).toContain('pathname === "/" ? ["\'strict-dynamic\'", "\'unsafe-eval\'"] : []');
-    expect(middleware).toContain("!isProduction && pathname !== \"/\" ? [\"'unsafe-eval'\"] : []");
+    expect(middleware).toContain('const BUNDLED_DESIGN_PATHS = ["/", "/app-preview"];');
+    expect(middleware).toContain("isBundledDesignPath ? [\"'strict-dynamic'\", \"'unsafe-eval'\"] : []");
+    expect(middleware).toContain("!isProduction && !isBundledDesignPath ? [\"'unsafe-eval'\"] : []");
   });
 
   it("normalizes copied Supabase endpoint URLs before creating clients", () => {

@@ -52,46 +52,31 @@
   white-space: nowrap;
 }
 
-.planBadge {
-  flex: none;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--edge-hairline);
-  padding: var(--space-1) var(--space-3);
+.plan {
+  margin-left: 44px;
   font-size: var(--text-label);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
   color: var(--text-muted);
 }
 
 .controls {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: 2px;
 }
 
-.langSwitch {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.langButton {
+/* Overrides shared `.btn`'s centered, pill-shaped layout (controls.css) —
+   these rows need to read as a plain left-aligned list, not buttons. */
+.row {
+  display: flex !important;
+  width: 100%;
+  justify-content: flex-start !important;
+  gap: var(--space-3) !important;
+  padding: var(--space-2) var(--space-1) !important;
+  min-height: 0 !important;
   font-size: var(--text-label);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-muted);
-  transition: color var(--motion-fast) var(--ease-altr);
+  color: var(--text-muted) !important;
 }
 
-.langButton:hover {
-  color: var(--text-primary);
-}
-
-.langButton[aria-pressed="true"] {
-  color: var(--text-primary);
-}
-
-.signOut {
-  flex: none;
+.row:hover:not(:disabled) {
+  color: var(--text-primary) !important;
 }

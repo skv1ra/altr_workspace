@@ -10,6 +10,13 @@ import styles from "./DashboardHome.module.css";
 
 type ImportStatus = "processing" | "completed" | "failed" | "deleted";
 
+export interface RecentMemory {
+  id: string;
+  title: string;
+  category: string;
+  confidence: number;
+}
+
 export interface DashboardHomeProps {
   name: string;
   plan: PlanId;
@@ -18,8 +25,12 @@ export interface DashboardHomeProps {
   draftsUsed: number;
   draftsLimit: number;
   draftsError: boolean;
+  importsUsed: number;
+  importsLimit: number;
+  importsError: boolean;
   lastImport: { status: ImportStatus; platform: string; createdAt: string } | null;
   lastImportError: boolean;
+  recentMemories: RecentMemory[];
 }
 
 function firstName(name: string) {
@@ -27,20 +38,16 @@ function firstName(name: string) {
 }
 
 /**
- * Three editorial rows, not cards — hairline-separated, big quiet
- * numerals, per this prompt's own (031) visual requirement. Originally
- * none of the three linked anywhere (ADR-013 — no dead links, since none
- * of Memory/Imports/Twin had a real page yet). Imports/Twin still don't
- * (032 deliberately kept `/import-conversations` standalone, outside
- * `AppShell`/this dashboard's own nav — see that page's own comment;
- * Twin is still 039, not yet built) — but Memory (036) now has a real
- * page (`/memory`), and that prompt's own `components/app/DashboardHome.tsx`
- * comment explicitly named itself as the place to close this one gap, the
- * same way `AppNav.tsx`'s own comment did. Only the Memory row's
- * label/numeral is wrapped in a real `<Link>` — the `QuotaMeter` beside it
- * stays a plain sibling, not nested inside the link, since its own
- * "reached" state can render a `<Link href="/pricing">` internally and
- * nested `<a>` tags are invalid HTML.
+ * Altr App v3 redesign: a hero card ("Your Twin is drawing on N memories…")
+ * plus three quota tiles and a "Recently learned" list, replacing the
+ * previous three hairline-separated rows. Every number here is still a real
+ * prop from `app/(app)/dashboard/page.tsx`'s own trusted server queries —
+ * this is a visual restructure, not new data. The design's own "Activity"
+ * timeline (import/draft events with relative timestamps) is deliberately
+ * NOT reproduced: no audit-log table exists to source it from truthfully,
+ * and `MemoryRow`'s own precedent (`components/app/memory/MemoryRow.tsx`)
+ * already established this codebase's rule against inventing detail an API
+ * doesn't actually return.
  */
 export function DashboardHome({
   name,
@@ -50,12 +57,16 @@ export function DashboardHome({
   draftsUsed,
   draftsLimit,
   draftsError,
+  importsUsed,
+  importsLimit,
+  importsError,
   lastImport,
   lastImportError,
+  recentMemories,
 }: DashboardHomeProps) {
   const [lang] = useLang("EN");
   const t = getSharedCopy(lang).dashboard;
-  const nav = getSharedCopy(lang).nav;
+  const memoryT = getSharedCopy(lang).memory;
 
   const isNewAccount =
     memoryCount === 0 && draftsUsed === 0 && !lastImport && !lastImportError && !draftsError;
@@ -75,40 +86,84 @@ export function DashboardHome({
           <p className="mt-3 max-w-[52ch] text-body text-text-muted">{t.emptyAccountBody}</p>
         </div>
       ) : (
-        <div className={styles.rows}>
-          <div className={styles.row}>
-            <Link href="/memory" className={styles.label}>
-              {nav.memory}
-            </Link>
-            <Link href="/memory" className={styles.numeral}>
-              {memoryCount}
-            </Link>
-            <QuotaMeter used={memoryCount} limit={memoryLimit} lang={lang} ariaLabel={nav.memory} />
+        <>
+          <div className={styles.hero}>
+            <p className={styles.heroText}>
+              {t.heroPrefix} <strong className={styles.heroNumeral}>{memoryCount} {t.heroMemories}</strong> {t.heroSuffix}
+            </p>
+            <div className={styles.heroActions}>
+              <Link href="/assistants" className={styles.heroPrimary}>
+                {t.draftReplyCta}
+              </Link>
+              <Link href="/memory" className={styles.heroSecondary}>
+                {t.reviewMemoryCta}
+              </Link>
+            </div>
           </div>
 
-          <div className={styles.row}>
-            <p className={styles.label}>{t.importsLabel}</p>
-            {lastImportError ? (
-              <p className={styles.unknown}>—</p>
-            ) : lastImport ? (
-              <>
-                <p className={styles.numeral}>{getSharedCopy(lang).dashboard.importStatus[lastImport.status]}</p>
-                <p className={styles.meta}>
+          <div className={styles.statGrid}>
+            <Link href="/memory" className={styles.statCard} data-testid="stat-memories">
+              <span className={styles.statLabel}>{t.statActiveMemories}</span>
+              <span className={styles.statNumeral}>
+                {memoryCount} <span className={styles.statOf}>{t.of} {memoryLimit}</span>
+              </span>
+              <QuotaMeter used={memoryCount} limit={memoryLimit} lang={lang} ariaLabel={t.statActiveMemories} />
+            </Link>
+
+            <div className={styles.statCard} data-testid="stat-drafts">
+              <span className={styles.statLabel}>{t.statAiDrafts}</span>
+              {draftsError ? (
+                <span className={styles.statUnknown}>—</span>
+              ) : (
+                <span className={styles.statNumeral}>
+                  {draftsUsed} <span className={styles.statOf}>{t.of} {draftsLimit}</span>
+                </span>
+              )}
+              <QuotaMeter used={draftsUsed} limit={draftsLimit} lang={lang} unknown={draftsError} ariaLabel={t.statAiDrafts} />
+            </div>
+
+            <div className={styles.statCard} data-testid="stat-imports">
+              <span className={styles.statLabel}>{t.statImports}</span>
+              {importsError ? (
+                <span className={styles.statUnknown}>—</span>
+              ) : (
+                <span className={styles.statNumeral}>
+                  {importsUsed} <span className={styles.statOf}>{t.of} {importsLimit}</span>
+                </span>
+              )}
+              <QuotaMeter used={importsUsed} limit={importsLimit} lang={lang} unknown={importsError} ariaLabel={t.statImports} />
+              {lastImport && (
+                <p className={styles.statMeta}>
                   {t.importsLastPrefix} {lastImport.platform}
                 </p>
-              </>
-            ) : (
-              <p className={styles.meta}>{t.importsEmpty}</p>
-            )}
+              )}
+              {!lastImport && !lastImportError && <p className={styles.statMeta}>{t.importsEmpty}</p>}
+            </div>
           </div>
 
-          <div className={styles.row}>
-            <p className={styles.label}>{t.twinLabel}</p>
-            {!draftsError && <p className={styles.numeral}>{draftsUsed}</p>}
-            <QuotaMeter used={draftsUsed} limit={draftsLimit} lang={lang} unknown={draftsError} ariaLabel={t.twinLabel} />
-            {!draftsError && <p className={styles.meta}>{t.thisMonth}</p>}
+          <div className={styles.recent}>
+            <div className={styles.recentHead}>
+              <h2 className="text-h4 font-normal text-text-primary">{t.recentlyLearnedHeading}</h2>
+              <Link href="/memory" className={styles.recentAllLink}>
+                {t.allMemoryLink}
+              </Link>
+            </div>
+
+            {recentMemories.length === 0 ? (
+              <p className={styles.recentEmpty}>{t.noMemoriesYetShort}</p>
+            ) : (
+              <ul className={styles.recentList}>
+                {recentMemories.map((memory) => (
+                  <li key={memory.id} className={styles.recentRow}>
+                    <span className={styles.recentCategory}>{memory.category}</span>
+                    <span className={styles.recentTitle}>{memory.title}</span>
+                    <span className={styles.recentConfidence}>{memoryT.confidenceLabel} {Math.round(memory.confidence * 100)}%</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

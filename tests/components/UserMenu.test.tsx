@@ -35,13 +35,24 @@ describe("UserMenu", () => {
     expect(screen.getByText(longEmail)).toHaveAttribute("title", longEmail);
   });
 
-  it("switching language updates the plan badge and re-renders in Ukrainian", async () => {
+  it("switching language updates the plan text and re-renders in Ukrainian", async () => {
     render(<UserMenu name="Max" email="max@example.com" plan="work" />);
 
     expect(screen.getByText("Work")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "UA" }));
+    // The language row is labeled with the *other* language (design's own
+    // "shows what you'll switch to" treatment) — starts as "Українська".
+    await userEvent.click(screen.getByRole("button", { name: "Українська" }));
 
     expect(screen.getByText("Робочий")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Вийти" })).toBeInTheDocument();
+  });
+
+  it("theme row toggles the label between the two modes", async () => {
+    render(<UserMenu name="Max" email="max@example.com" plan="free" />);
+
+    const themeRow = screen.getByRole("button", { name: "Light mode" });
+    await userEvent.click(themeRow);
+
+    expect(screen.getByRole("button", { name: "Dark mode" })).toBeInTheDocument();
   });
 });

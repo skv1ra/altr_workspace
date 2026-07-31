@@ -6,7 +6,7 @@ export const sharedCopy = {
     // product/pricing/menu/closeMenu/language were already correct for the
     // header's own needs and are reused as-is; the signed-in state reuses
     // common.backDashboard ("Dashboard") rather than adding a duplicate key.
-    nav: { product: "Product", memory: "Memory", assistants: "Assistants", imports: "Imports", billing: "Billing", privacy: "Privacy", pricing: "Pricing", profile: "Profile", menu: "Open menu", closeMenu: "Close menu", language: "Language", howItWorks: "How it works", login: "Log in", createAltr: "Create your Altr", menuTitle: "Menu" },
+    nav: { product: "Product", memory: "Memory", assistants: "Assistants", imports: "Imports", billing: "Billing", privacy: "Privacy", pricing: "Pricing", profile: "Profile", menu: "Open menu", closeMenu: "Close menu", language: "Language", howItWorks: "How it works", login: "Log in", createAltr: "Create your Altr", menuTitle: "Menu", switchToLight: "Light mode", switchToDark: "Dark mode", switchToLanguage: "Українська" },
     common: { loading: "Loading", save: "Save", cancel: "Cancel", close: "Close", error: "Something went wrong.", backDashboard: "Dashboard" },
     cookie: {
       bannerTitle: "Your privacy controls",
@@ -182,6 +182,18 @@ export const sharedCopy = {
       emptyAccountTitle: "Your Altr is just getting started.",
       emptyAccountBody: "Once you import a conversation, memories and drafts will start appearing here.",
       importStatus: { processing: "Processing", completed: "Completed", failed: "Failed", deleted: "Removed" },
+      heroPrefix: "Your Twin is drawing on",
+      heroMemories: "memories",
+      heroSuffix: "to draft in your voice.",
+      draftReplyCta: "Draft a reply",
+      reviewMemoryCta: "Review memory",
+      statActiveMemories: "Active memories",
+      statAiDrafts: "AI drafts",
+      statImports: "Imports",
+      of: "of",
+      recentlyLearnedHeading: "Recently learned",
+      allMemoryLink: "All memory",
+      noMemoriesYetShort: "Nothing learned yet.",
     },
     // Prompt 030 — profile and settings. `common.save`/`common.cancel`/
     // `footer.privacyLink` are reused as-is (same words, no duplicate keys)
@@ -857,7 +869,7 @@ export const sharedCopy = {
     },
   },
   UA: {
-    nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", imports: "Імпорти", billing: "Оплата", privacy: "Приватність", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню" },
+    nav: { product: "Продукт", memory: "Памʼять", assistants: "Асистенти", imports: "Імпорти", billing: "Оплата", privacy: "Приватність", pricing: "Тарифи", profile: "Профіль", menu: "Відкрити меню", closeMenu: "Закрити меню", language: "Мова", howItWorks: "Як працює", login: "Увійти", createAltr: "Створити свій Altr", menuTitle: "Меню", switchToLight: "Світла тема", switchToDark: "Темна тема", switchToLanguage: "English" },
     common: { loading: "Завантаження", save: "Зберегти", cancel: "Скасувати", close: "Закрити", error: "Сталася помилка.", backDashboard: "Кабінет" },
     cookie: {
       bannerTitle: "Твої налаштування приватності",
@@ -1003,6 +1015,18 @@ export const sharedCopy = {
       emptyAccountTitle: "Твій Altr щойно починається.",
       emptyAccountBody: "Щойно ти імпортуєш переписку, тут з'являться спогади та чернетки.",
       importStatus: { processing: "Обробка", completed: "Завершено", failed: "Помилка", deleted: "Видалено" },
+      heroPrefix: "Твій Твін спирається на",
+      heroMemories: "спогадів",
+      heroSuffix: "щоб писати твоїм голосом.",
+      draftReplyCta: "Створити чернетку",
+      reviewMemoryCta: "Переглянути пам'ять",
+      statActiveMemories: "Активні спогади",
+      statAiDrafts: "AI-чернетки",
+      statImports: "Імпорти",
+      of: "з",
+      recentlyLearnedHeading: "Нещодавно вивчено",
+      allMemoryLink: "Вся памʼять",
+      noMemoriesYetShort: "Поки нічого не вивчено.",
     },
     settings: {
       heading: "Налаштування",

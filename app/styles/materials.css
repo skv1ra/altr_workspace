@@ -24,6 +24,7 @@
   --text-muted: var(--altr-mist);
   --edge-hairline: rgb(var(--altr-white-rgb) / 15%);
   --accent-code: var(--color-iris-violet-bright);
+  --surface-hover: rgb(var(--altr-white-rgb) / 6%);
   position: relative;
   background-color: var(--surface-inverse);
   background-image:

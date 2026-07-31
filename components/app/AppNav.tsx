@@ -45,6 +45,23 @@ function useDestinations(): Destination[] {
   ];
 }
 
+/**
+ * Same faceted shard silhouette as `components/site/Logo.tsx`, redrawn with
+ * `fill-text-primary`/`fill-text-muted` instead of hardcoded obsidian/silver
+ * — that version is tuned for the always-light marketing header, this rail
+ * needs to read on both the dark and light `AppThemeSurface` states, and the
+ * `text-primary`/`text-muted` tokens already re-scope per surface
+ * (materials.css) so a plain color swap isn't enough on its own.
+ */
+function AppMark() {
+  return (
+    <svg aria-hidden="true" width="16" height="18" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 0L1 18H9V0Z" className="fill-text-primary" />
+      <path d="M9 0L17 18H9V0Z" className="fill-text-muted" />
+    </svg>
+  );
+}
+
 function NavLinks({ destinations, pathname, onNavigate }: { destinations: Destination[]; pathname: string; onNavigate?: () => void }) {
   return (
     <ul className={styles.list}>
@@ -90,6 +107,7 @@ export function AppNav({ name, email, plan }: AppNavProps) {
     <>
       <aside className={styles.rail}>
         <Link href="/dashboard" className={styles.wordmark}>
+          <AppMark />
           Altr
         </Link>
         <nav aria-label="Product navigation">
@@ -100,6 +118,7 @@ export function AppNav({ name, email, plan }: AppNavProps) {
 
       <div className={styles.mobileBar}>
         <Link href="/dashboard" className={styles.wordmark}>
+          <AppMark />
           Altr
         </Link>
         <button

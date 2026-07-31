@@ -74,6 +74,48 @@ export default async function DashboardPage() {
     draftsError = true;
   }
 
+  // Same monthly-imports-count shape `app/(app)/billing/page.tsx` (043)
+  // already queries directly for its own quota row — no GET endpoint
+  // exposes this as its own number either, same class of gap 029/038/039
+  // already found and worked around.
+  let importsUsed = 0;
+  let importsError = false;
+  try {
+    const { count, error } = await admin
+      .from("altr_conversation_imports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", monthStartIso())
+      .neq("status", "deleted");
+    if (error) throw error;
+    importsUsed = count ?? 0;
+  } catch {
+    importsError = true;
+  }
+
+  // "Recently learned" — the same real fields `MemoryRow` already renders
+  // (title/category/confidence), just the newest few, active only. No
+  // endpoint of its own exists (`GET /api/memories` returns the full,
+  // paginated list, not a "recent N" shape) so this reuses the same
+  // direct, trusted server-side read every other row on this page already
+  // does, with the same safe-empty-on-error degrade.
+  let recentMemories: Array<{ id: string; title: string; category: string; confidence: number }> = [];
+  try {
+    const { data, error } = await admin
+      .from("altr_memories")
+      .select("id,title,category,confidence")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(4);
+    if (error) throw error;
+    recentMemories = data ?? [];
+  } catch {
+    // Leave the safe empty default — degrades to "nothing learned yet"
+    // copy rather than blocking the page, same precedent as every other
+    // query on this page.
+  }
+
   return (
     <DashboardHome
       name={profile.name}
@@ -83,8 +125,12 @@ export default async function DashboardPage() {
       draftsUsed={draftsUsed}
       draftsLimit={limits.aiDraftsPerMonth}
       draftsError={draftsError}
+      importsUsed={importsUsed}
+      importsLimit={limits.importsPerMonth}
+      importsError={importsError}
       lastImport={lastImport}
       lastImportError={lastImportError}
+      recentMemories={recentMemories}
     />
   );
 }

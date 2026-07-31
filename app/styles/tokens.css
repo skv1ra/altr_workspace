@@ -90,6 +90,10 @@
   --text-link: var(--color-graphite);
   --accent-code: var(--color-iris-violet);
   --edge-hairline: var(--color-silver);
+  /* Quiet hover tint for interactive rows (nav items, list rows) — re-scoped
+     to a lighter value inside `.surface-inverse` (materials.css), same
+     per-surface-class pattern as `--edge-hairline`/`--text-muted`. */
+  --surface-hover: rgb(var(--altr-graphite-rgb) / 5%);
 
   /* Fluid type scale (clamp: min, fluid, max). Display tops out at the
      96px editorial-serif hero size; headings at the 56px compressed sans. */
