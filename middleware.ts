@@ -7,26 +7,30 @@ function createNonce() {
   return btoa(String.fromCharCode(...bytes));
 }
 
+const BUNDLED_DESIGN_PATHS = ["/", "/app-preview"];
+
 function buildContentSecurityPolicy(nonce: string, pathname: string) {
   const isProduction = process.env.NODE_ENV === "production";
   // Keep self-hosted Next.js chunks executable on statically rendered pages.
   // `strict-dynamic` would make browsers ignore `self` when those chunks do not carry a runtime nonce.
-  // The homepage is the one exception: it renders a design export whose
-  // bootstrap script (nonced) creates further <script> elements at runtime
-  // to unpack itself, and those dynamically-created scripts don't carry
-  // their own nonce. `strict-dynamic` extends the bootstrap script's own
-  // trust to scripts *it* creates — scoped to `/` only, everywhere else
-  // keeps the plain nonce-only policy. That runtime also compiles its own
-  // component logic from a string via `new Function(...)` (its own
-  // interpreter, not user input — the string comes from the same static,
-  // build-time bundle file, never from a request), which needs
-  // `'unsafe-eval'` too; scoped to `/` in production for the same reason,
-  // matching what non-production already had unconditionally.
+  // The homepage and `/app-preview` are the exception: they render a design
+  // export whose bootstrap script (nonced) creates further <script>
+  // elements at runtime to unpack itself, and those dynamically-created
+  // scripts don't carry their own nonce. `strict-dynamic` extends the
+  // bootstrap script's own trust to scripts *it* creates — scoped to
+  // `BUNDLED_DESIGN_PATHS` only, everywhere else keeps the plain
+  // nonce-only policy. That runtime also compiles its own component logic
+  // from a string via `new Function(...)` (its own interpreter, not user
+  // input — the string comes from the same static, build-time bundle file,
+  // never from a request), which needs `'unsafe-eval'` too; scoped to
+  // those paths in production for the same reason, matching what
+  // non-production already had unconditionally.
+  const isBundledDesignPath = BUNDLED_DESIGN_PATHS.includes(pathname);
   const scriptSrc = [
     "'self'",
     `'nonce-${nonce}'`,
-    ...(pathname === "/" ? ["'strict-dynamic'", "'unsafe-eval'"] : []),
-    ...(!isProduction && pathname !== "/" ? ["'unsafe-eval'"] : []),
+    ...(isBundledDesignPath ? ["'strict-dynamic'", "'unsafe-eval'"] : []),
+    ...(!isProduction && !isBundledDesignPath ? ["'unsafe-eval'"] : []),
   ];
   const connectSrc = [
     "'self'",
