@@ -1,6 +1,6 @@
 "use client";
 
-import { BrainCircuit, Bot, CreditCard, LayoutDashboard, Menu as MenuIcon, Settings as SettingsIcon, ShieldCheck, Upload } from "lucide-react";
+import { BrainCircuit, Bot, CreditCard, LayoutDashboard, Menu as MenuIcon, Plug, Settings as SettingsIcon, ShieldCheck, Upload } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -39,6 +39,7 @@ function useDestinations(): Destination[] {
     { href: "/memory", label: t.nav.memory, icon: BrainCircuit },
     { href: "/assistants", label: t.nav.assistants, icon: Bot },
     { href: "/import-conversations", label: t.nav.imports, icon: Upload },
+    { href: "/connections", label: t.nav.connections, icon: Plug },
     { href: "/billing", label: t.nav.billing, icon: CreditCard },
     { href: "/privacy-center", label: t.nav.privacy, icon: ShieldCheck },
     { href: "/settings", label: t.settings.heading, icon: SettingsIcon },

@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         "/memory",
         "/assistants",
         "/import-conversations",
+        "/connections",
         "/billing",
         "/payment/success",
         "/legacy-migration",

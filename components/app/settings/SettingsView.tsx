@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/Toast";
 import { updateCurrentProfile, type AltrProfile, type ToneMode } from "@/lib/auth";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang, type Lang } from "@/lib/i18n/lang-store";
+import { AccountTabs } from "./AccountTabs";
 import styles from "./SettingsView.module.css";
 
 type IdentityState = { name: string; altrName: string; role: string; bio: string; tone: ToneMode };
@@ -159,6 +160,7 @@ export function SettingsView({ profile }: { profile: AltrProfile }) {
 
   return (
     <div className={styles.wrap}>
+      <AccountTabs />
       <p className="v3-eyebrow">{t.eyebrow}</p>
       <h1 className="v3-h1">{t.heading}</h1>
 

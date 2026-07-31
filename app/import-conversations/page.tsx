@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ImportFlow } from "@/components/app/imports/ImportFlow";
 import { ImportHistory } from "@/components/app/imports/ImportHistory";
 import { Surface } from "@/components/ui/Surface";
+import { isConnectionProvider } from "@/lib/connections";
 
 export const metadata: Metadata = { title: "Import conversations" };
 
@@ -19,10 +20,11 @@ export const metadata: Metadata = { title: "Import conversations" };
  */
 export const dynamic = "force-dynamic";
 
-export default function ImportConversationsPage() {
+export default function ImportConversationsPage({ searchParams }: { searchParams: { provider?: string } }) {
+  const initialPlatform = isConnectionProvider(searchParams.provider) ? searchParams.provider : "telegram";
   return (
     <Surface variant="inverse" className="min-h-screen">
-      <ImportFlow />
+      <ImportFlow initialPlatform={initialPlatform} />
       <ImportHistory />
     </Surface>
   );

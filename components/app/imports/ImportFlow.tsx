@@ -86,11 +86,11 @@ function holdStage(enteredAt: number) {
  * account-level privacy surface. LEGACY's import consent is, and always
  * was, a local, unpersisted gate in front of the upload.
  */
-export function ImportFlow() {
+export function ImportFlow({ initialPlatform = "telegram" }: { initialPlatform?: ImportPlatform }) {
   const [lang] = useLang("EN");
   const t = getSharedCopy(lang).imports;
 
-  const [platform, setPlatform] = useState<ImportPlatform>("telegram");
+  const [platform, setPlatform] = useState<ImportPlatform>(initialPlatform);
   const [status, setStatus] = useState<StatusState>({ kind: "idle" });
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);

@@ -1,0 +1,27 @@
+.tabs {
+  display: flex;
+  width: fit-content;
+  gap: 6px;
+  margin-bottom: 34px;
+  padding: 5px;
+  border: 1px solid var(--v3-edge);
+  border-radius: 999px;
+  background: var(--v3-panel);
+}
+
+.tab {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--v3-muted);
+  transition: color 180ms var(--v3-ease), background 180ms var(--v3-ease);
+}
+
+.tab:hover {
+  color: var(--v3-heading);
+}
+
+.active {
+  color: var(--v3-heading);
+  background: var(--v3-panel-deep);
+}

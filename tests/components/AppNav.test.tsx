@@ -62,6 +62,7 @@ describe("AppNav", () => {
     for (const [name, href] of [
       ["Assistants", "/assistants"],
       ["Imports", "/import-conversations"],
+      ["Connections", "/connections"],
       ["Billing", "/billing"],
       ["Privacy", "/privacy-center"],
     ]) {

@@ -17,7 +17,7 @@ describe("middleware access boundaries", () => {
     else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey;
   });
 
-  it.each(["/dashboard", "/onboarding", "/settings", "/privacy-center"])(
+  it.each(["/dashboard", "/onboarding", "/settings", "/connections", "/privacy-center"])(
     "redirects an anonymous visitor from %s to login instead of rendering a 500",
     async (path) => {
       delete process.env.NEXT_PUBLIC_SUPABASE_URL;

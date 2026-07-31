@@ -7,6 +7,7 @@ import { updateCurrentProfile, type AltrProfile } from "@/lib/auth";
 const push = vi.fn();
 
 vi.mock("next/navigation", () => ({
+  usePathname: () => "/settings",
   useRouter: () => ({ push }),
 }));
 
@@ -44,6 +45,7 @@ describe("SettingsView", () => {
   it("has a real h1 (046 a11y audit — was a plain styled <p>, invisible to screen-reader heading navigation)", () => {
     render(<SettingsView profile={profile} />);
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Connections" })).toHaveAttribute("href", "/connections");
   });
 
   it("renders the identity form prefilled from the server profile payload", () => {

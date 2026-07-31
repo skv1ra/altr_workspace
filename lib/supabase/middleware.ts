@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse,type NextRequest } from "next/server";
 import { e2eMocksEnabled,getE2EIdentity } from "@/lib/testing/e2e-auth";
 import { normalizeSupabaseProjectUrl } from "@/lib/supabase/url";
-const pages=["/dashboard","/onboarding","/memory","/assistants","/import-conversations","/billing","/settings","/privacy-center","/payment/success","/payment/receipt","/legacy-migration"];
+const pages=["/dashboard","/onboarding","/memory","/assistants","/import-conversations","/connections","/billing","/settings","/privacy-center","/payment/success","/payment/receipt","/legacy-migration"];
 const publicApiPrefixes=["/api/auth/","/api/webhooks/","/api/dev/"];
 const publicApiExact=new Set(["/api/version","/api/health","/api/billing/plans","/api/privacy/deletion-requests"]);
 const protectedPath=(p:string)=>pages.some(x=>p===x||p.startsWith(`${x}/`))||(p.startsWith("/api/")&&!publicApiExact.has(p)&&!publicApiPrefixes.some(x=>p.startsWith(x)));

@@ -16,6 +16,8 @@ export type AuthRateLimitAction =
   | "import_chunk"
   | "memory_write"
   | "assistant_write"
+  | "connections_read"
+  | "conversation_write"
   | "privacy_request"
   | "data_export"
   | "account_delete";
@@ -44,6 +46,8 @@ const limits: Record<AuthRateLimitAction, { attempts: number; windowSeconds: num
   import_chunk: { attempts: 120, windowSeconds: 60 * 60 },
   memory_write: { attempts: 60, windowSeconds: 60 * 60 },
   assistant_write: { attempts: 30, windowSeconds: 60 * 60 },
+  connections_read: { attempts: 120, windowSeconds: 60 * 60 },
+  conversation_write: { attempts: 60, windowSeconds: 60 * 60 },
   privacy_request: { attempts: 5, windowSeconds: 60 * 60 },
   data_export: { attempts: 3, windowSeconds: 60 * 60 },
   account_delete: { attempts: 3, windowSeconds: 60 * 60 },
