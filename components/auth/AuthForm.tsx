@@ -16,7 +16,6 @@ import { loginSchema, registerSchema } from "@/lib/auth/validation";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
 import { LEGAL_VERSION } from "@/lib/legal";
-import { AuthVisual } from "./AuthVisual";
 import styles from "./AuthForm.module.css";
 
 export type AuthMode = "register" | "login";
@@ -147,8 +146,6 @@ export function AuthForm({ initialMode, next }: { initialMode: AuthMode; next: s
 
   return (
     <div className={styles.wrap}>
-      <AuthVisual lang={lang} />
-
       <Surface variant="page" as="section" className={styles.formPanel}>
         <div className={styles.card}>
           <div className={styles.topline}>

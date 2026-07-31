@@ -10,7 +10,6 @@ import { Surface } from "@/components/ui/Surface";
 import { getCurrentProfile, resetPassword } from "@/lib/auth";
 import { getSharedCopy } from "@/lib/i18n/copy";
 import { useLang } from "@/lib/i18n/lang-store";
-import { AuthVisual } from "./AuthVisual";
 import styles from "./AuthForm.module.css";
 
 /**
@@ -87,8 +86,6 @@ export function ResetPasswordForm() {
 
   return (
     <div className={styles.wrap}>
-      <AuthVisual lang={lang} />
-
       <Surface variant="page" as="section" className={styles.formPanel}>
         <div className={styles.card}>
           <div className={styles.topline}>
