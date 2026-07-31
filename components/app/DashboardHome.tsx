@@ -65,8 +65,9 @@ export function DashboardHome({
   recentMemories,
 }: DashboardHomeProps) {
   const [lang] = useLang("EN");
-  const t = getSharedCopy(lang).dashboard;
-  const memoryT = getSharedCopy(lang).memory;
+  const copy = getSharedCopy(lang);
+  const t = copy.dashboard;
+  const memoryT = copy.memory;
 
   const isNewAccount =
     memoryCount === 0 && draftsUsed === 0 && !lastImport && !lastImportError && !draftsError;
@@ -84,6 +85,9 @@ export function DashboardHome({
         <div className={styles.empty}>
           <h2 className="text-h3 font-normal text-text-primary">{t.emptyAccountTitle}</h2>
           <p className="mt-3 max-w-[52ch] text-body text-text-muted">{t.emptyAccountBody}</p>
+          <Link href="/import-conversations" className={`${styles.heroPrimary} ${styles.emptyCta}`}>
+            {memoryT.emptyNoneCta}
+          </Link>
         </div>
       ) : (
         <>

@@ -9,10 +9,17 @@
   gap: var(--space-4);
 }
 
+/* Same rounded-card language as `.hero` — a quiet, data-free version of
+   it, since there are no real numbers yet to headline. */
 .empty {
-  margin-top: var(--space-8);
-  padding-top: var(--space-8);
-  border-top: 1px solid var(--edge-hairline);
+  margin-top: var(--space-10);
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--edge-hairline);
+}
+
+.emptyCta {
+  margin-top: var(--space-6);
 }
 
 /* Hero card — "Your Twin is drawing on N memories…" */
