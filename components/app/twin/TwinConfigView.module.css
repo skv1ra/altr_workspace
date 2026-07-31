@@ -52,10 +52,14 @@
   color: var(--text-muted);
 }
 
+/* Card panel (Altr App v3) — replaces the previous hairline-divider
+   sections with the same bordered, rounded-lg treatment DashboardHome's
+   `.statCard`/`.hero` and PrivacyCenter's consent tiles already use. */
 .section {
-  margin-top: var(--space-10);
-  padding-top: var(--space-8);
-  border-top: 1px solid var(--edge-hairline);
+  margin-top: var(--space-6);
+  padding: var(--space-6) var(--space-8);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-lg);
 }
 
 .sectionHeading {

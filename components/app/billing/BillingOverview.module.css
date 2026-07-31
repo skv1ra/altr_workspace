@@ -2,10 +2,13 @@
   max-width: 760px;
 }
 
+/* Card panel (Altr App v3) — same treatment TwinConfigView/SettingsView
+   apply to their own `.section`. */
 .section {
-  margin-top: var(--space-10);
-  padding-top: var(--space-8);
-  border-top: 1px solid var(--edge-hairline);
+  margin-top: var(--space-6);
+  padding: var(--space-6) var(--space-8);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-lg);
 }
 
 .sectionHeading {
