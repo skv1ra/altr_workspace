@@ -104,6 +104,32 @@
   color: var(--v3-heading);
 }
 
+.providerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.providerActions :global(.btn) {
+  gap: 7px;
+}
+
+.providerActions :global(.v3-btn-quiet:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.comingSoon {
+  display: inline-flex;
+  margin-top: 22px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--v3-faint);
+}
+
 .liveSyncNote {
   margin: 16px 0 0;
   font-size: 12px;

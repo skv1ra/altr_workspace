@@ -17,6 +17,8 @@ export type AuthRateLimitAction =
   | "memory_write"
   | "assistant_write"
   | "connections_read"
+  | "connection_write"
+  | "gmail_sync"
   | "conversation_write"
   | "privacy_request"
   | "data_export"
@@ -47,6 +49,8 @@ const limits: Record<AuthRateLimitAction, { attempts: number; windowSeconds: num
   memory_write: { attempts: 60, windowSeconds: 60 * 60 },
   assistant_write: { attempts: 30, windowSeconds: 60 * 60 },
   connections_read: { attempts: 120, windowSeconds: 60 * 60 },
+  connection_write: { attempts: 20, windowSeconds: 60 * 60 },
+  gmail_sync: { attempts: 12, windowSeconds: 60 * 60 },
   conversation_write: { attempts: 60, windowSeconds: 60 * 60 },
   privacy_request: { attempts: 5, windowSeconds: 60 * 60 },
   data_export: { attempts: 3, windowSeconds: 60 * 60 },

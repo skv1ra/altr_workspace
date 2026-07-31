@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AccountTabs } from "@/components/app/settings/AccountTabs";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
@@ -27,6 +27,7 @@ import styles from "./ConnectionsView.module.css";
 
 type ProviderSummary = {
   provider: ConnectionProvider;
+  available: boolean;
   connectionId: string | null;
   displayName: string | null;
   status: "connected" | "disconnected" | "error" | "revoked";
@@ -86,6 +87,7 @@ export function ConnectionsView() {
   const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [workingId, setWorkingId] = useState<string | null>(null);
+  const gmailResultHandled = useRef(false);
 
   async function load() {
     setLoading(true);
@@ -108,6 +110,22 @@ export function ConnectionsView() {
     void load();
     // The page has one explicit refresh action; avoid an unstable function
     // dependency and perform only the intended first-load request here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (gmailResultHandled.current) return;
+    const result = new URLSearchParams(window.location.search).get("gmail");
+    if (!result) return;
+    gmailResultHandled.current = true;
+    window.history.replaceState({}, "", window.location.pathname);
+    if (result === "connected") {
+      toast.push(t.gmailConnectedToast);
+      void syncGmail();
+      return;
+    }
+    toast.push(result === "cancelled" ? t.gmailCancelledToast : result === "consent_required" ? t.gmailConsentToast : t.gmailConnectFailedToast);
+    // OAuth result is intentionally processed only once after the browser returns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,6 +197,32 @@ export function ConnectionsView() {
     }
   }
 
+  async function syncGmail() {
+    setWorkingId("gmail");
+    try {
+      await readJson("/api/connections/gmail/sync", { method: "POST" });
+      await load();
+      toast.push(t.gmailSyncedToast);
+    } catch (error) {
+      if (!(error instanceof Error && error.message === "AUTH_REQUIRED")) toast.push(t.gmailSyncFailedToast);
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
+  async function disconnectGmail() {
+    setWorkingId("gmail");
+    try {
+      await readJson("/api/connections/gmail", { method: "DELETE" });
+      await load();
+      toast.push(t.gmailDisconnectedToast);
+    } catch (error) {
+      if (!(error instanceof Error && error.message === "AUTH_REQUIRED")) toast.push(t.actionFailed);
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
   return (
     <div className={styles.wrap}>
       <AccountTabs />
@@ -206,21 +250,34 @@ export function ConnectionsView() {
             const summary = providers.find((item) => item.provider === provider);
             const Icon = PROVIDER_ICONS[provider];
             const connected = summary?.status === "connected";
+            const available = provider === "gmail";
             return (
               <article key={provider} className={`v3-panel ${styles.providerCard}`}>
                 <div className={styles.providerTop}>
                   <span className={styles.providerIcon}><Icon aria-hidden="true" width={18} height={18} /></span>
-                  <span className={connected ? styles.statusConnected : styles.statusMuted}>
-                    {connected ? t.connected : summary?.imports ? t.imported : t.notConnected}
+                  <span className={connected && available ? styles.statusConnected : styles.statusMuted}>
+                    {!available ? t.inDevelopment : connected ? t.connected : summary?.imports ? t.imported : t.notConnected}
                   </span>
                 </div>
                 <h3 className={styles.providerName}>{t.providers[provider]}</h3>
                 <p className={styles.providerMeta}>
-                  {summary?.messages ? `${summary.messages.toLocaleString()} ${t.messages}` : t.noData}
+                  {!available ? t.inDevelopmentBody : summary?.messages ? `${summary.messages.toLocaleString()} ${t.messages}` : t.noData}
                 </p>
-                <Link href={`/import-conversations?provider=${provider}`} className={styles.providerAction}>
-                  {summary?.imports ? t.importMore : t.importMessages}
-                </Link>
+                {!available ? (
+                  <span className={styles.comingSoon}>{t.comingSoon}</span>
+                ) : connected ? (
+                  <div className={styles.providerActions}>
+                    <Button variant="secondary" onClick={() => void syncGmail()} loading={workingId === "gmail"}>
+                      <RefreshCw aria-hidden="true" width={14} height={14} />
+                      {t.syncGmail}
+                    </Button>
+                    <button type="button" className="v3-btn-quiet" onClick={() => void disconnectGmail()} disabled={workingId === "gmail"}>
+                      {t.disconnect}
+                    </button>
+                  </div>
+                ) : (
+                  <a href="/api/connections/gmail/start" className={styles.providerAction}>{t.connectGmail}</a>
+                )}
               </article>
             );
           })}

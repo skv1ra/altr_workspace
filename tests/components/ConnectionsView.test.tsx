@@ -9,8 +9,8 @@ vi.mock("next/navigation", () => ({
 
 const providerPayload = {
   providers: [
-    { provider: "telegram", connectionId: null, displayName: null, status: "disconnected", connectedAt: null, lastSyncedAt: null, imports: 1, conversations: 1, messages: 12 },
-    { provider: "gmail", connectionId: null, displayName: null, status: "disconnected", connectedAt: null, lastSyncedAt: null, imports: 0, conversations: 0, messages: 0 },
+    { provider: "telegram", available: false, connectionId: null, displayName: null, status: "disconnected", connectedAt: null, lastSyncedAt: null, imports: 1, conversations: 1, messages: 12 },
+    { provider: "gmail", available: true, connectionId: null, displayName: null, status: "disconnected", connectedAt: null, lastSyncedAt: null, imports: 0, conversations: 0, messages: 0 },
   ],
 };
 
@@ -36,7 +36,7 @@ describe("ConnectionsView", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows connected sources separately from the real reply queue", async () => {
+  it("offers Gmail OAuth, marks every other provider as in development, and keeps the reply queue", async () => {
     vi.spyOn(global, "fetch").mockImplementation((input) => {
       const path = String(input);
       return path.endsWith("/api/connections") ? json(providerPayload) : json(inboxPayload);
@@ -47,8 +47,33 @@ describe("ConnectionsView", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Connections" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { level: 3, name: "Anna" })).toBeInTheDocument();
     expect(screen.getByText("Can we meet tomorrow?")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Import more" })).toHaveAttribute("href", "/import-conversations?provider=telegram");
+    expect(screen.getByRole("link", { name: "Connect Gmail" })).toHaveAttribute("href", "/api/connections/gmail/start");
+    expect(screen.getAllByText("In development")).toHaveLength(6);
     expect(screen.getByText("Needs reply")).toBeInTheDocument();
+  });
+
+  it("syncs an already connected Gmail account and refreshes the queue", async () => {
+    const connectedPayload = {
+      providers: providerPayload.providers.map((provider) => provider.provider === "gmail"
+        ? { ...provider, connectionId: "gmail-1", displayName: "max@example.com", status: "connected", messages: 4 }
+        : provider),
+    };
+    const fetchMock = vi.spyOn(global, "fetch").mockImplementation((input, init) => {
+      const path = String(input);
+      if (path.endsWith("/api/connections")) return json(connectedPayload);
+      if (path.endsWith("/api/connections/inbox")) return json(inboxPayload);
+      if (path.endsWith("/api/connections/gmail/sync") && init?.method === "POST") {
+        return json({ conversations: 1, messages: 4, syncedAt: "2026-07-31T12:00:00.000Z" });
+      }
+      return json({ error: "NOT_FOUND" }, 404);
+    });
+
+    render(<ConnectionsView />);
+    await screen.findByRole("button", { name: "Sync Gmail" });
+    await userEvent.click(screen.getByRole("button", { name: "Sync Gmail" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/connections/gmail/sync", { method: "POST" }));
+    expect(screen.getByRole("button", { name: "Disconnect" })).toBeInTheDocument();
   });
 
   it("generates a Twin draft from the selected conversation and keeps it review-only", async () => {

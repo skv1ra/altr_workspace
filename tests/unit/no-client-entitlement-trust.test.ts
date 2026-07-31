@@ -69,6 +69,7 @@ describe("no client-side entitlement trust (broader sweep — components/ and ap
     const matches = files.filter((file) => usesStorageOrParams(read(file))).sort();
     expect(matches).toEqual(
       [
+        "components/app/connections/ConnectionsView.tsx",
         "components/app/memory/MemoryOverview.tsx",
         "components/auth/AuthForm.tsx",
         "components/site/ProductSection.tsx",

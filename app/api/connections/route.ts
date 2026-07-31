@@ -9,7 +9,7 @@ export async function GET() {
     const [connectionsResult, importsResult] = await Promise.all([
       admin
         .from("altr_data_connections")
-        .select("id,provider,display_name,status,connected_at,last_synced_at,updated_at")
+        .select("id,provider,display_name,status,connected_at,last_synced_at,updated_at,metadata")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false }),
       admin
@@ -35,15 +35,27 @@ export async function GET() {
         }),
         { conversations: 0, messages: 0 },
       );
+      const metadata = connection?.metadata && typeof connection.metadata === "object" && !Array.isArray(connection.metadata)
+        ? connection.metadata as Record<string, unknown>
+        : {};
+      const sync = metadata.sync && typeof metadata.sync === "object" && !Array.isArray(metadata.sync)
+        ? metadata.sync as Record<string, unknown>
+        : {};
+      const liveTotals = {
+        conversations: Number(sync.conversations ?? 0),
+        messages: Number(sync.messages ?? 0),
+      };
       return {
         provider,
+        available: provider === "gmail",
         connectionId: connection?.id ?? null,
         displayName: connection?.display_name ?? null,
         status: connection?.status ?? "disconnected",
         connectedAt: connection?.connected_at ?? null,
         lastSyncedAt: connection?.last_synced_at ?? null,
         imports: providerImports.length,
-        ...totals,
+        conversations: totals.conversations + liveTotals.conversations,
+        messages: totals.messages + liveTotals.messages,
       };
     });
 
