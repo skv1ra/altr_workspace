@@ -92,6 +92,37 @@ test.describe("import journey", () => {
     expect(createCalled).toBe(false);
   });
 
+  test("the exact same file can be selected again after consent is granted", async ({ page }) => {
+    let createCalls = 0;
+    await mockApi(page, (path, route) => {
+      if (path === "/api/imports" && route.request().method() === "GET") {
+        return route.fulfill(json({ imports: [], planId: "free", limits: IMPORT_LIMITS }));
+      }
+      if (path === "/api/imports" && route.request().method() === "POST") {
+        createCalls += 1;
+        return route.fulfill(json({ import: { id: "12121212-1212-4212-8212-121212121212" }, planId: "free" }, 201));
+      }
+      if (path.endsWith("/chunks")) return route.fulfill(json({ ok: true }));
+      if (path.endsWith("/extract")) return route.fulfill(json({ done: true }));
+      return route.continue();
+    });
+
+    await page.goto("/import-conversations");
+    await expect(page.getByText(/free/)).toBeVisible({ timeout: 10_000 });
+    const input = page.locator('input[type="file"]');
+    const fixture = "tests/fixtures/imports/telegram.json";
+
+    await input.setInputFiles(fixture);
+    await expect(page.locator('p[role="alert"]')).toContainText("Confirm that normalized data may be stored.");
+    expect(createCalls).toBe(0);
+
+    await page.getByText("I authorize storage of normalized results.", { exact: false }).click();
+    await input.setInputFiles(fixture);
+
+    await expect(page.getByText("Import and memory extraction complete", { exact: false })).toBeVisible({ timeout: 20_000 });
+    expect(createCalls).toBe(1);
+  });
+
   test("cancel actually aborts the chunk-upload stage — no further chunk requests after cancel, and the partial import is deleted", async ({ page }) => {
     const limits = { ...IMPORT_LIMITS, importsPerMonth: 5 };
     let chunkCalls = 0;

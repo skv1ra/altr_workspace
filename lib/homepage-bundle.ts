@@ -52,7 +52,15 @@ export function renderHomepageBundle(nonce: string): string {
           : 'href=\\"/auth?mode=register\\"',
       ),
   );
-  const withNonce = withAuthLinks.replace("<script>", `<script nonce="${nonce}">`);
+  // The exported design still points navigation at sections that are not
+  // present in the bundle. Route those controls to the real Next.js pages
+  // instead of leaving apparently clickable links that do nothing.
+  const withLiveNavigation = withAuthLinks
+    .replace(/href=\\"#pricing\\"/g, 'href=\\"/pricing\\"')
+    .replace(/href=\\"#privacy-policy\\"/g, 'href=\\"/privacy\\"')
+    .replace(/href=\\"#terms\\"/g, 'href=\\"/terms\\"')
+    .replace(/href=\\"#cookies\\"/g, 'href=\\"/cookies\\"');
+  const withNonce = withLiveNavigation.replace("<script>", `<script nonce="${nonce}">`);
   const titleFix = `<script nonce="${nonce}">(function(){function setTitle(){if(document.title!=="Altr")document.title="Altr";}setTitle();new MutationObserver(setTitle).observe(document.documentElement,{childList:true,subtree:true});var n=0;var t=setInterval(function(){setTitle();if(++n>20)clearInterval(t);},250);})();</script>`;
   return withNonce.replace("</body>", `${titleFix}</body>`);
 }

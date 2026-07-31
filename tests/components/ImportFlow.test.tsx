@@ -107,6 +107,23 @@ describe("ImportFlow", () => {
     expect(fetch).toHaveBeenCalledTimes(1); // only the initial GET /api/imports — never a POST
   });
 
+  it("allows the same export to be selected again after consent is granted", async () => {
+    render(<ImportFlow />);
+    await screen.findByText(/free/);
+
+    const file = new File(["hello"], "chat.json", { type: "application/json" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, file);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Confirm that normalized data may be stored.");
+    expect(input.value).toBe("");
+
+    await checkConsent();
+    const worker = await uploadAndGetWorker(file);
+
+    expect(worker.lastMessage).not.toBeNull();
+  });
+
   it("pre-check rejection: a 0-byte file is rejected before parsing, with a precise designed message", async () => {
     render(<ImportFlow />);
     await screen.findByText(/free/);

@@ -376,7 +376,14 @@ export function ImportFlow({ initialPlatform = "telegram" }: { initialPlatform?:
             disabled={busy}
             accept=".json,.txt,.html,.htm,.csv,.zip,.mbox"
             className={styles.hiddenInput}
-            onChange={(event) => handleFiles(event.target.files)}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              // Browsers do not fire `change` when the same file is selected
+              // twice. Clear the input after every attempt so the same export
+              // can be retried after consent or another rejection is fixed.
+              event.currentTarget.value = "";
+              if (file) void run(file);
+            }}
           />
         </label>
         <p className={styles.dropHint}>{t.dropHint}</p>
